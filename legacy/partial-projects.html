@@ -1,0 +1,19 @@
+<section class="container projects">
+    <div class="center-all">
+    <h2>Cool things I've made</h2>
+    </div>
+
+    <ul class="list">
+        <li class="project row" ng-repeat="project in projects">
+            <!--<p class="{{project.type}} banner "><i class="glyphicon"></i></p>-->
+          <div class="col-md-3">
+            <a class="project-title" href="{{project.url.url||project.source_url.url}}">{{project.name}}</a>
+          </div>
+           <div class="col-md-9">
+            <p>{{project.description}}</p>
+            <small ng-show="project.tech != null" class="text-muted tech"><i class="glyphicon glyphicon-cog"></i> {{project.tech}}</small>
+            <small class="text-muted"><i class="glyphicon glyphicon-time"></i> {{project.date}}</small>
+          </div>
+        </li>
+    </ul>
+</section>

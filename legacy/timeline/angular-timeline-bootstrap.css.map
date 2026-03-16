@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "file": "angular-timeline-bootstrap.css",
+  "sources": [
+    "angular-timeline-bootstrap.scss"
+  ],
+  "sourcesContent": [],
+  "mappings": "AAAA;;EAAA,EAAE,YAAY,KAAK;IAEf,OAAO;IACP,OAAO;IACP,OAAO;;;AAIX;;EAAA,EAAE,YAAY,KAAK;IAEf,OAAO;IACP,OAAO;IACP,OAAO",
+  "names": [],
+  "sourceRoot": ""
+}

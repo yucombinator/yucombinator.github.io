@@ -1,0 +1,239 @@
+/* line 4, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline {
+  list-style: none;
+  padding: 20px 0 20px;
+  position: relative; }
+
+/* line 10, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline:before {
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  content: " ";
+  width: 3px;
+  background-color: #eeeeee;
+  left: 50%;
+  margin-left: -1.5px; }
+
+/* line 21, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li {
+  margin-bottom: 20px;
+  position: relative; }
+
+/* line 27, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li:before, .timeline > li:after {
+  content: " ";
+  display: table; }
+
+/* line 32, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li:after {
+  clear: both; }
+
+/* line 37, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li:before, .timeline > li:after {
+  content: " ";
+  display: table; }
+
+/* line 42, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li:after {
+  clear: both; }
+
+/* line 46, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li > .timeline-panel {
+  float: left;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  padding: 12px;
+  position: relative;
+  -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.175);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.175); }
+
+/* line 56, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li > .timeline-panel:before {
+  position: absolute;
+  top: 35px;
+  right: -15px;
+  display: inline-block;
+  border-top: 15px solid transparent;
+  border-left: 15px solid #ccc;
+  border-right: 0 solid #ccc;
+  border-bottom: 15px solid transparent;
+  content: " "; }
+
+/* line 68, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li > .timeline-panel:after {
+  position: absolute;
+  top: 36px;
+  right: -14px;
+  display: inline-block;
+  border-top: 14px solid transparent;
+  border-left: 14px solid #fff;
+  border-right: 0 solid #fff;
+  border-bottom: 14px solid transparent;
+  content: " "; }
+
+/* line 80, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li > .timeline-badge {
+  color: #fff;
+  width: 50px;
+  height: 50px;
+  line-height: 50px;
+  font-size: 1.4em;
+  text-align: center;
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  margin-left: -25px;
+  background-color: #999999;
+  z-index: 100;
+  border-top-right-radius: 50%;
+  border-top-left-radius: 50%;
+  border-bottom-right-radius: 50%;
+  border-bottom-left-radius: 50%; }
+
+/* line 99, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li.timeline-inverted > .timeline-panel {
+  float: right; }
+
+/* line 103, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li.timeline-inverted > .timeline-panel:before {
+  border-left-width: 0;
+  border-right-width: 15px;
+  left: -15px;
+  right: auto; }
+
+/* line 110, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline > li.timeline-inverted > .timeline-panel:after {
+  border-left-width: 0;
+  border-right-width: 14px;
+  left: -14px;
+  right: auto; }
+
+/* line 117, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-badge.primary {
+  background-color: #2e6da4 !important; }
+
+/* line 121, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-badge.success {
+  background-color: #3f903f !important; }
+
+/* line 125, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-badge.warning {
+  background-color: #f0ad4e !important; }
+
+/* line 129, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-badge.danger {
+  background-color: #d9534f !important; }
+
+/* line 133, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-badge.info {
+  background-color: #5bc0de !important; }
+
+/* line 137, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-title {
+  margin-top: 0;
+  color: inherit; }
+
+/* line 143, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-body > p, .timeline-body > ul {
+  margin-bottom: 0; }
+
+/* line 147, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-body > p + p {
+  margin-top: 5px; }
+
+@media only screen and (min-width: 768px) {
+  /* line 152, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-panel {
+    width: calc(50% - 70px);
+    width: -moz-calc(50% - 70px);
+    width: -webkit-calc(50% - 70px); }
+ }
+
+@media only screen and (max-width: 767px) {
+  /* line 161, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline:before {
+    left: 40px; }
+
+  /* line 165, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-panel {
+    width: calc(100% - 110px);
+    width: -moz-calc(100% - 110px);
+    width: -webkit-calc(100% - 110px); }
+
+  /* line 171, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-badge {
+    left: 15px;
+    margin-left: 0;
+    top: 36px; }
+
+  /* line 177, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-panel {
+    float: right; }
+
+  /* line 181, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-panel:before {
+    border-left-width: 0;
+    border-right-width: 15px;
+    left: -15px;
+    right: auto;
+    top: 46px; }
+
+  /* line 189, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+  ul.timeline > li > .timeline-panel:after {
+    border-left-width: 0;
+    border-right-width: 14px;
+    left: -14px;
+    right: auto;
+    top: 47px; }
+ }
+
+/* line 198, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-body > p + p {
+  margin-top: 5px; }
+
+/* line 202, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-footer {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f4f4f4; }
+
+/* line 208, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.timeline-footer > a {
+  cursor: pointer;
+  text-decoration: none; }
+
+/* line 213, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+img {
+  vertical-align: middle; }
+
+/* line 217, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.img-responsive {
+  display: block;
+  height: auto;
+  max-width: 100%; }
+
+/* line 223, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.img-rounded {
+  border-radius: 3px; }
+
+/* line 227, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.img-thumbnail {
+  background-color: #fff;
+  border: 1px solid #ededf0;
+  border-radius: 3px;
+  display: inline-block;
+  height: auto;
+  line-height: 1.42857;
+  max-width: 100%;
+  moz-transition: all 0.2s ease-in-out;
+  o-transition: all 0.2s ease-in-out;
+  padding: 2px;
+  transition: all 0.2s ease-in-out;
+  webkit-transition: all 0.2s ease-in-out; }
+
+/* line 242, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline.scss */
+.img-circle {
+  border-radius: 50%; }
+
+/*# sourceMappingURL=angular-timeline.css.map */

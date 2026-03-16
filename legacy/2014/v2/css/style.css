@@ -1,0 +1,277 @@
+.icon-block {
+    padding: 0 15px;
+}
+.container{
+    width:80%;
+}
+.skills .btn{
+    padding: 0 0.5rem;
+    font-size:12px;
+}
+.subtitle{
+    line-height: 40px;
+}
+
+.listing h5{
+    color: gray;
+}
+.card-panel h5{
+    margin-left:1rem;
+}
+.card-panel li{
+    margin-left:1rem;
+}
+.listing li:before,.skills li:before{ content:"-"; position:relative; left:-5px;}
+.listing li,.skills li{ text-indent:-5px; }
+.android{
+    color:#4CAF50;
+}
+.listing h5{
+    font-size: 1.2rem;
+}
+.listing{
+    margin-left: 2rem;
+    margin-bottom: 0px;
+}
+
+.date, .title, .position{
+    font-size: 1.3rem;
+    color:#555;
+    line-height: 1.1;
+}
+.title{
+    font-weight: bold;
+    color:#333;
+}
+.date{
+    font-size: 1.1rem;
+}
+.position{
+    font-size: 1.1rem;
+    color:gray;
+}
+.location{
+    color:gray;
+}
+.dev{
+        padding-left:1rem !important;
+}
+.btn{
+    padding: 0 5px;
+    margin: 3px;
+    font-size: 13px !important;
+    min-width: 50px;
+    box-shadow: 0 0px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+}
+.btn{
+    border-style: solid;
+    box-shadow: none;
+    border-width: 0px;
+    border-radius: 3px;
+}
+.me .btn{
+    color: #4a87ee !important;
+    background-color:white !important;
+    border-color: #3479ed !important;
+    border-width: 1px;
+}
+.me{
+    margin-bottom: 0.15rem;
+}
+h6{
+    display:inline-block;
+    margin:0;
+    padding:0;
+    font-size: 1.1rem;
+}
+.highlight{
+    display: block;
+}
+ul,ol{
+    margin:0.4rem;
+}
+    .highlight{
+        margin-top:0.10rem !important;
+        padding-left:1rem !important;
+    }
+    .devspec{
+        padding-bottom: 0.5rem;
+    }
+@media only screen{
+    .print_experience{display:none;}
+    .hobbies_print{
+        display:none;
+    }
+    .listing{
+        margin-bottom: 0px!important;
+    }
+    ul,ol{
+    margin:0rem;
+}
+}
+
+/* MOBILE SPECIFIC STYLES */
+@media only screen and (max-width: 599px) {
+    .row .col{
+        padding:0;
+    }
+    .card-panel{
+        margin:0;
+    }
+    .container{width:85%}
+    .card-panel {
+        padding: 0;
+        margin: 0;
+        -webkit-border-radius: 0px;
+        -moz-border-radius: 0px;
+        border-radius: 0px;
+        background-clip: padding-box;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+    }
+    .listing{
+margin-left: 0;
+    }
+
+    .btn{
+        margin-right: 5px;
+    }
+}
+/* PRINT SPECIFIC STYLES */
+@page
+{
+    size: auto;   /* auto is the initial value */
+
+    /* this affects the margin in the printer settings */
+    margin: 4mm 0mm 4mm 0mm;
+}
+@media print {
+    body
+    {
+        margin: 0mm;
+    }
+
+    .row .col {
+        float: none;
+        width: 100% !important;
+    }
+    html{
+        font-size: 11.5px !important;
+        line-height: 1.3 !important;
+        float: none !important;
+        overflow: visible !important;
+    }
+    .contact{
+        margin: 0;
+    }
+    .me h5{
+        margin:0;
+    }
+    h3{
+        font-size: 2rem;
+    }
+    h4{
+        font-size: 1.5rem;
+        margin-top:0.25rem;
+        margin-bottom:0.35rem;
+        line-height: 2rem;
+    }
+    .summary{
+        font-size:1.5rem;
+        margin-top:0.25rem;
+        margin-bottom:0.35rem;
+        margin-left:0;
+        line-height: 1.5rem;
+    }
+    h5{
+        font-size: 1.5rem;
+    }
+    h6{
+        display:inline-block;
+    }
+    .card-panel {
+        padding: 0;
+        margin: 0;
+        -webkit-border-radius: 0px;
+        -moz-border-radius: 0px;
+        border-radius: 0px;
+        background-clip: padding-box;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+    }
+    .row .col{
+        padding:0;
+    }
+    .card-panel{
+        margin:0;
+    }
+    .container{width:85%}
+    .me{
+        width:100% !important;
+        text-align: center;
+    }
+    .left_align{
+        text-align: left;
+    }
+    h3{
+        color: #1a69ed !important;
+    }
+    .subtitle h5{
+        color: #4a87ee !important;
+    }
+    .me .btn{
+        margin-right: 5px;
+        font-size:11px !important;
+        letter-spacing: 0;
+        background-color:white !important;
+        border-color: #4a87ee !important;
+        border-style: solid;
+        border-width: 1px;
+        color: #4a87ee !important;
+        box-shadow: none;
+        border-radius: 3px;
+
+    }
+    .linkedin{
+        visibility:hidden;
+        display: none;
+    }
+    .fa-github-square:after{
+        content: " icechen1";
+        font-family: "Roboto", sans-serif;
+        font-size: 12px;
+    }
+    .hide{display:none;}
+    .button_experience{display:none;}
+    .summary:after, .hobbies:after, h4:after{
+        display:block;
+        content: "";
+        width:100%;
+        border: 0;
+        border-bottom: 1px solid #4a87ee;
+        background: #999;
+    }
+
+    .hobbies_web{
+        display:none;
+    }
+    .hobbies_print p{
+        margin-left:1rem;
+    }
+    h5{
+        margin:0.25rem;
+    }
+    .highlight{
+        margin-top:0.10rem !important;
+        padding-left:1rem !important;
+    }
+    .skills,.dev{
+        padding-left:1rem !important;
+    }
+    .skills{
+        font-size: 1.05rem !important;
+    }
+
+}

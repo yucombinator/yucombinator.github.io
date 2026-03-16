@@ -1,11 +1,151 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Hello.</title>
-  <style>
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Yu Chen Hou - Personal calling card">
+    <meta name="author" content="Yu Chen Hou">
+    <title>Yu Chen Hou</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 20px;
+        }
+
+        .card {
+            text-align: center;
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .name {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .link {
+            display: inline-flex;
+            align-items: center;
+            padding: 16px 32px 16px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .link i {
+            margin-right: 12px;
+        }
+
+        .link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .link svg {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .email-link:hover {
+            border-color: #4f46e5;
+        }
+
+        .linkedin-link:hover {
+            border-color: #0079bf;
+        }
+
+        .hiking-link:hover {
+            border-color: #276749;
+        }
+
+        .email-link:hover {
+            border-color: #4f46e5;
+        }
+
+        .linkedin-link:hover {
+            border-color: #0079bf;
+        }
+
+        .hiking-link:hover {
+            border-color: #276749;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 40px 24px;
+            }
+
+            .name {
+                font-size: 2rem;
+            }
+
+            .link {
+                padding: 14px 20px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <p>Hello. This is Yu Chen Hou's website, I am rebuilding it. In the meantime, you can reach me at me@yuchenhou.com.</p>
-  <a href="https://hiking.withyu.ca/">Check out my trail reports<a>
+    <div class="card">
+        <h1 class="name">Yu Chen Hou</h1>
+
+        <div class="links">
+            <a href="mailto:me@yuchenhou.com" class="link email-link">
+                <i class="bi bi-envelope"></i>
+                Email me
+            </a>
+
+            <a href="https://www.linkedin.com/in/houyuchen" class="link linkedin-link" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-linkedin"></i>
+                LinkedIn
+            </a>
+
+            <a href="https://hikewithyu.com/" class="link hiking-link" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-tree"></i>
+                Hiking Journal
+            </a>
+        </div>
+    </div>
 </body>
 </html>
