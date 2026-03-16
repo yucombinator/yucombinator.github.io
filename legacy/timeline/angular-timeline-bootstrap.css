@@ -1,0 +1,17 @@
+@media only screen and (min-width: 768px) {
+  /* line 2, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline-bootstrap.scss */
+  ul.timeline > li > .timeline-panel {
+    width: calc(50% - 43px);
+    width: -moz-calc(50% - 43px);
+    width: -webkit-calc(50% - 43px); }
+ }
+
+@media only screen and (max-width: 767px) {
+  /* line 10, C:/Users/YuChen/Dropbox/Projects/Web/minimalistic-personal-site/timeline/angular-timeline-bootstrap.scss */
+  ul.timeline > li > .timeline-panel {
+    width: calc(100% - 83px);
+    width: -moz-calc(100% - 83px);
+    width: -webkit-calc(100% - 83px); }
+ }
+
+/*# sourceMappingURL=angular-timeline-bootstrap.css.map */
