@@ -132,6 +132,23 @@ Washington also has a dozen or so electric co-ops and mutuals (Kootenai Electric
 OPALCO, Tanner, Clearwater Power, the Pierce County mutuals) whose residential
 rates are not publicly filed. They are not on the map; that is a known gap.
 
+## Deploying
+
+The site is plain static files served by GitHub Pages from the repo root, so the
+map lives at `pudmap/` inside the site repo and needs no build step.
+
+```sh
+tools/deploy_site.sh          # sync into the site repo and print a preview URL
+tools/deploy_site.sh --push   # sync, commit and push
+```
+
+Live at <https://yuchenhou.com/pudmap/>, linked from the calling card at
+<https://yuchenhou.com/>. The sync excludes `data/us_counties.geojson` (a 3 MB
+build input for the territory generator) and the deploy script itself; the site
+only needs the 112 KB generated `boundaries.geojson`.
+
+The development copy stays in `~/dev/pudmap`; edit there and re-run the script.
+
 ## Stack
 
 Leaflet, vanilla ES modules, no build step, no framework. Design language is
