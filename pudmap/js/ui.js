@@ -190,8 +190,10 @@ export function renderDetail(props, state) {
     <div class="chips">${chips.join("")}</div>
     <div class="kv">${rows.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join("")}</div>
     ${tod}
-    <p class="src">Source: ${r.source
-      ? `<a href="${r.source}" target="_blank" rel="noopener">utility tariff</a>`
+    <p class="src">${u.site
+      ? `<a href="${u.site}" target="_blank" rel="noopener noreferrer">${esc(short(u.name))} website</a> &middot; `
+      : ""}Source: ${r.source
+      ? `<a href="${r.source}" target="_blank" rel="noopener noreferrer">utility tariff</a>`
       : "not yet published"}</p>
     ${u.notes ? `<details class="notes"><summary>Rate notes</summary><p>${esc(u.notes)}</p></details>` : ""}
   `;

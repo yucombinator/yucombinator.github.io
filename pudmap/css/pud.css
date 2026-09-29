@@ -443,3 +443,19 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
 .verdict.good { background: #e4f0e8; color: #0c5237; }
 .verdict.bad  { background: #fbe9df; color: #9a3412; }
 .verdict.even { background: #eef2ec; color: #4a6b58; }
+
+/* links inside Leaflet tooltips: the tooltip is pointer-events:none by
+   default, so the anchor needs to re-enable events for itself and its row */
+.pud-pop { pointer-events: auto; }
+.pud-pop .pop-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+}
+
+.pud-pop .pop-links a { color: var(--accent-mid); text-decoration: none; font-weight: 600; }
+.pud-pop .pop-links a:hover { text-decoration: underline; }

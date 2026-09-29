@@ -190,12 +190,21 @@ function tooltipHtml(p) {
   }
   if (u && u.tod) rows.push(`<div class="pop-row"><span>time-of-day</span><b>${centsAtHour(u, current.hour) != null ? "offered" : ""}</b></div>`);
 
+  const links = [];
+  if (u && u.site) {
+    links.push(`<a href="${u.site}" target="_blank" rel="noopener noreferrer">${escapeHtml(shortName(p.name))} website \u2197</a>`);
+  }
+  if (u && u.residential && u.residential.source) {
+    links.push(`<a href="${u.residential.source}" target="_blank" rel="noopener noreferrer">rate source \u2197</a>`);
+  }
+
   return `<div class="pud-pop">
     <h3>${escapeHtml(p.name)}</h3>
     <div class="pud-kind">${p.type === "pud" ? "Public utility district"
       : p.type === "municipal" ? "Municipal utility" : "Investor-owned"}</div>
     <div class="pud-county">${escapeHtml(p.county || p.counties || "")} County</div>
     ${rows.join("")}
+    ${links.length ? `<div class="pop-links">${links.join("")}</div>` : ""}
   </div>`;
 }
 
