@@ -1,0 +1,126 @@
+{
+ "utilities": [
+  {
+   "id": "clallam_pud",
+   "name": "Clallam County PUD No. 1",
+   "type": "pud",
+   "service_area": "All of Clallam County except inside certain City of Port Angeles boundaries; offices in Sequim, Port Angeles, Forks, and Clallam Bay/Sekiu",
+   "primary_city": "Sequim",
+   "residential": {
+    "energy_cents_kwh": "8.48",
+    "flat": "true",
+    "fixed_charge_monthly_usd": "44.58",
+    "includes_bpa": "true",
+    "effective": "2026-04-01",
+    "source": "https://www.clallampud.net/services/electric/electric-rates/"
+   },
+   "tod": {
+    "null": "",
+    "notes": "Schedule R 'General Service - Residential, Farm': Basic Customer Charge $44.58/month single phase ($89.13 three phase) plus 8.48 cents/kWh on all energy. No tiers, no TOD. Rates step up 3.75% on 2027-04-01 to $46.25 and 8.80 cents. A separate Washington CETA low-income assistance charge of $1.17/month applies to all customers. Quoted figures exclude state/local taxes (~8% WA public utility + privilege tax). The published Schedule R energy charge is the all-in delivered rate; Clallam PUD buys power from BPA and those costs are inside the 8.48 cents. Note this PUD does NOT serve inside the Port Angeles city limits - see port_angeles_city_light. Green Rate option adds 0.3 cents/kWh (verified same page)."
+   }
+  },
+  {
+   "id": "jefferson_pud",
+   "name": "Jefferson County PUD No. 1 (JPUD)",
+   "type": "pud",
+   "service_area": "Eastern Jefferson County around Port Townsend, including Quilcene, Chimacum, Brinnon and the Gardiner/Pysht area",
+   "primary_city": "Port Townsend",
+   "residential": {
+    "tiers": [
+     {
+      "up_to_kwh": "600",
+      "cents_kwh": "11.3"
+     },
+     {
+      "cents_kwh": "13.71"
+     }
+    ],
+    "flat": "false",
+    "fixed_charge_monthly_usd": "32.9",
+    "includes_bpa": "true",
+    "effective": "2026-07-05",
+    "source": "https://www.jeffpud.org/wp-content/uploads/2026/06/July-2026-PUD-Newsletter.pdf"
+   },
+   "tod": {
+    "null": "",
+    "notes": "Progressive two-tier residential energy charge effective with bills after the July 2026 cycle: Tier 1 (0-600 kWh) 11.30 cents/kWh, Tier 2 (601+ kWh) 13.71 cents/kWh. Residential base fee $32.90/month single phase, $49.66 three phase. No TOD. Rates are scheduled to rise again: 2027 = 12.10/14.68 cents and $35.61; 2028 = 12.97/15.73 cents and $38.31. Rate page https://www.jeffpud.org/rates-for-electricity/ states the same $32.90 / 0-600 kWh $0.1130 figures (page is behind a bot-protection challenge, so figures were confirmed from the JPUD newsletter PDF and the search-indexed rate table). A new bill-assistance funding charge of $4.00/month is being rolled out as a separate line item. All-in delivered rate - JPUD is a BPA full-service utility, so BPA power costs are inside these cents/kWh."
+   }
+  },
+  {
+   "id": "port_angeles_city_light",
+   "name": "City of Port Angeles - Light Operations (City Light)",
+   "type": "municipal",
+   "service_area": "Inside the 13.5 square mile city limits of Port Angeles only (about 10,750 electric customers); the surrounding county is Clallam County PUD",
+   "primary_city": "Port Angeles",
+   "residential": {
+    "energy_cents_kwh": "6.695",
+    "flat": "true",
+    "fixed_charge_monthly_usd": "41.97",
+    "includes_bpa": "true",
+    "effective": "2026-06-01",
+    "source": "https://cityofpa.us/1407/Current-Utility-Rates"
+   },
+   "tod": {
+    "null": "",
+    "notes": "2026 residential electric: Electric base $41.97 per month plus electric consumption $0.06695 per kWh (6.695 cents), flat, no tiers and no TOD. The city publishes these as the 2026 residential rates and states electric rates were updated June 1, 2026. A separate per-meter Medic I charge of $14.66 per unit also appears on residential electric bills and is not included in the figures above. Low-income discounted rates exist. Verified distinct from clallam_pud: Light Operations serves only inside city limits, while Clallam PUD serves the rest of the county (see https://cityofpa.us/429/Light-Operations-Electric-Utility and https://www.clallampud.net/about-us/who-we-are/). The city's prior-year rate sheets are at https://cityofpa.us/282/Residential-Commercial-Utility-Rates."
+   }
+  },
+  {
+   "id": "mason_pud_1",
+   "name": "Mason County PUD No. 1",
+   "type": "pud",
+   "service_area": "Rural north Mason County on the Hood Canal side, including Potlatch and the Hama Hama area; district office at 21971 N Hwy 101, Shelton (Potlatch)",
+   "primary_city": "Hama Hama",
+   "residential": {
+    "energy_cents_kwh": "9.96",
+    "flat": "true",
+    "fixed_charge_monthly_usd": "47.24",
+    "includes_bpa": "true",
+    "effective": "2026-04-01",
+    "source": "https://mason-pud1.org/wp-content/uploads/2026/06/Electric_Rates-2026.pdf"
+   },
+   "tod": {
+    "null": ""
+   },
+   "notes": "Distinct from Mason PUD 3. Standard Residential Service: Basic Charge $47.24/month plus all kWh at 0.09960/kWh (9.96 cents), flat, no tiers, no TOD. The tariff also carries a 'Residential Low-Use' class for usage under 450 kWh/month with a higher basic charge of $49.98/month and the same 9.96 cents/kWh. On top of the tariff the bill carries WA State Public Utility Tax 3.873% and State Privilege Tax 2.14%. Tariff sheet states 'Last Rate Change: April 1, 2026'. BPA costs are inside the published all-in rate."
+  },
+  {
+   "id": "mason_pud_3",
+   "name": "Mason County PUD No. 3",
+   "type": "pud",
+   "service_area": "North-central Mason County around Belfair and the Shelton area, plus the Skokomish/Kamilche and Allyn portions; main office 2621 E Johns Prairie Rd, Shelton",
+   "primary_city": "Belfair",
+   "residential": {
+    "energy_cents_kwh": "9.21",
+    "flat": "true",
+    "fixed_charge_monthly_usd": "56.24",
+    "includes_bpa": "true",
+    "effective": "2026-03-01",
+    "source": "https://www.pud3.org/wp-content/uploads/2026-Schedule-12.pdf"
+   },
+   "tod": {
+    "null": ""
+   },
+   "notes": "Residential Service Schedule 12: Energy Rate $0.0921/kWh plus a System Charge of $1.85 per day single phase ($2.22/day three phase). Flat, no tiers, no TOD. The fixed_charge_monthly_usd figure is the $1.85/day system charge converted at ~30.4 days; PUD 3 bills it per day, so it varies 54.90-57.35 across 30-, 31-, and 28-day months. Important BPA caveat: the 9.21 cents does NOT include BPA's temporary power surcharge - Supplemental Schedule 93 bills it as a separate line item, currently $1.63 per month from January through September 2026, with an October 2026 true-up to the exact BPA amount. Residential bills also carry a Low-Income Energy Assistance surcharge (Schedule 94) unless exempt. Effective date 2026-03-01 taken from the adopted 2026 tariff at https://www.pud3.org/wp-content/uploads/2026-Rates_Rate-Schedule_20260301_final-adopted.pdf. Keep distinct from mason_pud_1."
+  },
+  {
+   "id": "pacific_pud",
+   "name": "Pacific County PUD No. 2",
+   "type": "pud",
+   "service_area": "South Pacific County - Raymond, South Bend, Long Beach, Lebam and Bay Center; home office 405 Duryea St, Raymond",
+   "primary_city": "South Bend",
+   "residential": {
+    "energy_cents_kwh": "6.92",
+    "flat": "true",
+    "fixed_charge_monthly_usd": "31.42",
+    "includes_bpa": "true",
+    "effective": "2026-07-01",
+    "source": "https://www.pacificpud.org/faqs/rates/"
+   },
+   "tod": {
+    "null": ""
+   },
+   "notes": "'Residential & Farm Service, 1 Phase: $31.42' basic charge plus $0.0692/kWh, no demand charge, flat with no tiers and no TOD. Three phase basic is $43.13. Rate page states 'Effective: 07/01/2026'. All-in delivered rate including BPA power costs. The utility's home office is in Raymond (the assignment's South Bend is inside the same service territory); label placed at South Bend."
+  }
+ ]
+}

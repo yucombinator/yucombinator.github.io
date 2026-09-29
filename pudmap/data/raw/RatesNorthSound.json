@@ -1,0 +1,229 @@
+{
+ "utilities": [
+  {
+   "id": "snohomish_pud",
+   "name": "Snohomish County PUD",
+   "type": "pud",
+   "service_area": "Most of unincorporated and rural eastern Snohomish County outside the PSE service territory (Granite Falls, Lake Stevens, Arlington, Easton, foothill communities)",
+   "primary_city": "Everett",
+   "residential": {
+    "energy_cents_kwh": "10.613",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "1000000",
+     "cents_kwh": "10.613"
+    },
+    "fixed_charge_monthly_usd": "14.9",
+    "includes_bpa": "true",
+    "effective": "2026-04-01",
+    "source": "https://www.snopud.com/wp-content/uploads/2025/10/ElectricRates_2026.pdf"
+   },
+   "tod": "",
+   "notes": "Single flat energy charge; no residential tiers and no residential time-of-use option (Schedule 24 Time of Use is non-residential, >500 kW average demand). Energy charge is 10.613 cents/kWh per Rate Schedule 7, Resolution No. 6260 (2026), effective April 1, 2026 (was 10.263 cents from April 1, 2024). Base charge is billed PER DAY, not per month, and varies by service-panel size: Small Service (panels 100A or less) $0.49/day, Medium (over 100A to 200A) $0.80/day, Large (over 200A to 400A) $1.14/day, Extra-Large (over 400A) $1.86/day; base-charge rates last changed April 1, 2025. fixed_charge_monthly_usd 14.90 is Small Service converted at 30.4 days/month ($0.49 x 30.4); the full residential range is roughly $14.90 to $56.50 per month. Energy Northwest/BPA: YES, included. Schedule 7 Section 6 provides a BPA cost adjustment clause that passes BPA wholesale power and transmission changes straight through to the retail rate, and Section 7 passes BPA Residential Exchange benefits through as a credit. The PUD states the published billing rate is further discounted by the BPA Residential Exchange Credit of $0.000318/kWh, so a typical customer is actually billed about 10.581 cents/kWh (10.613 minus 0.0318). Utility web page: https://www.snopud.com/account/about-my-bill/rates/electric/"
+  },
+  {
+   "id": "skagit_pud",
+   "name": "Skagit PUD (Skagit Public Utility District)",
+   "type": "pud",
+   "service_area": "Water-only district centered on Mount Vernon and the Samagit Valley in western Skagit County; no electric distribution territory",
+   "primary_city": "Mount Vernon",
+   "residential": {
+    "energy_cents_kwh": "null",
+    "flat": "null",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "null",
+    "includes_bpa": "false",
+    "effective": "null",
+    "source": ""
+   },
+   "tod": "",
+   "notes": "NO RESIDENTIAL ELECTRIC RATE EXISTS — Skagit PUD is a water utility, not an electric utility, so there is no residential electric tariff to report. Evidence gathered: (1) skagitpud.org serves only water/sewer/broadband; its entire customer navigation (My Account, Billing, Water Rates & Fees, Water Quality, Water Systems, Cross-Connection Control) is water-only, and its only published rate schedule page is 'Water Rates & Fees' (https://www.skagitpud.org/customers/my-account/billing/water-rates-fees). (2) 'About Skagit PUD' states its mission as 'To provide our customers with high-quality water services at an affordable price' and contains zero mentions of electric. (3) The Wayback Machine CDX index of skagitpud.org returns no electric-rate URL of any kind; the only 'rate' URLs are water rates, a 2016 water rate increase news item, and a 2019 budget rate hearing. (4) I checked the live site's customer/billing section directly, which returned HTTP 403 to both plain and browser-imitating requests, so I read the archived copies instead. Residential electricity in the Mount Vernon/Skagit Valley area is served by Puget Sound Energy. Do not render an electric rate card for this utility."
+  },
+  {
+   "id": "whatcom_pud",
+   "name": "PUD No. 1 of Whatcom County (Whatcom PUD)",
+   "type": "pud",
+   "service_area": "Ferndale and rural north Whatcom County; its electric system serves industrial/irrigation customers (Grandview, Point Roberts transmission) and its own water plants, not residential loads",
+   "primary_city": "Ferndale",
+   "residential": {
+    "energy_cents_kwh": "null",
+    "flat": "null",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "null",
+    "includes_bpa": "false",
+    "effective": "null",
+    "source": ""
+   },
+   "tod": "",
+   "notes": "NO RESIDENTIAL ELECTRIC RATE EXISTS — Whatcom PUD's electric utility serves industrial customers only, so there is no residential electric tariff. Primary source: the PUD's own page 'Find Residential Utility Providers' (https://www.pudwhatcom.org/services/find-your-electricity-provider) states 'If you are not an industrial customer, then Whatcom PUD is probably not your electric service provider,' and names Puget Sound Energy (most of Whatcom County), City of Blaine, and City of Sumas as the residential/commercial electric providers. Its 'Electric Service' page (https://www.pudwhatcom.org/services/electric-service) says it serves 'industrial electric customers along with our own two water treatment plants with combined annual consumption of approximately 27 average megawatts.' Its board-adopted electric rates for 2026 do exist (Resolution No. 885, adopted December 9, 2025, effective January 1, 2026; agenda packet at https://www.pudwhatcom.org/public/download/files/325549) but they are industrial/general-service rates, not residential, and the published packet does not contain a residential per-kWh schedule. BPA: the PUD buys 100% of its energy from Bonneville Power Administration under a power purchase agreement, with BPA/PSE transmission agreements, so its industrial rates do embed BPA power cost — but there is no residential rate to report. Note: primary_city set to Ferndale (the PUD's district office at 1705 Trigg Road), not Bellingham, because the PUD has no Bellingham electric customers."
+  },
+  {
+   "id": "kitsap_pud",
+   "name": "Kitsap County PUD",
+   "type": "pud",
+   "service_area": "Water, wastewater and fiber broadband across central and southern Kitsap County (Bremerton, Port Orchard, Bainbridge Island, Suquamish, Keyport); no electric territory",
+   "primary_city": "Bremerton",
+   "residential": {
+    "energy_cents_kwh": "null",
+    "flat": "null",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "null",
+    "includes_bpa": "false",
+    "effective": "null",
+    "source": ""
+   },
+   "tod": "",
+   "notes": "NO RESIDENTIAL ELECTRIC RATE EXISTS — Kitsap PUD does not provide electric service at all. Its own homepage navigation (https://www.kpud.org/) lists only 'Water & Wastewater' and 'Fiber Internet'; there is no electric rates page, no electric tariff, and no energy service. The PUD has an active governance item, 'Exploring Electric Service in Kitsap County' (https://www.kpud.org/governance/exploring-electric-service-in-kitsap-county/), which explains that Kitsap County voters must first decide whether to authorize KPUD 'to acquire or construct electric facilities and infrastructure,' and that such a vote 'would not require the PUD to provide electric service, establish electric rates, or determine what a future electric system would look like.' Kitsap County residential electricity is served by Puget Sound Energy. Note the domain: kitsappud.org, kitsap-pud.com and whatcommpower-style variants do not resolve; the live site is www.kpud.org."
+  },
+  {
+   "id": "seattle_city_light",
+   "name": "Seattle City Light",
+   "type": "municipal",
+   "service_area": "City of Seattle, plus neighboring jurisdictions under franchise/contract: Shoreline, Burien, SeaTac, Lake Forest Park, Normandy Park, Tukwila, Renton and unincorporated King County",
+   "primary_city": "Seattle",
+   "residential": {
+    "energy_cents_kwh": "13.38",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "1000000",
+     "cents_kwh": "13.38"
+    },
+    "fixed_charge_monthly_usd": "11.99",
+    "includes_bpa": "false",
+    "effective": "2026-01-01",
+    "source": "https://www.seattle.gov/city-light/residential-services/billing-information/rates"
+   },
+   "tod": {
+    "periods": [
+     {
+      "name": "Peak",
+      "start": "17:00",
+      "end": "21:00",
+      "cents_kwh": "16.1",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Mid-peak",
+      "start": "06:00",
+      "end": "17:00",
+      "cents_kwh": "14.09",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Mid-peak",
+      "start": "21:00",
+      "end": "24:00",
+      "cents_kwh": "14.09",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Mid-peak (all day)",
+      "start": "06:00",
+      "end": "24:00",
+      "cents_kwh": "14.09",
+      "weekdays_only": "false"
+     },
+     {
+      "name": "Off-peak",
+      "start": "00:00",
+      "end": "06:00",
+      "cents_kwh": "8.05",
+      "weekdays_only": "false"
+     }
+    ],
+    "seasons": ""
+   },
+   "notes": "Two distinct residential products; both are optional and quoted here for the City of Seattle (the core service territory). FLAT RATE: energy 13.38 cents/kWh (all kWh at one price — City Light eliminated the old tiering after 250 kWh, so as of 2026 the flat rate is genuinely flat, not a hidden two-step tier) plus a base service charge of $0.3945 PER DAY. fixed_charge_monthly_usd 11.99 is that daily base converted at 30.4 days/month. Effective January 1, 2026 (rates adopted by Ordinance in fall 2024 as part of the 2025-2030 Strategic Plan; ~5.4% average increase). Separately, City Light removed the 4% Rate Stabilization Account surcharge on April 1, 2026, so current bills reflect that removal. TIME OF USE (optional, three tiers, City of Seattle): Peak 5 p.m.-9 p.m. Monday-Saturday except city-observed holidays at 16.10 cents; Mid-peak 6 a.m.-5 p.m. and 9 p.m.-midnight Monday-Saturday at 14.09 cents; on Sundays and city-observed holidays Mid-peak applies 6 a.m. to midnight with no peak hours; Off-peak midnight-6 a.m. every day at 8.05 cents; same base service charge of $0.3945/day. Because weekday and weekend rates do NOT differ except for the absence of peak on Sundays/holidays, periods are emitted with weekdays_only true for the weekday-split periods and a separate all-day Mid-peak entry (weekdays_only false) for Sundays and holidays. There are no seasonal (summer/winter) differences, so seasons is empty. Jurisdiction adders if the map needs them: Burien/SeaTac/Shoreline/unincorporated King County 14.64 cents flat (base $0.4261/day), Lake Forest Park 14.65 ($0.4262), Normandy Park 14.43 ($0.4197), Tukwila 14.53 ($0.4229), Renton 13.56 ($0.3945). Some streets add a small undergrounding charge per kWh (Burien 0.0037 and 0.0013; Shoreline 0.0007-0.0022). City Light is a municipal, not-for-profit utility with its own hydroelectric generation — it buys NO BPA/Energy Northwest power, so includes_bpa is false. Its own site notes the average all-in residential rate is about 16 cents/kWh, which is higher than the 13.38 energy-only figure above. Supporting sources: https://powerlines.seattle.gov/2026citylightrates/ (5.4% increase effective January 1, 2026) and https://www.seattle.gov/city-light/residential-services/billing-information/time-of-use"
+  },
+  {
+   "id": "pse",
+   "name": "Puget Sound Energy",
+   "type": "iou",
+   "service_area": "Investor-owned utility covering most of King, Pierce, Snohomish, Kitsap, Skagit and Whatcom counties outside municipal and PUD territories, plus parts of Pierce County east and south",
+   "primary_city": "Bellevue",
+   "residential": {
+    "energy_cents_kwh": "15.87",
+    "flat": "false",
+    "tiers": [
+     {
+      "up_to_kwh": "600",
+      "cents_kwh": "15.87"
+     },
+     {
+      "up_to_kwh": "1000000",
+      "cents_kwh": "17.81"
+     }
+    ],
+    "fixed_charge_monthly_usd": "7.49",
+    "includes_bpa": "false",
+    "effective": "2025-10-01",
+    "source": "https://www.pse.com/-/media/Project/PSE/Portal/Rate-documents/summ_elec_prices_2025_10_01.pdf"
+   },
+   "tod": {
+    "periods": [
+     {
+      "name": "Peak (winter, Oct-Mar)",
+      "start": "07:00",
+      "end": "10:00",
+      "cents_kwh": "53.08",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Peak (winter, Oct-Mar)",
+      "start": "17:00",
+      "end": "20:00",
+      "cents_kwh": "53.08",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Peak (summer, Apr-Sep)",
+      "start": "17:00",
+      "end": "20:00",
+      "cents_kwh": "34.45",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Off-peak (winter and summer)",
+      "start": "00:00",
+      "end": "07:00",
+      "cents_kwh": "13.02",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Off-peak (winter and summer)",
+      "start": "10:00",
+      "end": "17:00",
+      "cents_kwh": "13.02",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Off-peak (winter only extra block)",
+      "start": "20:00",
+      "end": "24:00",
+      "cents_kwh": "13.02",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Off-peak (summer only extra block)",
+      "start": "20:00",
+      "end": "24:00",
+      "cents_kwh": "13.02",
+      "weekdays_only": "true"
+     },
+     {
+      "name": "Off-peak (all hours, all days incl. weekends and holidays)",
+      "start": "00:00",
+      "end": "24:00",
+      "cents_kwh": "13.02",
+      "weekdays_only": "false"
+     }
+    ],
+    "seasons": [
+     "summer",
+     "winter"
+    ]
+   },
+   "notes": "STANDARD RESIDENTIAL RATE — Schedule 7 (single-phase, one meter, single-family unit; three-phase basic charge is $17.99/month). Basic charge $7.49/month (a flat monthly charge, not per-day). Two-block tiered energy charge on a 600 kWh breakpoint. All figures below are PSE's own 'TOTAL PER KWH', i.e. they already include every supplemental rider and credit so they can be compared directly to other utilities: Tier 1 (first 600 kWh) $0.158699 = 15.87 cents; Tier 2 (over 600 kWh) $0.178116 = 17.81 cents. Composition of the Tier 1 all-in figure: base energy charge $0.133017 + GHG emissions cap and invest adjustment (Sch 111) $0.002963 + Low Income program (Sch 129) $0.007550 + Bill Discount Rate Rider (Sch 129D) $0.000777 + Property Tax Tracker (Sch 140) $0.002103 + Energy Charge Credit Recovery Adjustment (Sch 141A) $0.001790 + Colstrip Adjustment Rider (Sch 141COL) $0.002957 + Transportation Electrification Plan Rider (Sch 141TEP) $0.000598 + Targeted Exception Rate Adjustment (Sch 141TEX) $0.000457 + Wildfire Prevention Tracker (Sch 141WFP) $0.001133 + Revenue Decoupling Adjustment (Sch 142) -$0.002416 = $0.133017 total electricity charge $0.150929; plus Power Cost Adjustment Clause (Sch 95) $0.006556 and Electric Conservation Service Rider (Sch 120) $0.007862; minus Energy Exchange Credit (Sch 194) $0.006648. Energy Northwest/BPA: NO — PSE is an investor-owned utility that buys its own power and does not pass through BPA block costs. energy_cents_kwh is set to the Tier 1 rate because this is the block that covers the first 600 kWh, which most households bill in. EFFECTIVE DATE: October 1, 2025. I verified no newer electric summary exists: the PSE summary-sheet PDF naming pattern (summ_elec_prices_YYYY_MM_DD.pdf) resolves for 2025_10_01 but returns 404 for 2026_01_01, 2026_04_01, 2026_07_01 and 2026_10_01, and the PSE rate news page confirms the next electric change is a PENDING UTC filing effective October 1, 2026 (a 2026 three-year rate plan was filed February 27, 2026 with hearings September 29 / October 7, 2026 requesting 15.2% for 2027, 3.7% for 2028, 8.7% for 2029). So as of today the figures above are correct, but they will change on October 1, 2026. TIME-OF-USE OPTIONS (three residential schedules; the 'tod' block above is Schedule 307, the plain residential Time-of-Use, and its cents figures are all-in TOTAL PER KWH). SCHEDULE 307 Residential Service Time-of-Use — basic charge $7.49/month; winter (Oct-Mar) weekday peak 7-10 AM and 5-8 PM at 53.08 cents ($0.530751); winter weekday off-peak 12-7 AM, 10 AM-5 PM, 8 PM-midnight at 13.02 cents ($0.130241); summer (Apr-Sep) weekday peak 5-8 PM only at 34.45 cents ($0.344530); summer weekday off-peak 12-5 AM and 8 PM-midnight at 13.02 cents; weekends and holidays are off-peak all day at 13.02 cents. SCHEDULE 317 Residential TOU with Peak Time Rebate (customers get a bill credit for cutting peak-period use on PSE-called event days) — basic charge $7.49/month; winter weekday peak 30.17 cents ($0.301725), summer weekday peak 26.46 cents ($0.264574), all off-peak periods and all weekends/holidays 15.15 cents ($0.151494); same peak hours as 307. SCHEDULE 327 Residential TOU 3-Tier with Super Off-Peak — basic charge $7.49/month; winter weekday peak 50.34 cents, winter off-peak 14.80 cents, summer weekday peak 28.47 cents, summer off-peak 14.33 cents, super off-peak 11 PM-7 AM daily 7.91 cents. No weekday/weekend rate difference exists on any PSE residential schedule — weekends and holidays are simply priced at the off-peak rate all day, which is why the weekend entries carry weekdays_only false. Basic charges are the same $7.49/month across schedules 7, 307, 317 and 327. PSE renders its tariff PDF links through a Coveo search widget that is not present in the static HTML, so I located the primary document via PSE's own search API and then read the PDF directly at the URL given in 'source'."
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "utilities": [
+  {
+   "id": "klickitat_pud",
+   "name": "Klickitat County PUD",
+   "type": "pud",
+   "service_area": "Rural Klickitat County and the City of Goldendale; also the North Bonneville area east of the Columbia, plus irrigation and small-industrial load along the Klickitat and Little Klickitat valleys",
+   "primary_city": "Goldendale",
+   "residential": {
+    "energy_cents_kwh": "10.78",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "25.4",
+    "includes_bpa": "true",
+    "effective": "2026-01-01",
+    "source": "https://klickitatpud.org/services-rates/electric-rates/"
+   },
+   "tod": "",
+   "notes": "Schedule is 'Residential & Farm' on the PUD's own Electric Rates page, effective on bills issued after January 1, 2026: Basic Fee $25.40/month, all kWh at $0.1078. The PUD itself states an average residential bill of $154.76 at 1,200 kWh (25.40 + 1200 x 0.1078 = $154.76), which confirms the flat structure. BPA is included in the all-in rate: the same schedule's net-metering provisions compute the infrastructure fee as the current residential kWh rate less the current BPA Power for Public Average Tier 1 rate, i.e. the 10.78c is a fully loaded power-plus-delivery rate. Careful with the industrial skew: KPUD's Large General Service rate is 4.73-6.81c/kWh and Industrial Service (over 1,000 average kW, i.e. the Goldendale/Henkel industrial load) is a negotiated contract, so any systemwide published average cents/kWh will understate the residential rate — use 10.78c, not the average. Other schedules on the same page (Small General 11.04c, Medium General 7.53c/6.16c + demand, Irrigation 6.29c + demand) are non-residential and were not used. No time-of-use residential schedule exists; the only TOU on the page is Irrigation Time of Use. A low-income elderly discount (basic fee only, Dec-May, income-capped) exists but is not the standard rate."
+  },
+  {
+   "id": "skamania_pud",
+   "name": "Skamania County PUD",
+   "type": "pud",
+   "service_area": "North-central Skamania County: the City of Stevenson and rural Skamania County including North Bonneville, Carson, Underwood and the Gorge",
+   "primary_city": "Stevenson",
+   "residential": {
+    "energy_cents_kwh": "10.45",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "60",
+    "includes_bpa": "true",
+    "effective": "2026-01-01",
+    "source": "https://www.skamaniapud.com/your-account/rates/2025-electric-rate-schedule/"
+   },
+   "tod": "",
+   "notes": "From the PUD's published 2026 Electric Rate Schedule (titled '2026 Electric Rate Schedule' even though the page path retains the 2025 slug): Residential Rate = Basic Charge per month $60, Energy charge $0.1045 per kWh. Flat, no tiers, no TOD. Note this PUD's energy charge is modest but its basic charge is very high by PUD standards — $60/month means a 500 kWh residential bill is about $112, so it is NOT a cheap utility for a small household despite the 10.45c rate. BPA pass-through is included: Skamania is a full-service net-licencee PUD and the published rate is a single all-in energy charge. One separate line item applies: the Clean Energy Transformation Act (CETA) surcharge of $3.85/month, listed on the same schedule under Fees — it is a fixed monthly add-on, not part of the per-kWh rate, and is not included in fixed_charge_monthly_usd. A stale 'Rate Comparison Calculator' page on the PUD's site still shows Skamania at $57 basic / 10.11c; that page has not been updated and the 2026 rate schedule supersedes it. Separate schedules exist for commercial/small industrial and large industrial (3-phase demand-metered, 5.83c/kWh + demand) and were not used."
+  },
+  {
+   "id": "city_of_richland",
+   "name": "City of Richland Energy Services",
+   "type": "municipal",
+   "service_area": "City of Richland in Benton County, south-central Washington, plus a small surrounding area served by the city's distribution system (distinct from Benton PUD and from the Hanford/ DOE-contract areas)",
+   "primary_city": "Richland",
+   "residential": {
+    "energy_cents_kwh": "8.04",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "22.5",
+    "includes_bpa": "true",
+    "effective": "2026-01-01",
+    "source": "https://ecode360.com/50064293?render=print"
+   },
+   "tod": "",
+   "notes": "Richland publishes its rates as city code, not a PDF: Richland Municipal Code 14.24.060 'Retail electrical rates' states 'Rates are effective January 1, 2026.' Schedule 10 General Residential: Daily Service Charge single-phase $0.75/day (multiphase $1.06/day), Energy Charge $0.0804/kWh. Converted to a monthly figure, $0.75/day is $22.50 for a 30-day bill; the city bills daily so bills will vary slightly with cycle length. These rates implement the 8.5% across-the-board increase the Richland City Council approved for all customer classes beginning 1/1/2026 (prior 2019-2025 Schedule 10 was $0.69/day and 7.41c/kWh — the 8.5% increase reproduces the new figures exactly, a useful cross-check). The city's own Electric Rates page points to this municipal-code section for 'Current Electric Rates'. BPA pass-through is included: RES buys its bulk supply from Bonneville Power Administration (BPA transmits RES's wholesale power to the Tri-Cities system) and the city states wholesale power is over 60% of RES expenses; BPA cost is embedded in the all-in 8.04c. Flat rate, no tiers, no residential TOD. A low-income discount applies per RMC 3.29 but is not the standard rate. The city's website (richlandwa.gov) blocks direct automated requests; figures were read from the code host ecode360, which the city links to as its current code."
+  },
+  {
+   "id": "city_of_ellensburg",
+   "name": "City of Ellensburg Light & Power",
+   "type": "municipal",
+   "service_area": "City of Ellensburg and adjacent Kittitas County (Ellensburg Light & Power service territory)",
+   "primary_city": "Ellensburg",
+   "residential": {
+    "energy_cents_kwh": "8.01",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "30.01",
+    "includes_bpa": "true",
+    "effective": "2026-05-01",
+    "source": "https://www.ellensburgwa.gov/ArchiveCenter/ViewFile/Item/3626"
+   },
+   "tod": "",
+   "notes": "Ellensburg sets electric rates in city code section 9.91.100, not on a rate page; the Electric Utility page on the city's site has no published numbers. Source used is Ordinance No. 4983 (adopted April 2026, second reading 04/20/2026), which amends ECC 9.91.100(A)-(M),(P),(Q) 'Electric utility rate schedules' and lays out a multi-year residential E-100 table. Residential E-100 is a flat all-usage consumption charge plus a daily customer charge: 1/1/2025 $0.0772/kWh + $0.9640/day; 5/1/2026 $0.0801/kWh + $1.0002/day; 1/1/2027 $0.0831/kWh + $1.0377/day; 1/1/2028 $0.0862/kWh + $1.0766/day. As of September 2026 the 5/1/2026 column is in force: 8.01 cents/kWh and $1.0002/day (about $30.01 on a 30-day bill). The ordinance's recitals state the rate change was driven by a cost of service study and by projected wholesale power and transmission cost increases from BPA, so the 8.01c is a fully loaded all-in rate including BPA pass-through. Flat, no tiers, no residential time-of-use. Separate schedules exist for residential distributed generation E-115, low-income senior/disabled E-130, and general service E-200/E-201 (3-phase demand-metered), none of which apply to a standard residential customer."
+  },
+  {
+   "id": "centralia_city_light",
+   "name": "Centralia City Light",
+   "type": "municipal",
+   "service_area": "City of Centralia in Lewis County, and a small area outside city limits",
+   "primary_city": "Centralia",
+   "residential": {
+    "energy_cents_kwh": "7.63",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "24.39",
+    "includes_bpa": "true",
+    "effective": "2026-01-01",
+    "source": "https://www.cityofcentralia.com/DocumentCenter/View/4962/Electric-Rate-Sheet---English-PDF"
+   },
+   "tod": "",
+   "notes": "Source is the city's published 'City of Centralia Electric Rate Sheet - English Version', rates as of January 2026 (dated 1/1/2026, issued under Monthly Electrical Rates Ordinance No. 2367; the identical Spanish version is DocumentCenter/View/4963). Residential schedule, two geographies: INSIDE CITY LIMITS customer charge $24.39/month and energy $0.0763/kWh; OUTSIDE CITY LIMITS customer charge $26.79/month and energy $0.0844/kWh. Figures given are the inside-city-limits rate since the vast majority of customers are inside city limits — outside-city-limits customers pay 8.44c. The rate sheet shows 2023, 2024, 2025 and 2026 columns all identical ($24.39 / $0.0763), so the residential rate has been flat since at least 2023. Flat, no tiers, no time-of-use. A low-income senior/totally disabled schedule waives the customer charge only (energy still billed). BPA is included in the all-in energy charge: the city states its Yelm hydroelectric plant supplied 12.47% of customer power in 2024 and 'the remainder is purchased through long-term contracts with Bonneville Power Administration (BPA) and market purchases' (cityofcentralia.com/183/City-Light). The customer's own city website is cityofcentralia.com — NOT centraliawa.gov, which does not resolve."
+  },
+  {
+   "id": "pacific_power",
+   "name": "PacifiCorp dba Pacific Power",
+   "type": "iou",
+   "service_area": "Investor-owned service territory in the south-central Washington counties of Yakima, Walla Walla, Benton (the Tri-Cities/Centralia-of-the-Columbia area), Klickitat and Columbia",
+   "primary_city": "Yakima",
+   "residential": {
+    "energy_cents_kwh": "14.311",
+    "flat": "true",
+    "tiers": "",
+    "fixed_charge_monthly_usd": "8.5",
+    "includes_bpa": "false",
+    "effective": "2026-09-01",
+    "source": "https://www.pacificpower.net/content/dam/pcorp/documents/en/pacificpower/rates-regulation/washington/WA_Price_Summary.pdf"
+   },
+   "tod": {
+    "periods": [
+     {
+      "name": "On-peak (Schedule 19 opt-in, optional TOU pilot)",
+      "start": "14:00",
+      "end": "22:00",
+      "cents_kwh": "17.371",
+      "weekdays_only": "false"
+     },
+     {
+      "name": "On-peak, winter shoulder (Schedule 19 opt-in)",
+      "start": "06:00",
+      "end": "08:00",
+      "cents_kwh": "17.371",
+      "weekdays_only": "false"
+     },
+     {
+      "name": "On-peak, winter evening (Schedule 19 opt-in)",
+      "start": "16:00",
+      "end": "22:00",
+      "cents_kwh": "17.371",
+      "weekdays_only": "false"
+     },
+     {
+      "name": "Off-peak (Schedule 19 opt-in, all other times)",
+      "start": "22:00",
+      "end": "06:00",
+      "cents_kwh": "12.066",
+      "weekdays_only": "false"
+     }
+    ],
+    "seasons": [
+     "summer",
+     "winter"
+    ]
+   },
+   "notes": "Washington residential is FLAT, not time-of-day. Source is Pacific Power's own WA Price Summary PDF (effective September 1, 2026; base rates effective January 1, 2026 per WUTC Docket UE-250224), reached from pacificpower.net/about/rates-regulation/washington-rates-tariffs.html, with the tariff index (WN U-76) confirming which schedules exist. Schedule 16 Residential Service, single-phase single-family home: basic charge $8.50/month, energy 14.311 cents/kWh combined effective (base 10.623 + riders 92/93/94/191 net +2.357, then +2.462 PCAM and -0.105 production tax credit tracker). Note: Rider Schedule 98 (Pacific Northwest Electric Power Planning and Conservation Act / CETA cost allocation, 1.217 cents/kWh) is billed as a separate rate and is marked 'not applicable to all customers' — it is excluded from the 14.311 combined effective figure, so a real residential bill may be about 1.2c/kWh higher. Other single-phase residential variants: multi-family $6.75/month, three-phase single-family $16.50, three-phase multi-family $14.75 — all at the same 14.311c/kWh. Schedule 19 is an OPTIONAL Residential Time of Use Pilot, not the default schedule: customers must elect it and are charged a $2.00/month TOU metering fee; base on-peak 13.683c / off-peak 8.378c, combined effective on-peak 17.371c and off-peak 12.066c. Its on-peak definition has two seasons and no weekday/weekend split: June-September on-peak 2:00 p.m.-10:00 p.m. all days; October-May on-peak 6:00 a.m.-8:00 a.m. and 4:00 p.m.-10:00 p.m. all days; off-peak all other times. The tod block above is populated with those optional opt-in rates for reference only; a standard WA residential customer is on flat Schedule 16 at 14.311c. Schedule 17 is an optional low-income bill-assistance discount of 14-85 percent off the applicable Schedule 16 or 19 rates. BPA is NOT included — Pacific Power is an investor-owned utility and is not a BPA customer, so its WA rates carry no BPA pass-through (contrast the PUDs and municipals above). The pending sale of Pacific Power's Washington business to Portland General Electric does not change current rates: WA is UTC-regulated and existing tariffs remain in effect under PacifiCorp until a transaction closes and a successor tariff is filed."
+  }
+ ]
+}

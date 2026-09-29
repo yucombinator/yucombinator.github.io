@@ -1,0 +1,130 @@
+{
+ "utilities": [
+  {
+   "id": "clark_pud",
+   "name": "Clark Public Utilities (PUD No. 1 of Clark County)",
+   "type": "pud",
+   "service_area": "Most of Clark County southwest of the Columbia River, including the Vancouver and Battle Ground/Brush Prairie areas; serves unincorporated county and several small cities, excluding municipal systems such as Camas.",
+   "primary_city": "Vancouver",
+   "residential": {
+    "energy_cents_kwh": "8.79",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "8.79"
+    },
+    "fixed_charge_monthly_usd": "19.0",
+    "includes_bpa": "false",
+    "effective": "null",
+    "source": "https://www.clarkpublicutilities.com/about-cpu/public-documents/current-electric-water-rates/"
+   },
+   "tod": "null",
+   "notes": "Single flat residential energy charge of 8.79 cents per kWh plus a basic $19.00 monthly charge; no tiers and no time-of-use option published. The PUD states it resells power at cost with no mark-up, and the published rate is an all-in per-kWh figure rather than a separate energy + delivery breakdown. CPU is not a net Bonneville customer: it contracts for hydroelectric power from direct-connect suppliers such as Pend Oreille PUD (Box Canyon contract), so the 8.79 cents does not carry a distinct BPA line item. The rates page carries no effective date for the electric rate; page content was current as of the 2026-04-21 modification stamp, and a January 2026 public comparison still listed CPU at 8.79 cents, so no 2026 change was found. Commercial (Schedules 34/134/234) and industrial (Schedule 85) rates on the same page run 8.33 down to 4.80 cents with demand charges — much lower per kWh — which is a reminder that CPU's residential rate is the comparison of interest here, not its large-customer schedules."
+  },
+  {
+   "id": "cowlitz_pud",
+   "name": "Cowlitz County Public Utility District No. 1",
+   "type": "pud",
+   "service_area": "Nearly all of Cowlitz County, from the Longview/Kelso metro area south through Castle Rock, Vader and Woodland to the Cowlitz River canyon.",
+   "primary_city": "Kelso",
+   "residential": {
+    "energy_cents_kwh": "7.66",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "7.66"
+    },
+    "fixed_charge_monthly_usd": "24.64",
+    "includes_bpa": "true",
+    "effective": "2025-10-01",
+    "source": "https://www.cowlitzpud.org/wp-content/uploads/Schedule-1-Residential-Service-Rate-Schedule.pdf"
+   },
+   "tod": "null",
+   "notes": "Schedule 1 — Residential Service, adopted by Resolution No. 2828, effective October 1, 2025: Base Charge $0.81 per day single phase ($1.05 per day three phase) plus an Energy Charge of $0.0766 per kWh, with no tiers and no time-of-use periods. The daily base charge is converted here to $24.64/month (30.4 days); a 30-day month bills $24.30. Cowlitz does bill residential on a daily base-charge basis, so the monthly fixed figure moves slightly with billing cycle length. State privilege and public utility taxes are stated to be INCLUDED in the published rates; city utility tax under RCW 54.28.070 is ADDED on top for customers inside city limits, so bills inside Kelso/Longview/Castle Rock/Woodland carry a few percent more. Verified as separate from the large-power schedules as instructed: Schedule 1 covers single-family homes, individually metered multi-family dwellings and multi-use premises under 25% non-residential load, while Schedules 8 and 9 (Large Commercial and Industrial Service, primary and transmission) carry their own much lower energy rates and demand charges. Schedule 62 is a Direct Access Delivery Charge for transmission-voltage customers, indicating some large loads bypass the District, which is consistent with its heavy industrial base. Cowlitz purchases power under a Bonneville Power Administration contract, and the 7.66 cents is an all-in energy charge including power supply cost; there is no separately billed BPA line item on Schedule 1. Discounts of 20% or 30% are available to qualifying low-income senior, disabled and veteran customers."
+  },
+  {
+   "id": "grays_harbor_pud",
+   "name": "Grays Harbor County Public Utility District No. 1",
+   "type": "pud",
+   "service_area": "Parts of southern and western Grays Harbor County only, concentrated around Elma, Satsop, Malone and the rural coastal rural areas; the cities of Aberdeen, Hoquiam, Montesano, Ocean Shies and Westport have their own municipal systems and are not served.",
+   "primary_city": "Elma",
+   "residential": {
+    "energy_cents_kwh": "9.38",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "9.38"
+    },
+    "fixed_charge_monthly_usd": "39.0",
+    "includes_bpa": "true",
+    "effective": "2025-05-01",
+    "source": "https://www.ghpud.org/wp-content/uploads/Summary-rate-table-proposed-rate-increase-for-2025-final.pdf"
+   },
+   "tod": "null",
+   "notes": "Schedule 10 — Residential Rate: System Charge $39.00 per month plus Energy Charge $0.09380 per kWh, flat with no tiers and no time-of-use. Effective May 1, 2025 (3.00% increase); the District's published 2025 Summary of Rates and the 2025 Schedule of Rates are still the current documents linked from its rates page, and a January 2026 public utility rate comparison noted Grays Harbor PUD approved no rate increase for 2026, so 9.38 cents was still current when checked. Schedule 10 explicitly carries a BPA Adjustment rider (Schedule 99), so BPA power costs are embedded in the 9.38 cents — that is why this PUD sits noticeably above other BPA-served neighbors despite being a public utility. Schedule 98 Tax Additions adds State Public Utility Tax 3.873% and Privilege Tax 2.14% ON TOP of the published rate, and customers inside the city limits of Aberdeen, Cosmopolis, Elma, Hoquiam, Montesano, Oakville, Ocean Shores, Westport and McCleary add a further 6.0% city utility tax. Schedule 12E (second residential service on the same parcel, e.g. a garage or domestic well) uses a smaller $15.75 customer charge at the same 9.38 cents. Senior/disabled discount tiers run from 35% down to 10% off the bill. Residential Rate Calculator on the District site is the tool to check an actual bill."
+  },
+  {
+   "id": "wahkiakum_pud",
+   "name": "Wahkiakum County Public Utility District No. 1",
+   "type": "pud",
+   "service_area": "All of sparsely populated Wahkiakum County, centered on Cathlamet and Skamokawa along the Columbia River.",
+   "primary_city": "Cathlamet",
+   "residential": {
+    "energy_cents_kwh": "7.83",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "7.83"
+    },
+    "fixed_charge_monthly_usd": "26.7",
+    "includes_bpa": "true",
+    "effective": "2026-03-01",
+    "source": "https://www.wahkiakumpud.org/_files/ugd/99a939_37ed8512097b404a9423adec189a3338.pdf"
+   },
+   "tod": "null",
+   "notes": "From the District's official 'Current electric, water and sewer utility rates' PDF, dated 3/1/2026: Residential — Basic Monthly Charge $26.70 per electric meter plus $0.0783 per kWh. Flat, no tiers, no time-of-use. The 7.83 cents is an all-in figure covering the District's purchased power (Wahkiakum is a small net Bonneville customer), so BPA pass-through is included in the per-kWh number rather than billed separately. Senior or disabled discounts on the same sheet give effective rates of 7.05, 6.66, 6.26 and 5.87 cents for 10%, 15%, 20% and 25% discounts respectively, with the $26.70 basic charge unchanged. For scale, Small Commercial pays the same $26.70 basic plus 8.14 cents, and General Service pays $26.70 (single phase) or $30.90 (three phase) plus 7.56 cents with a $3.40/kW demand charge above 20 kW — i.e. residential is close to but slightly above the general-service energy rate here. Note this is one of the few Washington PUDs that publishes a complete current rate table with no tiers and no TOD; there is no separate residential energy charge schedule PDF."
+  },
+  {
+   "id": "lewis_pud",
+   "name": "Lewis County Public Utility District No. 1",
+   "type": "pud",
+   "service_area": "Most of Lewis County including the Chehalis, Winlock, Mossyrock and Silver Creek areas, in the rural and small-town corridor between Mount St. Helens and the Willapa Hills.",
+   "primary_city": "Chehalis",
+   "residential": {
+    "energy_cents_kwh": "7.394",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "7.394"
+    },
+    "fixed_charge_monthly_usd": "31.63",
+    "includes_bpa": "true",
+    "effective": "2026-01-01",
+    "source": "https://app.na2.teamsupport.com/dc/1/attachments/e679c034-14c0-4f47-8fb9-2b30e43744a7"
+   },
+   "tod": "null",
+   "notes": "From the District's 2026 Rate Brochure (effective January 1, 2026, Resolution No. 3027), SCHEDULE 7 — RESIDENTIAL: $1.04 per day basic charge plus $0.07394 per kWh. Flat, no tiers, no time-of-use. The basic charge is daily, converted here to $31.63/month (365/12); a 30-day month bills $31.20. Lewis County PUD buys its power from Bonneville Power Administration (it has a dedicated BPA power supply page), and the published 7.394 cents is a single all-in charge, so BPA cost is included rather than billed as a line item. SCHEDULE 8 — RESIDENTIAL SECONDARY METER (garage, workshop, domestic well under 5 hp on the same parcel) is $0.82 per day plus the same 7.394 cents per kWh. Comparing classes: SCHEDULE 20 GENERAL SERVICES (<300 kW) steps down to $0.05855 per kWh above 15,000 kWh per month, and SCHEDULE 40 LARGE GENERAL SERVICES and SCHEDULE 31 INDUSTRIAL PRIMARY run $0.04966 per kWh plus heavy-load-hour demand charges — so residential is materially more expensive per kWh than large-load service here. Qualifying low-income senior customers may receive a 50% or 100% discount on the basic charge only, under Resolution 2987; the energy rate is unchanged. A SCHEDULE 4 GREEN POWER RATE at $2.00 per 100 kWh block is available as an opt-in rider for Schedule 7 or 20 customers. Tax additions apply on top of the published rate."
+  },
+  {
+   "id": "tacoma_power",
+   "name": "Tacoma Power (City of Tacoma Department of Public Utilities)",
+   "type": "municipal",
+   "service_area": "City of Tacoma plus adjoining contract cities — Fife, Fircest, Lakewood, Steilacoom and University Place — making it one of the largest municipal electric systems in Washington.",
+   "primary_city": "Tacoma",
+   "residential": {
+    "energy_cents_kwh": "9.1646",
+    "flat": "true",
+    "tiers": {
+     "up_to_kwh": "500",
+     "cents_kwh": "9.1646"
+    },
+    "fixed_charge_monthly_usd": "31.3",
+    "includes_bpa": "false",
+    "effective": "2026-04-01",
+    "source": "https://www.mytpu.org/wp-content/uploads/All-Schedules-2026_Clean.pdf"
+   },
+   "tod": "null",
+   "notes": "SCHEDULE A-1 RESIDENTIAL SERVICE (TMC 12.06.160), Ordinance No. 28993, effective April 1, 2026: monthly rate is the SUM of three components — Energy $0.045351 per kWh, Delivery $0.046295 per kWh, and a Customer Charge of $31.30 per month ($25.60 for collectively metered apartments). energy_cents_kwh of 9.1646 is the combined energy + delivery figure; it is not a single published number and the page should be aware the utility publishes it in two pieces. Flat, no tiers, no residential time-of-use rate exists in the 2026 schedule book — the only optional residential rider is SCHEDULE EO Evergreen Options (Renewable Energy Program), which is a green-power premium, not a TOD rate. Contract-city exceptions: Fife, Fircest, Lakewood and Steilacoom get the same rates as Tacoma, but the City of University Place pays a higher Energy $0.048644 + Delivery $0.049657 per kWh (9.8301 cents combined) with a $33.57 monthly Customer Charge, because UP sits outside Tacoma's municipal bond/tax base. SCHEDULE A-2 (Low-Income Senior and/or Low-Income Disabled) is 65% of the Schedule A-1 bill, not a separate per-kWh rate. SCHEDULE PR Prepaid Residential carries the same energy and delivery rates with the customer charge prorated daily. As a municipal hydro-based utility, Tacoma Power has no BPA pass-through line item on Schedule A-1; supply is its own hydroelectric resources plus contracted firm purchases, and no BPA adjustment rider appears in the residential schedule."
+  }
+ ]
+}

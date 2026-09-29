@@ -1,0 +1,150 @@
+{
+ "utilities": [
+  {
+   "id": "douglas_pud",
+   "name": "Douglas County PUD (PUD No. 1 of Douglas County)",
+   "type": "pud",
+   "service_area": "A small, compact system serving the Waterville/Rock Island area west of the Columbia River, plus the City of Waterville and nearby rural farm/ranch lands; no service in the Wenatchee valley",
+   "primary_city": "Waterville",
+   "residential": {
+    "energy_cents_kwh": 2.35,
+    "flat": false,
+    "tiers": [
+     {
+      "up_to_kwh": 2500,
+      "cents_kwh": 2.35
+     },
+     {
+      "up_to_kwh": 5000,
+      "cents_kwh": 2.81
+     },
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 2.87
+     }
+    ],
+    "fixed_charge_monthly_usd": 17.57,
+    "includes_bpa": false,
+    "effective": "2026-01-01",
+    "source": "https://web.archive.org/web/20251030082453id_/https://douglaspud.org/download/24/site-collection-documents/13175/24-053-rates-26-30.pdf"
+   },
+   "tod": null,
+   "notes": "Rate Schedule 1, General Service, section A) 'Residential and Commercial Services'. Energy tiers are 0-2,500 kWh at $0.0235/kWh, 2,501-5,000 kWh at $0.0281/kWh, 5,001 kWh and over at $0.0287/kWh. Also a demand charge of $2.82/kW on demand above 45 kW (2026 threshold) - negligible for a typical home. The source is a PUD board document titled 'January 2026 - 2030 Rate Adjustment Proposal' (file 24-053-rates-26-30.pdf) linked from the District's own 'Customer Service Policies and Rate Schedules' page; its first column is 1/1/2026, which is the step in effect today. Its structure mirrors the District's previously operative 'Approved Rates 2020-2025' schedule, which confirms these are the operative rates rather than a staff study. NO BPA PASS-THROUGH: this PUD owns and operates the Wells Hydroelectric Project and Schedule 1 has no purchased-power or BPA line item; the published rate is entirely its own generation plus delivery. IMPORTANT CAVEAT ON SOURCING: douglaspud.org returns HTTP 403 to our network on every path (site, wp-content PDFs, sitemap, wp-json), so the rate document was read from an Internet Archive capture of the PUD's own rate-schedules page dated 2025-10-30. That capture is the most recent one on file (no 2026 capture exists), so a rate action taken after 2025-10-30 would not appear. The prior published card (Schedule 1 D&E, effective 2024-07-01, also archived) showed $14.63 basic / 0.0233 first 25,000 kWh, so the progression is consistent with a step change on 1/1/2026. Rates for 1/1/2027 through 1/1/2030 are pre-published in the same document (basic rising to $27.57 and the 5,001+ block to 0.0305)."
+  },
+  {
+   "id": "chelan_pud",
+   "name": "Chelan County PUD",
+   "type": "pud",
+   "service_area": "Wenatchee valley and greater Chelan County - Wenatchee, Chelan, Cashmere, Wenatchee Heights, Entiat, Peshastin, Monitor/Plain - excluding the remote Stehekin area, which is on its own Schedule 101",
+   "primary_city": "Wenatchee",
+   "residential": {
+    "energy_cents_kwh": 2.85,
+    "flat": true,
+    "tiers": [
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 2.85
+     }
+    ],
+    "fixed_charge_monthly_usd": 17.6,
+    "includes_bpa": false,
+    "effective": "2026-06-01",
+    "source": "https://www.chelanpud.org/docs/default-source/default-document-library/electric-rate-schedules290fbeaf9dd5636da1c4ff0800ce4554.pdf"
+   },
+   "tod": null,
+   "notes": "Rate Schedule 1, Residential Service, taken from the District's own consolidated 'Electric Rate Schedules' PDF (36 pp., all schedules). The RATES table is published with three columns and the current one is 6/1/2026: Monthly Basic Charge single phase $17.60 (three phase $23.65) and Monthly Energy Charge $0.0285/kWh, applied to ALL kWh - there is no tiering. Prior columns were $0.0280 (6/1/2025) and $0.0270 (6/1/2024). No time-of-use: Schedule 1 is a single flat energy rate. This is the residential schedule specifically, not an aggregate revenue requirement, despite the District's very large irrigation (Schedule 35/36) and industrial load - those are separate schedules in the same document. NO BPA PASS-THROUGH LINE: Schedule 1 carries a single all-in energy charge with no separate purchased-power adjustment, consistent with a District whose supply is dominated by its own Columbia River hydro (Rocky Reach, Rock Island, Boundary, Lake Chelan). Other line items that are NOT included in the 17.60/2.85 figures: a low-income senior/disabled rate discount of $11.50/month, a $25/month fee to opt out of AMI meters, and city/town utility tax added per RCW 54.28.070. The document's resolution history ends at Resolution 25-15007 (June 16, 2025), which amended Rates 36 and 4 only; the 6/1/2026 residential column therefore comes from the most recent general rate schedule. Access note: chelanpud.org is behind Cloudflare and rejects HTTP/2 requests with 403; the schedule PDF was retrieved over HTTP/1.1 from the live site."
+  },
+  {
+   "id": "kittitas_pud",
+   "name": "Kittitas County PUD",
+   "type": "pud",
+   "service_area": "Central and eastern Kittitas County - Cle Elum, Roslyn, Ronald, Liberty, and the Manastash/Naches valleys; district offices at Ellensburg and Cle Elum",
+   "primary_city": "Cle Elum",
+   "residential": {
+    "energy_cents_kwh": 8.99,
+    "flat": true,
+    "tiers": [
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 8.99
+     }
+    ],
+    "fixed_charge_monthly_usd": 40,
+    "includes_bpa": true,
+    "effective": "2025-04-01",
+    "source": "https://www.kittitaspud.com/DocumentCenter/View/1671/Residential-Rates---2025"
+   },
+   "tod": null,
+   "notes": "This is a board-resolution rate card PDF, not a web table - exactly the small-PUD case. The linked document 'Residential Rates - 2025' is Kittitas County PUD Resolution 2025-04, Schedule 41, effective April 1, 2025, and states: BASIC $40.00 per month, ENERGY 8.99 cents per kWh for all kWh, plus the regular/additional/adjustment/transition notes and a 0.1913 cents per kWh Green Energy adder that is 'added to customer's bill when applicable' (a voluntary program, excluded from the 8.99 headline rate). No tiering and no time-of-use. INCLUDES BPA/ENERGY NORTHWEST: the schedule is a single all-in energy charge with no separate power-supply adjustment line; the District's rate-increase notice on the same page attributes the April 1, 2025 increase directly to 'increased costs of BPA power supply', so 8.99 cents is an all-in cost of energy. This is the highest residential rate in the Central WA group largely because the $40 basic charge is very high against a small meter count. CURRENCY: as of 2026-09-29 the live Rates page still carries the 2025 documents as current, there is no 2026 rate change referenced anywhere on the site, and the page states the District 'has not had a rate increase since August 2023' - so the 4/1/2025 schedule is the one in effect. Access note: this PDF is a scan with no extractable text layer; figures were read by rendering the page image."
+  },
+  {
+   "id": "franklin_pud",
+   "name": "Franklin PUD (Public Utility District No. 1 of Franklin County)",
+   "type": "pud",
+   "service_area": "Franklin County, the Mid-Columbia basin - Pasco, Kennewick-adjacent fringe, Burbank, Connell, and the irrigated agricultural lands between the Columbia and Yakima rivers",
+   "primary_city": "Pasco",
+   "residential": {
+    "energy_cents_kwh": 7.63,
+    "flat": true,
+    "tiers": [
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 7.63
+     }
+    ],
+    "fixed_charge_monthly_usd": 34,
+    "includes_bpa": true,
+    "effective": "2026-05-01",
+    "source": "https://www.franklinpud.com/wp-content/uploads/2025/07/1.0-RESIDENTIAL-RATE-07.01.25.pdf"
+   },
+   "tod": null,
+   "notes": "Rate Schedule 1, Residential Service, from the District's own tariff sheet (Resolution 1436, adopted 07.01.25). The schedule publishes a forward escalator table: 'System Charge Single Phase $34.00' is unchanged across every column, and 'Energy Charge All kWh' runs 0.0702 (05/01/2024), 0.0732 (05/01/2025), 0.0763 (05/01/2026), 0.0795 (05/01/2027). Because the schedule is still the District's posted current version and today falls after the 05/01/2026 step, 7.63 cents/kWh is the rate now in effect; 7.95 cents is already pre-published for 05/01/2027. Flat rate, all kWh, no tiering and no time-of-use. Minimum bill is the System Charge. INCLUDES BPA/ENERGY NORTHWEST PURCHASED POWER: the schedule has only two charges (System Charge and a single all-in Energy Charge) with no separate power-cost or PCA line, so purchased power is embedded in the 7.63 cents. Access note: franklinpud.com is behind Cloudflare and 403s some paths over HTTP/2; the rate schedules index and the PDFs were reachable and are current as published."
+  },
+  {
+   "id": "grant_pud",
+   "name": "Grant County PUD",
+   "type": "pud",
+   "service_area": "Central Grant County - Ephrata, Soap Lake, and the surrounding irrigated agricultural area between Ephrata and the Grant/Adams county line",
+   "primary_city": "Ephrata",
+   "residential": {
+    "energy_cents_kwh": 5.16,
+    "flat": true,
+    "tiers": [
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 5.16
+     }
+    ],
+    "fixed_charge_monthly_usd": 18.87,
+    "includes_bpa": true,
+    "effective": "2026-04-01",
+    "source": "https://www.grantpud.org/images/2026/2026-Rates/2026-Rate-Schedule-1.pdf"
+   },
+   "tod": null,
+   "notes": "Rate Schedule 1, Domestic Service, Resolution No. 9114, EFFECTIVE 'with meter readings after April 1, 2026'. The residential bill is built from three explicit per-kWh lines that must be summed: PRP Energy Charge $0.02548/kWh + Incremental Energy Charge $0.00000/kWh + Delivery Charge $0.02616/kWh = $0.05164/kWh, i.e. 5.16 cents/kWh flat, no tiering, no time-of-use. Basic Charge is $0.62 PER DAY (= $18.87 per 30-day month); Minimum Charge is $21.00 per month, so the real floor is $21.00. A 20% low-income senior/disabled discount applies to the bill exclusive of taxes, and city/town utility tax is added per RCW 54.28.070. BPA/ENERGY NORTHWEST IS EXPLICITLY SHOWN: the 2.548 cents 'PRP Energy' line is the purchased-power pass-through and appears identically on every Grant PUD schedule, so roughly half of the residential energy rate is the power supply cost and half is local delivery. Current-rate confirmation: this is the 2026 package (the site's /images/2026/2026-Rates/ set plus the 2026 Rates one-sheet flyer titled 'Powering Our Future - 2026 Rates Package'), and Schedule 1 is listed as the RESIDENTIAL (core customer) schedule, distinct from the tiered non-core large-load and industrial schedules 14-19 and 85. Access note: grantpud.org publishes rates only as PDF tariff sheets - there is no HTML rate table, which is the small-PUD case flagged in the assignment."
+  },
+  {
+   "id": "benton_pud",
+   "name": "Benton PUD (Public Utility District No. 1 of Benton County)",
+   "type": "pud",
+   "service_area": "Benton County, south-central Washington - Prosser, Patterson, and the irrigated Benton/Columbia basin lands around the Yakima and Columbia river systems",
+   "primary_city": "Prosser",
+   "residential": {
+    "energy_cents_kwh": 7.22,
+    "flat": true,
+    "tiers": [
+     {
+      "up_to_kwh": null,
+      "cents_kwh": 7.22
+     }
+    ],
+    "fixed_charge_monthly_usd": 20.13,
+    "includes_bpa": true,
+    "effective": "2026-04-01",
+    "source": "https://bentonpud.org/getattachment/7715562a-4367-4822-9fd7-b4462773393c/Rate-Schedules-2026-04-01.pdf"
+   },
+   "tod": null,
+   "notes": "Schedule 11, Residential, from the District's consolidated 2026 tariff book (28 pp., Resolution No. 2716, effective April 1, 2026). Daily System Charge $0.66 per day (= $20.13 per 30-day month); Monthly Energy Charge $0.0722 per kWh for all kWh - flat, no tiering. NOT A TIME-OF-USE RATE despite the demand charge: the $1.54/kW monthly demand charge is a peak-DEMAND charge, not a differentiated energy price, and it is billed on the maximum 1-hour kW measured during defined peak hours - Oct 1-Apr 30 weekdays 6-9 a.m. and 5-8 p.m., May 1-Sep 30 weekdays 5-8 p.m., Pacific, holidays excluded. For a typical household under ~10 kW of coincident peak this adds only a few dollars a month, but the map's bill calculator will understate a real bill unless it is modeled. Minimum monthly bill is the daily system charge. A second-meter schedule (Schedule 12) exists for a second service on the same parcel and carries a higher system charge. INCLUDES PURCHASED POWER: as with the other Benton schedules, energy is a single all-in $/kWh figure with no separate power-cost adjustment line, so the energy-supply cost is embedded in the 7.22 cents. Access note: bentonpud.com is behind a bot-wall that redirects all HTML to a JS challenge; the live site is bentonpud.org, where the rate book is posted as a downloadable attachment, which is where this document came from."
+  }
+ ]
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WA electric rate map — where power costs less than your county's</title>
+<meta name="description" content="Washington electric utility service territories shaded by how their residential rate compares with the utility in your own county.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/pud.css">
+</head>
+<body>
+
+<div id="map"></div>
+<div id="err" role="alert"></div>
+
+<header id="head" class="panel">
+  <h1>Washington rate map</h1>
+  <p class="sub">Residential electricity rates by service territory, shaded by how each one
+  compares with your county's utility. Every label carries the actual cents. Tap a
+  territory for detail.</p>
+</header>
+
+<section id="controls" class="panel" aria-label="Rate assumptions">
+  <h2>Compare against</h2>
+
+  <div class="field">
+    <label for="county">Your county</label>
+    <select id="county" aria-describedby="county-note"></select>
+    <p class="field-note" id="county-note">The map re-prices every territory
+    against your county's main utility.</p>
+  </div>
+
+  <h2 class="second">Assumptions</h2>
+
+  <div class="field">
+    <label id="usage-label">Monthly usage</label>
+    <div class="seg" id="usage" role="group" aria-labelledby="usage-label">
+      <button type="button" data-kwh="300">300</button>
+      <button type="button" data-kwh="500">500</button>
+      <button type="button" data-kwh="1000" aria-pressed="true">1,000</button>
+      <button type="button" data-kwh="2000">2,000</button>
+      <button type="button" data-kwh="3000">3,000</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="hour-label">Time of day</label>
+    <input type="range" id="hour" min="0" max="23" step="1" value="19" aria-labelledby="hour-label">
+    <div class="hourrow"><span>kWh price at this hour</span><b id="hour-read">7:00 pm</b></div>
+  </div>
+
+  <div class="field">
+    <label id="mode-label">Map colors</label>
+    <div class="seg" id="mode" role="group" aria-labelledby="mode-label">
+      <button type="button" data-mode="flat" aria-pressed="true">All-hours</button>
+      <button type="button" data-mode="tod">This hour</button>
+    </div>
+    <p class="field-note" id="tod-note" hidden>Only 4 of 40 utilities publish a
+    time-of-day schedule &mdash; Puget Sound Energy, City Light, Avista and Pacific
+    Power. The rest charge one price at every hour, so only those four move.</p>
+  </div>
+
+  <div class="field">
+    <label id="base-label">Basemap</label>
+    <div class="seg" id="base" role="group" aria-labelledby="base-label">
+      <button type="button" data-base="light" aria-pressed="true">Light</button>
+      <button type="button" data-base="terrain">Terrain</button>
+    </div>
+  </div>
+</section>
+
+<section id="detail" class="panel" aria-live="polite"></section>
+
+<details id="legend" class="panel" open>
+  <summary>Legend</summary>
+  <div class="legend-bar" id="legend-bar"></div>
+  <div class="legend-scale">
+    <span id="ramp-lo">&mdash;</span>
+    <span class="legend-mid" id="ramp-mid"></span>
+    <span id="ramp-hi">&mdash;</span>
+  </div>
+  <div class="legend-ends"><span>cheaper than yours</span><span>dearer</span></div>
+  <div class="legend-none">
+    <i class="swatch" style="background:#d9ddd3"></i>
+    <span>no rate collected</span>
+  </div>
+  <p class="legend-note" id="legend-basis">Every territory is shaded by how its price compares with your county's utility.</p>
+  <p class="legend-note"><b>All-hours</b> colors the standard residential rate.
+  <b>This hour</b> uses time-of-day schedules where published — for Puget Sound Energy,
+  City Light, Avista and Pacific Power those are opt-in products, not what most
+  customers actually pay.</p>
+</details>
+
+<footer>
+  Territories are approximate: census county boundaries with a nearest-service-center
+  model, not legal service areas. Rates are curated from each utility's published
+  tariff and do not update on their own — see the README for sources and effective dates.
+  Non-investor-owned rates are set by locally elected utility boards, not the WUTC.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

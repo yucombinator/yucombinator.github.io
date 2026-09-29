@@ -1,0 +1,497 @@
+{
+  "note": "Roster assembled from WUTC, the Washington PUD Association, WA L&I, and each utility's own site. Three IOUs only: NorthWestern Energy has no Washington territory. Territories are an approximate nearest-service-center model, not legal boundaries.",
+  "utilities": [
+    {
+      "id": "snohomish_pud",
+      "name": "Snohomish PUD",
+      "type": "pud",
+      "counties": [
+        "Snohomish"
+      ],
+      "primary_city": "Everett",
+      "county_wide": false
+    },
+    {
+      "id": "seattle_city_light",
+      "name": "Seattle City Light",
+      "type": "municipal",
+      "counties": [
+        "King"
+      ],
+      "primary_city": "Seattle",
+      "county_wide": false
+    },
+    {
+      "id": "pse",
+      "name": "Puget Sound Energy",
+      "type": "iou",
+      "counties": [
+        "King",
+        "Pierce",
+        "Snohomish",
+        "Kitsap",
+        "Thurston",
+        "Jefferson",
+        "Kittitas",
+        "Lewis",
+        "Skagit",
+        "Whatcom",
+        "Pacific",
+        "Clallam",
+        "Mason",
+        "Island",
+        "San Juan",
+        "Wahkiakum"
+      ],
+      "primary_city": "Bellevue",
+      "county_wide": false
+    },
+    {
+      "id": "clark_pud",
+      "name": "Clark Public Utilities",
+      "type": "pud",
+      "counties": [
+        "Clark"
+      ],
+      "primary_city": "Vancouver",
+      "county_wide": false
+    },
+    {
+      "id": "cowlitz_pud",
+      "name": "Cowlitz County PUD",
+      "type": "pud",
+      "counties": [
+        "Cowlitz"
+      ],
+      "primary_city": "Kelso",
+      "county_wide": true
+    },
+    {
+      "id": "grays_harbor_pud",
+      "name": "Grays Harbor PUD",
+      "type": "pud",
+      "counties": [
+        "Grays Harbor"
+      ],
+      "primary_city": "Elma",
+      "county_wide": false
+    },
+    {
+      "id": "wahkiakum_pud",
+      "name": "Wahkiakum County PUD",
+      "type": "pud",
+      "counties": [
+        "Wahkiakum"
+      ],
+      "primary_city": "Cathlamet",
+      "county_wide": false
+    },
+    {
+      "id": "lewis_pud",
+      "name": "Lewis County PUD",
+      "type": "pud",
+      "counties": [
+        "Lewis"
+      ],
+      "primary_city": "Chehalis",
+      "county_wide": false
+    },
+    {
+      "id": "tacoma_power",
+      "name": "Tacoma Power",
+      "type": "municipal",
+      "counties": [
+        "Pierce"
+      ],
+      "primary_city": "Tacoma",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_milton",
+      "name": "City of Milton",
+      "type": "municipal",
+      "counties": [
+        "Pierce",
+        "King"
+      ],
+      "primary_city": "Milton",
+      "county_wide": false
+    },
+    {
+      "id": "town_of_eatonville",
+      "name": "Town of Eatonville",
+      "type": "municipal",
+      "counties": [
+        "Pierce"
+      ],
+      "primary_city": "Eatonville",
+      "county_wide": false
+    },
+    {
+      "id": "town_of_ruston",
+      "name": "Town of Ruston",
+      "type": "municipal",
+      "counties": [
+        "Pierce"
+      ],
+      "primary_city": "Ruston",
+      "county_wide": false
+    },
+    {
+      "id": "town_of_steilacoom",
+      "name": "Town of Steilacoom",
+      "type": "municipal",
+      "counties": [
+        "Pierce"
+      ],
+      "primary_city": "Steilacoom",
+      "county_wide": false
+    },
+    {
+      "id": "douglas_pud",
+      "name": "Douglas County PUD",
+      "type": "pud",
+      "counties": [
+        "Douglas"
+      ],
+      "primary_city": "Waterville",
+      "county_wide": false
+    },
+    {
+      "id": "chelan_pud",
+      "name": "Chelan County PUD",
+      "type": "pud",
+      "counties": [
+        "Chelan"
+      ],
+      "primary_city": "Wenatchee",
+      "county_wide": false
+    },
+    {
+      "id": "kittitas_pud",
+      "name": "Kittitas County PUD",
+      "type": "pud",
+      "counties": [
+        "Kittitas"
+      ],
+      "primary_city": "Cle Elum",
+      "county_wide": false
+    },
+    {
+      "id": "franklin_pud",
+      "name": "Franklin PUD",
+      "type": "pud",
+      "counties": [
+        "Franklin"
+      ],
+      "primary_city": "Pasco",
+      "county_wide": false
+    },
+    {
+      "id": "grant_pud",
+      "name": "Grant County PUD",
+      "type": "pud",
+      "counties": [
+        "Grant"
+      ],
+      "primary_city": "Ephrata",
+      "county_wide": false
+    },
+    {
+      "id": "benton_pud",
+      "name": "Benton PUD",
+      "type": "pud",
+      "counties": [
+        "Benton"
+      ],
+      "primary_city": "Prosser",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_ellensburg",
+      "name": "Ellensburg Light & Power",
+      "type": "municipal",
+      "counties": [
+        "Kittitas"
+      ],
+      "primary_city": "Ellensburg",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_cashmere",
+      "name": "Cashmere Light",
+      "type": "municipal",
+      "counties": [
+        "Chelan"
+      ],
+      "primary_city": "Cashmere",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_coulee_dam",
+      "name": "Coulee Dam Light",
+      "type": "municipal",
+      "counties": [
+        "Grant"
+      ],
+      "primary_city": "Coulee Dam",
+      "county_wide": false
+    },
+    {
+      "id": "ferry_pud",
+      "name": "Ferry County PUD",
+      "type": "pud",
+      "counties": [
+        "Ferry"
+      ],
+      "primary_city": "Republic",
+      "county_wide": false
+    },
+    {
+      "id": "pend_oreille_pud",
+      "name": "Pend Oreille PUD",
+      "type": "pud",
+      "counties": [
+        "Pend Oreille"
+      ],
+      "primary_city": "Metaline Falls",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_cheney",
+      "name": "City of Cheney",
+      "type": "municipal",
+      "counties": [
+        "Spokane"
+      ],
+      "primary_city": "Cheney",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_chewelah",
+      "name": "City of Chewelah",
+      "type": "municipal",
+      "counties": [
+        "Stevens"
+      ],
+      "primary_city": "Chewelah",
+      "county_wide": false
+    },
+    {
+      "id": "avista",
+      "name": "Avista Utilities",
+      "type": "iou",
+      "counties": [
+        "Spokane",
+        "Adams",
+        "Whitman",
+        "Grant",
+        "Franklin",
+        "Lincoln",
+        "Pend Oreille",
+        "Stevens",
+        "Ferry",
+        "Douglas",
+        "Chelan"
+      ],
+      "primary_city": "Spokane",
+      "county_wide": false
+    },
+    {
+      "id": "clallam_pud",
+      "name": "Clallam County PUD",
+      "type": "pud",
+      "counties": [
+        "Clallam"
+      ],
+      "primary_city": "Port Angeles",
+      "county_wide": false
+    },
+    {
+      "id": "port_angeles_city_light",
+      "name": "Port Angeles City Light",
+      "type": "municipal",
+      "counties": [
+        "Clallam"
+      ],
+      "primary_city": "Port Angeles",
+      "county_wide": false
+    },
+    {
+      "id": "jefferson_pud",
+      "name": "Jefferson County PUD",
+      "type": "pud",
+      "counties": [
+        "Jefferson"
+      ],
+      "primary_city": "Port Townsend",
+      "county_wide": false
+    },
+    {
+      "id": "mason_pud_1",
+      "name": "Mason County PUD No. 1",
+      "type": "pud",
+      "counties": [
+        "Mason"
+      ],
+      "primary_city": "Hama Hama",
+      "county_wide": false
+    },
+    {
+      "id": "mason_pud_3",
+      "name": "Mason County PUD No. 3",
+      "type": "pud",
+      "counties": [
+        "Mason"
+      ],
+      "primary_city": "Belfair",
+      "county_wide": false
+    },
+    {
+      "id": "pacific_pud",
+      "name": "Pacific County PUD No. 2",
+      "type": "pud",
+      "counties": [
+        "Pacific"
+      ],
+      "primary_city": "South Bend",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_mccleary",
+      "name": "City of McCleary",
+      "type": "municipal",
+      "counties": [
+        "Grays Harbor"
+      ],
+      "primary_city": "McCleary",
+      "county_wide": false
+    },
+    {
+      "id": "klickitat_pud",
+      "name": "Klickitat County PUD",
+      "type": "pud",
+      "counties": [
+        "Klickitat"
+      ],
+      "primary_city": "Goldendale",
+      "county_wide": false
+    },
+    {
+      "id": "skamania_pud",
+      "name": "Skamania County PUD",
+      "type": "pud",
+      "counties": [
+        "Skamania"
+      ],
+      "primary_city": "Stevenson",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_richland",
+      "name": "Richland Energy Services",
+      "type": "municipal",
+      "counties": [
+        "Benton"
+      ],
+      "primary_city": "Richland",
+      "county_wide": false
+    },
+    {
+      "id": "centralia_city_light",
+      "name": "Centralia City Light",
+      "type": "municipal",
+      "counties": [
+        "Lewis"
+      ],
+      "primary_city": "Centralia",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_blaine",
+      "name": "Blaine City Light",
+      "type": "municipal",
+      "counties": [
+        "Whatcom"
+      ],
+      "primary_city": "Blaine",
+      "county_wide": false
+    },
+    {
+      "id": "city_of_sumas",
+      "name": "Sumas Electric",
+      "type": "municipal",
+      "counties": [
+        "Whatcom"
+      ],
+      "primary_city": "Sumas",
+      "county_wide": false
+    },
+    {
+      "id": "pacific_power",
+      "name": "Pacific Power (PacifiCorp)",
+      "type": "iou",
+      "counties": [
+        "Yakima",
+        "Benton",
+        "Walla Walla",
+        "Garfield",
+        "Columbia",
+        "Kittitas"
+      ],
+      "primary_city": "Yakima",
+      "county_wide": false
+    }
+  ],
+  "county_default": {
+    "King": "pse",
+    "Pierce": "pse",
+    "Snohomish": "pse",
+    "Kitsap": "pse",
+    "Thurston": "pse",
+    "Island": "pse",
+    "San Juan": "pse",
+    "Skagit": "pse",
+    "Whatcom": "pse",
+    "Jefferson": "pse",
+    "Cowlitz": "cowlitz_pud",
+    "Clark": "pse",
+    "Grays Harbor": "pse",
+    "Pacific": "pse",
+    "Wahkiakum": "pse",
+    "Kittitas": "pse",
+    "Lewis": "pse",
+    "Skamania": "pse",
+    "Chelan": "pse",
+    "Douglas": "pse",
+    "Kittitas ": "pse",
+    "Grant": "pse",
+    "Franklin": "pse",
+    "Benton": "pacific_power",
+    "Yakima": "pacific_power",
+    "Walla Walla": "pacific_power",
+    "Garfield": "pacific_power",
+    "Columbia": "pacific_power",
+    "Asotin": "pacific_power",
+    "Klickitat": "pse",
+    "Spokane": "avista",
+    "Adams": "avista",
+    "Whitman": "avista",
+    "Lincoln": "avista",
+    "Pend Oreille": "avista",
+    "Stevens": "avista",
+    "Ferry": "avista",
+    "Okanogan": "pse",
+    "Clallam": "pse",
+    "Mason": "pse",
+    "Jefferson ": "pse"
+  },
+  "excluded_not_electric": {
+    "asotin_pud": "water and sewer only; de minimis electric system, no tariff published",
+    "skagit_pud": "water utility; Mount Vernon/Skagit Valley residential electric is PSE",
+    "whatcom_pud": "electric system serves industrial/irrigation customers only, not residential",
+    "kitsap_pud": "no electric service; the district is still studying whether to offer it",
+    "stevens_pud": "water and sewer only",
+    "thurston_pud": "water utility; Olympia-area electric is PSE"
+  }
+}

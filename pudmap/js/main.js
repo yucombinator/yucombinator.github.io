@@ -1,0 +1,120 @@
+// Entry point: load data, wire the map and the panels.
+
+import { initMap, restyle, setSelection, getSelected, setBasemap, getMap } from "./map.js";
+import { setRates, setBenchmark, benchmarkId, utilityById, headlineCents, hasRate } from "./rates.js";
+import { initControls, initCounty, renderDetail, showError, clearError, updateBenchmarkCopy } from "./ui.js";
+
+const state = { period: "flat", usage: 1000, hour: 19, county: "King" };
+
+async function loadJson(path) {
+  const res = await fetch(path, { cache: "no-cache" });
+  if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`${path} is not valid JSON — ${err.message}`);
+  }
+}
+
+async function main() {
+  // destructure in the same order as the fetches below — mismatched order here
+  // silently hands rates.json to initMap, which Leaflet rejects as bad GeoJSON
+  const [rates, boundaries, roster] = await Promise.all([
+    loadJson("data/rates.json").catch((e) => {
+      showError(`Could not load rates: ${e.message}. The map below shows territories without prices.`);
+      return { utilities: [], benchmark: "pse" };
+    }),
+    loadJson("data/boundaries.geojson"),
+    loadJson("data/utilities.json").catch(() => ({ utilities: [], county_default: {} })),
+  ]);
+  setRates(rates);
+  clearError();
+
+  setBasemap("light");   // choropleth has to read over the basemap
+  initMap(boundaries, {
+    onSelect: (props) => renderDetail(props, state),
+  }, state);
+
+  // dev hook: inspect the live map from the console
+  window.__pud = { map: getMap(), boundaries, rates };
+
+  // One row per county. The benchmark is the largest PUBLIC-POWER utility with
+  // territory in that county, because that is the utility a resident
+  // recognises as "mine". The roster's county_default is only a fallback: 27 of
+  // 41 counties default to Puget Sound Energy, so benchmarking on that made the
+  // selector a no-op for two thirds of the state.
+  const areas = {};
+  for (const f of boundaries.features) {
+    const c = f.properties.county;
+    const a = ringArea(f);
+    areas[c] = areas[c] || {};
+    areas[c][f.properties.id] = Math.max(areas[c][f.properties.id] || 0, a);
+  }
+
+  const counties = Object.keys(areas).map((county) => {
+    const byUtil = areas[county];
+    const fallback = roster.county_default?.[county];
+    const publicIds = new Set(roster.utilities.map((u) => u.id));
+    // only utilities we actually have a price for, otherwise the map goes gray
+    const priced = (uid) => hasRate(uid);
+    const publicHere = Object.entries(byUtil)
+      .filter(([uid]) => publicIds.has(uid) && priced(uid))
+      .sort((a, b) => b[1] - a[1]);
+    const pricedAnywhere = Object.entries(byUtil)
+      .filter(([uid]) => priced(uid))
+      .sort((a, b) => b[1] - a[1]);
+    const chosen = publicHere.length
+      ? publicHere[0][0]
+      : (pricedAnywhere.length ? pricedAnywhere[0][0] : (fallback || Object.entries(byUtil)[0][0]));
+    const u = utilityById(chosen);
+    return {
+      county,
+      id: chosen,
+      utilityName: u ? shortLabel(u.name, chosen) : chosen,
+      isPublic: publicHere.length > 0,
+      hasPrice: priced(chosen),
+    };
+  }).sort((a, b) => a.county.localeCompare(b.county));
+
+  initCounty(counties, state, (row) => {
+    setBenchmark(row.id);
+    updateBenchmarkCopy();
+    restyle();
+    const sel = getSelected();
+    if (sel) renderDetail(sel, state);
+  });
+
+  initControls(state, () => {
+    restyle();
+    const sel = getSelected();
+    if (sel) renderDetail(sel, state);
+  }, setBasemap);
+
+  const missing = boundaries.features
+    .map((f) => f.properties.id)
+    .filter((id) => !utilityById(id)?.residential || headlineCents(utilityById(id)) == null);
+  const missingCount = new Set(missing).size;
+  if (missingCount) {
+    console.warn(`${missingCount} utilities have no collected rate yet:`, [...new Set(missing)].join(", "));
+  }
+}
+
+function ringArea(f) {
+  const ring = f.geometry && f.geometry.coordinates && f.geometry.coordinates[0];
+  if (!ring) return 0;
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    a += (ring[j][0] * ring[i][1]) - (ring[i][0] * ring[j][1]);
+  }
+  return Math.abs(a / 2);
+}
+
+function shortLabel(name, id) {
+  return name
+    .replace(/ County PUD( No\. \d+)?/, " PUD")
+    .replace(/ Public Utilities| Energy Services| Light( & Power| Department)?/g, "")
+    .replace(/^City of /, "") || id;
+}
+
+main().catch((err) => showError(err.message));
