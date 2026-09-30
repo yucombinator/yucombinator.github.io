@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Data visualizations by Yu Chen Hou - Washington electric rates and the US immigration queue">
+    <meta name="author" content="Yu Chen Hou">
+    <title>Visualizations - Yu Chen Hou</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        .card {
+            text-align: center;
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+        }
+
+        .name {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .projects {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .project {
+            display: flex;
+            align-items: flex-start;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            text-decoration: none;
+            color: #fff;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .project:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .project i {
+            margin-right: 14px;
+            margin-top: 2px;
+            font-size: 1.25rem;
+            line-height: 1.4;
+        }
+
+        .project h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .project p {
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.45;
+        }
+
+        .pudmap:hover {
+            border-color: #2f7d4f;
+        }
+
+        .immiflow:hover {
+            border-color: #1f78b4;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 32px;
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .back:hover {
+            color: rgba(255, 255, 255, 0.85);
+            border-bottom-color: rgba(255, 255, 255, 0.35);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 40px 24px;
+            }
+
+            .name {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="name">Visualizations</h1>
+
+        <p class="subtitle">Things I have made to make a pile of data legible.</p>
+
+        <div class="projects">
+            <a href="/pudmap/" class="project pudmap" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <div>
+                    <h2>WA Power Rates</h2>
+                    <p>An interactive map of Washington electric utility service territories,
+                    shaded by what a residential customer pays.</p>
+                </div>
+            </a>
+
+            <a href="/immiflow/" class="project immiflow" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-diagram-3-fill"></i>
+                <div>
+                    <h2>Immigration Queues</h2>
+                    <p>A flowchart of the ways out for someone living in the US without legal
+                    status, showing each required form and how long it takes.</p>
+                </div>
+            </a>
+        </div>
+
+        <a href="/" class="back">&#8592; Back</a>
+    </div>
+</body>
+</html>

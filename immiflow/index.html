@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The US immigration system, as a queue</title>
+<meta name="description" content="An interactive flowchart of the US immigration system: every form, which agency processes it, and roughly how long you wait.">
+<link rel="stylesheet" href="css/immiflow.css">
+</head>
+<body>
+
+<div id="graph-wrap">
+  <noscript><p style="padding:20px">This flowchart needs JavaScript. The short version: it is a queue,
+and most of it is longer than people think.</p></noscript>
+  <svg id="graph" role="img" aria-label="Flowchart of the US immigration system"></svg>
+</div>
+<div id="err" role="alert"></div>
+
+<header id="head" class="panel">
+  <h1>The US immigration system, as a queue</h1>
+  <p class="sub">One person, no legal status, every path out. Each step names the form, the agency
+  that processes it, and roughly how long the wait is.</p>
+</header>
+
+<div id="right-col">
+<section id="honesty" class="panel">
+  <h2>About these numbers</h2>
+  <p>USCIS publishes the time within which it completed <b>80% of cases</b> for each form. That is not a
+  median and not a promise. <b>About 4 months</b> means 80% finished inside 4 months.</p>
+  <p>Figures are rounded and compiled September 2026 from public USCIS and Department of Labor
+  processing times. They do not update themselves.</p>
+</section>
+
+<section id="filters" class="panel">
+  <h2>Show one path</h2>
+  <div class="seg" id="track" role="group" aria-label="Filter by path"></div>
+</section>
+
+<section id="detail" class="panel" aria-live="polite"></section>
+</div>
+
+<section id="legend" class="panel">
+  <h2>Paths</h2>
+  <div class="row" id="legend-rows"></div>
+</section>
+
+<footer>Figures compiled September 2026 from public USCIS and Department of Labor processing times,
+rounded, and not live. The visa-bulletin wait and the USCIS processing wait are two different queues
+and are never added together. TPS and DACA are temporary and are not routes to a green card.
+This page is an explainer, not legal advice.</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
