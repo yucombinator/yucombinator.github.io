@@ -77,30 +77,31 @@ async function main() {
     };
   }).sort((a, b) => a.county.localeCompare(b.county));
 
-  initCounty(counties, state, (row) => {
-    setBenchmark(row.id);
-    updateBenchmarkCopy();
-    restyle();
-    const sel = getSelected();
-    if (sel) renderDetail(sel, state);
-  });
-
-  // county name per utility, for the list view's second line
   const countiesById = {};
   for (const f of boundaries.features) {
     const id = f.properties.id;
     if (!countiesById[id]) countiesById[id] = `${f.properties.county} County`;
   }
 
+  const openFromList = (id) => {
+    focusUtility(id);
+    setView("map");
+  };
+
+  // every control funnels through here: map, list and detail card are always
+  // rendered from the same state, so they cannot disagree
   const repaint = () => {
     restyle();
     const sel = getSelected();
     if (sel) renderDetail(sel, state);
-    renderList(state, countiesById, (id) => {
-      focusUtility(id);          // list row -> jump the map to that territory
-      setView("map");
-    });
+    renderList(state, countiesById, openFromList);
   };
+
+  initCounty(counties, state, (row) => {
+    setBenchmark(row.id);
+    updateBenchmarkCopy();
+    repaint();
+  });
 
   initControls(state, repaint, setBasemap);
 
@@ -111,7 +112,7 @@ async function main() {
     for (const b of view.querySelectorAll("button")) b.setAttribute("aria-pressed", "false");
     btn.setAttribute("aria-pressed", "true");
     const isList = setView(btn.dataset.view);
-    if (isList) renderList(state, countiesById, (id) => { focusUtility(id); setView("map"); });
+    if (isList) renderList(state, countiesById, openFromList);
   });
 
   const missing = boundaries.features

@@ -2,8 +2,16 @@
 
 import {
   utilityById, headlineCents, centsAtHour, periodsFor, monthlyBill,
-  benchmarkCents, benchmarkId, RATES, periodAt,
+  benchmarkCents, benchmarkId, RATES, periodAt, colorForRate,
 } from "./rates.js";
+
+/** Blend a map colour toward white so text on top of it stays readable. */
+function tint(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c) => Math.round(c + (255 - c) * amount);
+  const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255);
+  return `rgb(${r},${g},${b})`;
+}
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -80,7 +88,10 @@ export function renderList(state, countiesById, onPick) {
     const pct = (delta != null && benchTotal > 0) ? Math.round(Math.abs(delta) / benchTotal * 100) : null;
     const word = same ? "same" : `${pct}% ${cheaper ? "cheaper" : "more expensive"}`;
     const sign = cheaper ? "\u2212" : "+";
-    return `<tr data-id="${u.id}" tabindex="0">
+    const { fill } = colorForRate(cents, benchmarkCents(state.hour, state.period));
+    const rowTint = cents == null ? "transparent" : tint(fill, 0.82);
+    return `<tr data-id="${u.id}" tabindex="0" style="background:${rowTint}">
+      <td class="c-swatch"><i style="background:${fill}"></i></td>
       <td class="c-name">
         <a href="${u.site || "#"}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(u.name)}</a>
         <span class="c-county">${esc(county || TYPE_LABEL[u.type] || u.type)}</span>
@@ -91,11 +102,21 @@ export function renderList(state, countiesById, onPick) {
     </tr>`;
   }).join("");
 
+  const benchCents = bench ? benchmarkCents(state.hour, state.period) : null;
+  const lo = benchCents ? (benchCents * 0.45).toFixed(1) : "\u2014";
+  const hi = benchCents ? (benchCents * 1.5).toFixed(1) : "\u2014";
+
   panel.innerHTML = `
     <header>
       <h2>Every utility, priced at ${state.usage.toLocaleString()} kWh${flat ? "" : " at " + fmtHourLabel(state.hour)}</h2>
       <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your county utility")}</b>.
       Click a row to open it on the map.</p>
+      <div class="list-legend">
+        <div class="legend-bar"></div>
+        <div class="legend-scale"><span>${lo}\u00A2</span><span class="legend-mid">${benchCents ? benchCents.toFixed(2) + "\u00A2" : ""}</span><span>${hi}\u00A2</span></div>
+        <div class="legend-ends"><span>cheaper than yours</span><span>more expensive</span></div>
+        <div class="legend-none"><i class="swatch" style="background:#d9ddd3"></i><span>no rate collected</span></div>
+      </div>
     </header>
     <table>
       <thead><tr><th>Utility</th><th>per kWh</th><th>${state.usage.toLocaleString()} kWh</th><th>vs yours</th></tr></thead>
@@ -121,6 +142,8 @@ export function setView(which) {
   map.style.display = isList ? "none" : "";
   $("#legend").hidden = isList;
   $("#detail").classList.toggle("forced-hide", isList);
+  // the list carries its own title, so the site header card only gets in the way
+  $("#head").style.display = isList ? "none" : "";
   if (!isList) requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   return isList;
 }

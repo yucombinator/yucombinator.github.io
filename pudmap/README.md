@@ -46,8 +46,10 @@ yesterday's ES modules after an edit.
   link to the source tariff.
 - **List view** — the same numbers as a table: every utility sorted cheapest
   first, with its per-kWh rate, the bill at your chosen usage, and the gap
-  against your county's utility. Click a row to jump the map to that
-  territory. The two views always agree because they read the same state.
+  against your county's utility. Rows are tinted and swatched with the same
+  green-to-red scale as the map, with the legend repeated above the table.
+  Click a row to jump the map to that territory. The two views always agree
+  because they read the same state through a single repaint path.
 - **Colour legend** — a single green-to-red bar showing the actual cents per
   kWh, with your selected utility's rate marked in the middle, so the shading
   is readable as numbers rather than vibes.
