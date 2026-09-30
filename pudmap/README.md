@@ -17,19 +17,17 @@ yesterday's ES modules after an edit.
 
 ## What it shows
 
-- **Benchmark selector** at the top, two ways. Pick your county and the map
-  re-prices against that county's own public utility, so "Douglas County" means
-  Douglas PUD at 2.35¢, not the Puget Sound Energy that covers most of the
-  state. Or pick any of the 40 utilities directly — a county often holds more
-  than one, and King County has both Puget Sound Energy and Seattle City Light.
-  Counties whose main utility has no published rate are labelled `(no rate)`.
-  Both dropdowns stay in sync, so the map, the list and the legend can never
-  disagree about who "yours" is.
+- **"Select your utility"** at the top — the single control that re-benchmarks
+  everything. Pick any of the priced utilities and the map, the list and the
+  legend all measure against it. A county often holds more than one operator:
+  King County has both Puget Sound Energy and Seattle City Light, so the picker
+  lists utilities rather than counties.
 - **Choropleth** of every electric utility territory in Washington, colored
   relative to your chosen benchmark at the selected hour. Green is cheaper,
   red is more expensive, gray is a rate we have not collected yet. Hue says
   who owns the wire — orange is investor-owned, green is public power.
-- **Monthly usage** selector (300–3,000 kWh) and a **time-of-day** slider.
+- **Monthly usage** selector (300–3,000 kWh). The **time-of-day** slider only
+  appears in "This hour" view, where it actually means something.
   Only 4 of the 40 utilities publish a time-of-day schedule (Puget Sound
   Energy, City Light, Avista, Pacific Power) and all four sell it as an opt-in
   product, so the other 36 charge one price at every hour and the slider cannot
@@ -82,7 +80,7 @@ than the published rate.
 
 Both are surfaced in the UI, not buried here.
 
-**Territories are the real thing.** The map is drawn from the *Electric Utility
+**Where the boundaries come from.** The map is drawn from the *Electric Utility
 Service Areas* layer published by the Washington Utilities and Transportation
 Commission and the Department of Ecology — 65 polygons covering every electric
 distribution operator in the state, including co-ops, mutuals and the naval

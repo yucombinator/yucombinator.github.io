@@ -25,7 +25,6 @@ export function clearError() {
   $("#err").classList.remove("show");
 }
 
-/** County selector: choosing a county re-benchmarks the whole map. */
 const TYPE_ORDER = ["pud", "municipal", "iou"];
 
 /** Every utility, grouped by who owns it, so Seattle City Light is reachable
@@ -40,13 +39,23 @@ export function initUtility(onPick) {
     .map((t) => `<optgroup label="${TYPE_LABEL[t]}">${groups[t]
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((u) => `<option value="${u.id}">${escapeOption(u.name)}</option>`)
+      .map((u) => `<option value="${u.id}">${escapeOption(optionLabel(u))}</option>`)
       .join("")}</optgroup>`)
     .join("");
 
   sel.addEventListener("change", () => {
     if (sel.value) onPick(sel.value);
   });
+}
+
+/** Trim the registry suffixes so the control stays one tidy line. */
+function optionLabel(u) {
+  return u.name
+    .replace(/ \([^)]*\)/g, "")
+    .replace(/ ?(Public )?(Utility District|PUD)( No\. \d+)?/i, " PUD")
+    .replace(/ (Light & Power|Light Department|Electric (Department|Division|Utility))$/, "")
+    .replace(/,? City of /, "")
+    .replace(/, Town of$/, "");
 }
 
 function escapeOption(name) {
@@ -56,26 +65,6 @@ function escapeOption(name) {
 export function syncUtility(id) {
   const sel = $("#utility");
   if (sel) sel.value = id || "";
-}
-
-export function initCounty(counties, current, onPick) {
-  const sel = $("#county");
-  sel.innerHTML = counties
-    .map((c) => `<option value="${c.county}">${c.county} County — ${c.utilityName}`
-      + `${c.isPublic ? "" : " (no public power)"}${c.hasPrice ? "" : " (no rate)"}</option>`)
-    .join("");
-  sel.value = current.county;
-  sel.addEventListener("change", () => {
-    const row = counties.find((c) => c.county === sel.value);
-    current.county = row.county;
-    if (!row.hasPrice) {
-      showError(`${row.county} County's main utility has no published residential rate in our data, so prices cannot be compared against it. Pick another county or ignore the colours.`);
-    } else {
-      clearError();
-    }
-    onPick(row);
-  });
-  updateBenchmarkCopy();
 }
 
 export function updateBenchmarkCopy() {
@@ -146,7 +135,7 @@ export function renderList(state, countiesById, onPick) {
   panel.innerHTML = `
     <header>
       <h2>Every utility, priced at ${state.usage.toLocaleString()} kWh${flat ? "" : " at " + fmtHourLabel(state.hour)}</h2>
-      <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your county utility")}</b>.
+      <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your utility")}</b>.
       Click a row to expand its rate breakdown.</p>
       <div class="list-legend">
         <div class="legend-bar"></div>
@@ -249,10 +238,12 @@ export function initControls(state, onChange, onBasemap) {
   buildRamp();
 }
 
-/** Say plainly how much of the state can move with the hour slider. */
+/** The hour slider and its caveat only belong in "This hour" view. */
 function setTodNote(period) {
-  const el = $("#tod-note");
-  if (el) el.hidden = period !== "tod";
+  const note = $("#tod-note");
+  if (note) note.hidden = period !== "tod";
+  const field = $("#hour-field");
+  if (field) field.hidden = period !== "tod";
 }
 
 function buildRamp() {

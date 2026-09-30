@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WA electric rate map — where power costs less than your county's</title>
-<meta name="description" content="Washington electric utility service territories shaded by how their residential rate compares with the utility in your own county.">
+<meta name="description" content="Washington electric utility service territories shaded by how their residential rate compares with the utility you choose as your benchmark.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="css/pud.css">
 </head>
@@ -16,7 +16,7 @@
 <header id="head" class="panel">
   <h1>Washington rate map</h1>
   <p class="sub">Residential electricity rates by service territory, shaded by how each one
-  compares with your county's utility. Every label carries the actual cents. Tap a
+  compares with the utility you select. Every label carries the actual cents. Tap a
   territory for detail.</p>
 </header>
 
@@ -31,20 +31,14 @@
     </div>
   </div>
 
-  <div class="field">
-    <label for="county">Your county</label>
-    <select id="county" aria-describedby="county-note"></select>
-    <p class="field-note" id="county-note">The map re-prices every territory
-    against your county's main utility.</p>
-  </div>
 
   <div class="field">
-    <label for="utility">or any utility</label>
+    <label for="utility">Select your utility</label>
     <select id="utility" aria-describedby="utility-note">
       <option value="">Choose a utility&hellip;</option>
     </select>
-    <p class="field-note" id="utility-note">A county can hold more than one:
-    King County has both Puget Sound Energy and Seattle City Light.</p>
+    <p class="field-note" id="utility-note">Everything re-prices against the one
+    you pick.</p>
   </div>
 
   <h2 class="second">Assumptions</h2>
@@ -60,7 +54,7 @@
     </div>
   </div>
 
-  <div class="field">
+  <div class="field" id="hour-field" hidden>
     <label id="hour-label">Time of day</label>
     <input type="range" id="hour" min="0" max="23" step="1" value="19" aria-labelledby="hour-label">
     <div class="hourrow"><span>kWh price at this hour</span><b id="hour-read">7:00 pm</b></div>
@@ -103,7 +97,7 @@
     <i class="swatch" style="background:#d9ddd3"></i>
     <span>no rate collected</span>
   </div>
-  <p class="legend-note" id="legend-basis">Every territory is shaded by how its price compares with your county's utility.</p>
+  <p class="legend-note" id="legend-basis">Every territory is shaded by how its price compares with the utility you selected.</p>
   <p class="legend-note"><b>All-hours</b> colors the standard residential rate.
   <b>This hour</b> uses time-of-day schedules where published — for Puget Sound Energy,
   City Light, Avista and Pacific Power those are opt-in products, not what most
@@ -111,12 +105,12 @@
 </details>
 
 <footer>
-  Boundaries are the official <b>Electric Utility Service Areas</b> published by the
-  Washington UTC and Department of Ecology — real service territories, not a model.
-  Rates are curated from each utility's own published tariff and do not update on
-  their own; see the README for sources and effective dates. Co-ops, mutuals and
-  naval bases render gray because we have no residential rate for them. PUD and
-  municipal rates are set by locally elected boards, not the WUTC.
+  Boundaries are the <b>Electric Utility Service Areas</b> published by the
+  Washington UTC and Department of Ecology. Rates are curated from each utility's
+  own published tariff and do not update on their own; see the README for sources
+  and effective dates. Co-ops, mutuals and naval bases render gray because we have
+  no residential rate for them. PUD and municipal rates are set by locally elected
+  boards, not the WUTC.
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

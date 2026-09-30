@@ -541,3 +541,22 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
   border: 1px solid var(--line);
   border-radius: 5px;
 }
+
+/* the picker must never stretch the panel: long utility names are the widest
+   thing in it, so the control clips rather than widening the column */
+#controls { width: 272px; }
+
+select#utility {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+                    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 14px, calc(100% - 9px) 14px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
