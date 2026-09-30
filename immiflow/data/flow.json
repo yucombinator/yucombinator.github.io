@@ -23,7 +23,7 @@
         "bulletin": null, "backlogs": null, "note": "You get at most 12 months, and 90 days of unemployment." } ] },
     { "id": "stem-opt", "track": "student", "label": "24-month STEM OPT extension",
       "form": "I-765", "agency": "USCIS",
-      "gate": "Requires a degree in a STEM field on the eligible list.",
+      "gate": "Three things, not one: a bachelor's or higher in a STEM field on the eligible list, you are already inside a period of post-completion OPT, and an employer enrolled in E-Verify. That last one is why your school's partner list is short.",
       "chip": null,
       "waits": [ { "category": "STEM OPT extension", "regular": "about 4 months", "premium": null,
         "bulletin": null, "backlogs": null, "note": "Adds 24 months. The longest runway a student gets." } ] },
@@ -76,7 +76,8 @@
         { "category": "EB-5", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": "Longer for Chinese and Indian investors, since 2014 and 2019 respectively", "note": null }
       ] },
     { "id": "i485-eb", "track": "employment", "label": "Adjustment of status to permanent residence",
-      "form": "I-485", "agency": "USCIS", "chip": null,
+      "form": "I-485", "agency": "USCIS", "chip": "may be barred outright",
+      "gate": "Adjusting status means staying in the US for it. If you have ever worked in the US without authorization, this door is shut: the bar survives you leaving and coming back, and counts every previous period you have been here. There is one narrow exemption for employment-based applicants, and only where the violation was 180 days or less.",
       "waits": [ { "category": "I-485, employment-based", "regular": "about 6 months", "premium": null,
         "bulletin": null, "backlogs": null, "note": "You can only file once your priority date is current. This wait is separate from the queue above and does not include it." } ] },
 
@@ -92,7 +93,7 @@
       ] },
     { "id": "immediate-relative", "track": "family", "label": "Immediate relative — no queue",
       "form": null, "agency": null, "chip": "skips the queue entirely",
-      "gate": "Spouse, parent, or unmarried child under 21 of a US citizen. This is the only kind of applicant who never waits in the visa bulletin. Everyone on every other path is behind someone.",
+      "gate": "Spouse, parent, or unmarried child under 21 of a US citizen. This is the only kind of applicant who never waits in the visa bulletin. Everyone on every other path is behind someone. It is also the one path that is exempt from the unauthorized-work bar, so an undocumented work history does not close this door.",
       "waits": [ { "category": "Immediate relatives", "regular": "about 8 months inside the US", "premium": null,
         "bulletin": "no wait — exempt from the bulletin", "backlogs": null,
         "note": "The bulletin wait and the processing wait are shown separately on purpose; only one of them applies here." } ] },
@@ -110,7 +111,8 @@
         { "category": "F4 — siblings of citizens", "regular": null, "premium": null, "bulletin": "roughly 18 years, and far longer for some countries", "backlogs": "Indian siblings date from 2006, Mexican from 2001, Philippine from 2008", "note": "The longest ordinary wait in the system." }
       ] },
     { "id": "i485-fam", "track": "family", "label": "Adjustment of status to permanent residence",
-      "form": "I-485", "agency": "USCIS", "chip": null,
+      "form": "I-485", "agency": "USCIS", "chip": "may be barred outright",
+      "gate": "Same bar as the employment route, with no exemption at all here. If you have worked in the US without authorization, a family preference category no longer lets you adjust in country — you leave and consular process instead, which is a different and much longer queue.",
       "waits": [ { "category": "I-485, family-based", "regular": "about 6 months", "premium": null,
         "bulletin": null, "backlogs": null,
         "note": "Filed only once the bulletin date is current. This wait does not include the queue." } ] },
