@@ -59,6 +59,9 @@ export function updateBenchmarkCopy() {
  * List view: every utility as a sortable row, priced exactly the way the map
  * is — same benchmark, same usage, same hour — so the two views never disagree.
  */
+/** Which list row is expanded, if any. */
+let expandedId = null;
+
 export function renderList(state, countiesById, onPick) {
   const panel = $("#list");
   if (panel.hidden) return;
@@ -82,6 +85,7 @@ export function renderList(state, countiesById, onPick) {
 
   const benchTotal = bench ? monthlyBill(bench, state.usage) : null;
   const body = rows.map(({ u, cents, bill, delta, county }) => {
+    const open = u.id === expandedId;
     const cheaper = delta != null && delta < 0;
     const same = delta != null && Math.abs(delta) < 0.5;
     const cls = same ? "even" : cheaper ? "good" : "bad";
@@ -99,7 +103,8 @@ export function renderList(state, countiesById, onPick) {
       <td class="c-num">${cents == null ? "&mdash;" : cents.toFixed(2) + "\u00A2"}</td>
       <td class="c-num">${bill == null ? "&mdash;" : "$" + bill.toFixed(2)}</td>
       <td class="c-delta ${cls}">${delta == null ? "&mdash;" : `${word} ${sign}$${Math.abs(delta).toFixed(2)}`}</td>
-    </tr>`;
+    </tr>
+    ${open ? `<tr class="c-expand"><td colspan="5">${detailHtml({ id: u.id, type: u.type, county }, state)}</td></tr>` : ""}`;
   }).join("");
 
   const benchCents = bench ? benchmarkCents(state.hour, state.period) : null;
@@ -110,7 +115,7 @@ export function renderList(state, countiesById, onPick) {
     <header>
       <h2>Every utility, priced at ${state.usage.toLocaleString()} kWh${flat ? "" : " at " + fmtHourLabel(state.hour)}</h2>
       <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your county utility")}</b>.
-      Click a row to open it on the map.</p>
+      Click a row to expand its rate breakdown.</p>
       <div class="list-legend">
         <div class="legend-bar"></div>
         <div class="legend-scale"><span>${lo}\u00A2</span><span class="legend-mid">${benchCents ? benchCents.toFixed(2) + "\u00A2" : ""}</span><span>${hi}\u00A2</span></div>
@@ -123,10 +128,15 @@ export function renderList(state, countiesById, onPick) {
       <tbody>${body}</tbody>
     </table>`;
 
-  for (const tr of panel.querySelectorAll("tbody tr")) {
-    const go = () => onPick(tr.dataset.id);
-    tr.addEventListener("click", go);
-    tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  for (const tr of panel.querySelectorAll("tbody tr[data-id]")) {
+    const toggle = () => {
+      expandedId = expandedId === tr.dataset.id ? null : tr.dataset.id;
+      renderList(state, countiesById, onPick);
+    };
+    tr.addEventListener("click", toggle);
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
   }
 }
 
@@ -229,16 +239,13 @@ const TYPE_LABEL = {
   iou: "Investor-owned utility",
 };
 
-export function renderDetail(props, state) {
-  const panel = $("#detail");
-  if (!props) { panel.classList.remove("open"); return; }
+/** The shared body: the map's detail card and the list's expanded row. */
+export function detailHtml(props, state) {
   const u = utilityById(props.id);
-  panel.classList.add("open");
   if (!u) {
-    panel.innerHTML = `<h3>${esc(props.name)}</h3>
+    return `<h3>${esc(props.name)}</h3>
       <div class="kind">${TYPE_LABEL[props.type] || ""}</div>
       <p class="meta">Rate not yet collected for this utility.</p>`;
-    return;
   }
 
   const r = u.residential || {};
@@ -284,10 +291,10 @@ export function renderDetail(props, state) {
       `<tr><td>First ${t.up_to_kwh.toLocaleString()} kWh</td><td>${t.cents_kwh.toFixed(2)}¢</td></tr>`).join("")}</table>`;
   }
 
-  panel.innerHTML = `
+  return `
     <h3>${esc(u.name)}</h3>
     <div class="kind">${TYPE_LABEL[u.type] || u.type}</div>
-    <p class="meta">${esc(u.service_area || props.county + " County")}</p>
+    <p class="meta">${esc(u.service_area || (props.county || "") + " County")}</p>
     <div class="chips">${chips.join("")}</div>
     <div class="kv">${rows.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join("")}</div>
     ${tod}
@@ -298,6 +305,13 @@ export function renderDetail(props, state) {
       : "not yet published"}</p>
     ${u.notes ? `<details class="notes"><summary>Rate notes</summary><p>${esc(u.notes)}</p></details>` : ""}
   `;
+}
+
+export function renderDetail(props, state) {
+  const panel = $("#detail");
+  if (!props) { panel.classList.remove("open"); return; }
+  panel.classList.add("open");
+  panel.innerHTML = detailHtml(props, state);
 }
 
 function esc(s) {

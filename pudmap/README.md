@@ -48,8 +48,10 @@ yesterday's ES modules after an edit.
   first, with its per-kWh rate, the bill at your chosen usage, and the gap
   against your county's utility. Rows are tinted and swatched with the same
   green-to-red scale as the map, with the legend repeated above the table.
-  Click a row to jump the map to that territory. The two views always agree
-  because they read the same state through a single repaint path.
+  Click a row to expand its full rate breakdown in place — service area, chips,
+  bill, basic charge, surcharges, tiers or time-of-day periods, and links to the
+  utility's site and its published tariff. The two views always agree because
+  they read the same state through a single repaint path.
 - **Colour legend** — a single green-to-red bar showing the actual cents per
   kWh, with your selected utility's rate marked in the middle, so the shading
   is readable as numbers rather than vibes.

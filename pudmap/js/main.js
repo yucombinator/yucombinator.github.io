@@ -1,6 +1,6 @@
 // Entry point: load data, wire the map and the panels.
 
-import { initMap, restyle, setSelection, getSelected, setBasemap, getMap, focusUtility } from "./map.js";
+import { initMap, restyle, setSelection, getSelected, setBasemap, getMap } from "./map.js";
 import { setRates, setBenchmark, benchmarkId, utilityById, headlineCents, hasRate } from "./rates.js";
 import { initControls, initCounty, renderDetail, renderList, setView, showError, clearError, updateBenchmarkCopy } from "./ui.js";
 
@@ -83,18 +83,13 @@ async function main() {
     if (!countiesById[id]) countiesById[id] = `${f.properties.county} County`;
   }
 
-  const openFromList = (id) => {
-    focusUtility(id);
-    setView("map");
-  };
-
   // every control funnels through here: map, list and detail card are always
   // rendered from the same state, so they cannot disagree
   const repaint = () => {
     restyle();
     const sel = getSelected();
     if (sel) renderDetail(sel, state);
-    renderList(state, countiesById, openFromList);
+    renderList(state, countiesById);
   };
 
   initCounty(counties, state, (row) => {
@@ -112,7 +107,7 @@ async function main() {
     for (const b of view.querySelectorAll("button")) b.setAttribute("aria-pressed", "false");
     btn.setAttribute("aria-pressed", "true");
     const isList = setView(btn.dataset.view);
-    if (isList) renderList(state, countiesById, openFromList);
+    if (isList) renderList(state, countiesById);
   });
 
   const missing = boundaries.features

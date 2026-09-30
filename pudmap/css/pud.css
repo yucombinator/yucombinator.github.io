@@ -459,13 +459,13 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
   background: var(--surface);
 }
 
-#list header { max-width: 940px; margin: 0 auto 18px; }
+#list header, #list table { max-width: 940px; }
+#list header { margin: 0 auto 16px; }
 #list h2 { margin: 0 0 4px; font: 600 20px/1.25 var(--serif); }
 #list header p { margin: 0; font-size: 12px; color: var(--ink-soft); }
 #list header b { color: var(--ink); }
 
 #list table {
-  max-width: 940px;
   margin: 0 auto;
   width: 100%;
   border-collapse: collapse;
@@ -489,7 +489,16 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
 
 #list td { padding: 8px 12px; border-top: 1px solid var(--line); font-size: 12.5px; }
 #list tbody tr:first-child td { border-top: 0; }
-#list tbody tr:hover { background: var(--accent-soft); cursor: pointer; }
+#list tbody tr[data-id] { cursor: pointer; }
+#list tbody tr[data-id]:hover { background: var(--accent-soft); }
+#list tbody tr.is-open { background: var(--accent-soft); }
+#list tbody tr.is-open td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+#list .c-expand { background: var(--surface); cursor: default; }
+#list .c-expand:hover { background: var(--surface); }
+#list .c-expand > td { padding: 0 12px 14px 38px; }
+#list .c-expand .kv { max-width: 520px; }
+#list .c-expand .todtable { max-width: 420px; }
 #list tbody tr:focus { outline: 2px solid var(--accent-strong); outline-offset: -2px; }
 
 #list .c-name a { color: var(--ink); text-decoration: none; font-weight: 600; }
@@ -525,7 +534,7 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
 #list tbody tr:focus { outline: 2px solid var(--accent-strong); outline-offset: -2px; }
 
 .list-legend {
-  max-width: 420px;
+  max-width: 940px;          /* match the table so the scale lines up with it */
   margin: 12px 0 0;
   padding: 10px 12px 9px;
   background: var(--surface-raised);
