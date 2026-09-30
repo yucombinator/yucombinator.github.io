@@ -1,14 +1,25 @@
 import { isInTrack } from "./model.js";
+import { edgePath } from "./layout.js";
 
 const HUE = { student: "#1f78b4", employment: "#0c5237", family: "#8a6512", humanitarian: "#9a3412", origin: "#18362d" };
 
-function wrap(text, perLine) {
+function makeMeasurer(S, className) {
+  const temp = S.append("text").attr("class", className);
+  return (s) => { temp.text(s); return temp.node().getComputedTextLength(); };
+}
+
+function wrap(text, maxW, measure) {
   const words = text.split(" ");
   const lines = [];
   let line = "";
   for (const w of words) {
-    if ((line + " " + w).trim().length > perLine && line) { lines.push(line); line = w; }
-    else line = (line + " " + w).trim();
+    const candidate = line ? line + " " + w : w;
+    if (measure(candidate) > maxW && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = candidate;
+    }
   }
   if (line) lines.push(line);
   return lines;
@@ -23,12 +34,14 @@ export function renderGraph(svg, laid, d3, state) {
   S.append("defs").append("marker")
     .attr("id", "arrow").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
     .attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
-    .append("path").attr("d", "M0,-4L9,0L0,4").attr("fill", "#d9ddd3");
+    .append("path").attr("d", "M0,-4L9,0L0,4").attr("class", "arrowhead");
+  const measureLabel = makeMeasurer(S, "measure-label");
+  const measureChip = makeMeasurer(S, "measure-chip");
 
   const gEdges = S.append("g");
   gEdges.selectAll("path").data(laid.edges).join("path")
     .attr("class", d => `edge${d.conditional ? " conditional" : ""}`)
-    .attr("d", d => d.points.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" "))
+    .attr("d", d => edgePath(d.points))
     .attr("marker-end", "url(#arrow)");
 
   const gNodes = S.append("g");
@@ -44,14 +57,14 @@ export function renderGraph(svg, laid, d3, state) {
 
   g.each(function (d) {
     const sel = d3.select(this);
-    const lines = wrap(d.label, Math.floor(d.w / 8));
+    const lines = wrap(d.label, d.w - 28, measureLabel);
     const perLine = Math.max(1, lines.length);
     sel.append("text").attr("class", "label")
       .attr("x", 14).attr("y", 22)
       .selectAll("tspan").data(lines).join("tspan")
       .attr("x", 14).attr("dy", 19).text(t => t);
     if (d.chipText) {
-      const chipLines = wrap(d.chipText, Math.floor((d.w - 28) / 5.6));
+      const chipLines = wrap(d.chipText, d.w - 28, measureChip);
       sel.append("text").attr("class", "chip")
         .attr("x", 14).attr("y", 22 + perLine * 19 + 4)
         .attr("fill", HUE[d.track] ?? HUE.origin)
@@ -68,6 +81,8 @@ export function renderGraph(svg, laid, d3, state) {
       window.dispatchEvent(new CustomEvent("node:select", { detail: d.id }));
     }
   });
+
+  S.selectAll("text.measure-label, text.measure-chip").remove();
 
   updateHighlight(svg, d3, state);
 }
