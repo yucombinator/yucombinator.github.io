@@ -35,9 +35,9 @@ whether they qualify.
 **In:**
 - Four tracks: student, direct employment, family/marriage, humanitarian.
 - Every step that requires a form, petition, or certification, with the form
-  number, the processing agency, and the published wait.
+  number, the processing agency, and an approximate wait.
 - The two distinct waits a green-card applicant faces — the visa-bulletin queue
-  and the USCIS processing time — shown as separate numbers, never summed.
+  and the USCIS processing time — shown as separate figures, never summed.
 - Country-specific backlogs (India, China, Mexico, Philippines) wherever they
   change a category's answer.
 - Premium processing wherever it exists, as its own column.
@@ -51,38 +51,28 @@ whether they qualify.
 - Consular processing times. The data is not reliably available and would double
   the page's size.
 - Fees. Real and important, but a different question from "how long".
-- Live data. There is no live source; see the honesty section.
+- Live data, and source-level citation per figure. See "Approximate by design".
 
-## The data honesty problem
+## Approximate by design
 
-Three constraints shape the design, and all three are surfaced in the UI rather
-than buried in the README.
+**This is an explainer, not a reference.** The page exists to make the shape of
+the system legible. It is not a lookup table, and it does not pretend to the
+precision of one. Two consequences:
 
-**1. There is no single source, and our two sources disagree.** The page is
-built from two Boundless articles, which disagree with each other:
+**Figures are rounded to a period, not to the decimal.** "about 4 months", "over
+a year", "around 3 years" — not "3.7 mo". The underlying sources disagree with
+each other (the two Boundless articles put I-140 at 3.7 and 8.1 months), and
+both are curated snapshots that go stale in a month. A reader does not need the
+fifth decimal; they need to know that one queue is weeks and another is years.
+What the page must never do is imply a precision it does not have.
 
-| Step | `uscis-processing-times` (updated 2026-08-14) | `average-green-card-wait-times` (updated 2025-04-01) |
-|---|---|---|
-| I-140 | 3.7 mo | 8.1 mo |
-| PERM ETA-9089 | 372 days | 483 days |
-| I-485 (employment) | 5.7 mo | *(blank in source)* |
-
-Resolution, applied uniformly: **the newer source wins**, and the losing figure
-is not silently discarded — it is kept in the row as `superseded` so a reader who
-meets the older number elsewhere can see why the page disagrees. Every wait row
-carries `as_of`, and the page's footer names both source articles and their
-update dates.
-
-**2. The number is not what people think it is.** USCIS publishes one figure per
-form per office: the time within which it completed **80% of cases**. It is not
-a median, not an average, and not a promise. The 45.5-month F2A figure means
-"80% finished inside 45.5 months," not "you will wait 45.5 months." The page
-says this once, prominently, in a panel that is visible without interaction —
-not in a tooltip nobody opens.
-
-**3. It is a snapshot.** Processing times are refreshed monthly; we are not
-fetching them at request time. `as_of` is displayed on every figure. A figure
-older than N days is styled as stale.
+**One honesty note, said once, prominently.** USCIS publishes the time within
+which it completed **80% of cases** — not a median, not a promise. A figure of
+"about 4 months" means "80% finished inside 4 months." This appears in a panel
+visible without interaction, in the footer, not in a tooltip nobody opens. It is
+the one caveat worth interrupting the reader for; the rest is a single footer
+line: *figures compiled September 2026 from public USCIS and Department of Labor
+processing times, rounded, and not live.*
 
 **The temptation we are refusing:** adding the visa-bulletin wait and the USCIS
 processing time together to produce one reassuring "about X years to green card"
@@ -148,14 +138,11 @@ filter, and the legend, so a reader can identify a path by color alone.
   "waits": [
     {
       "category": "OPT (post-completion)",
-      "regular": "3.9 mo",
+      "regular": "about 4 months",
       "premium": null,
       "bulletin": null,
       "backlogs": null,
-      "note": "",
-      "source": "https://www.boundless.com/immigration-resources/uscis-processing-times",
-      "as_of": "2026-08-14",
-      "superseded": null
+      "note": ""
     }
   ]
 }
@@ -174,9 +161,8 @@ detail panel is opened.
 ## Interaction
 
 - **Click a node** → detail panel: the form, the agency, every wait row with
-  regular / premium / bulletin columns, country backlogs, the gate explained, and
-  the source link. Nodes with no published figure say so in words; they never
-  render a zero or a blank.
+  regular / premium / bulletin columns, country backlogs, and the gate explained.
+  Nodes with no known wait say so in words; they never render a zero or a blank.
 - **Track filter** — four chips above the canvas, plus "All". Selecting a track
   dims every node not on it rather than removing them, so the reader still sees
   what the other paths were.
@@ -194,15 +180,15 @@ detail panel is opened.
   does not half-render.
 - A node with no wait data → chip reads "not published", grey, same neutral the
   pudmap uses for an uncollected rate.
-- A wait figure whose `as_of` is older than 90 days → styled stale, still shown.
-  A stale number disclosed is more useful than a missing one.
+- A node whose only wait is a lottery or an uncounted queue → the chip says what
+  actually happens ("lottery", "depends on the bulletin") rather than a number.
 
 ## Testing
 
 - `tools/validate_data.py` asserts: every edge endpoint resolves to a real node;
-  no duplicate ids; every wait row has `source` and `as_of`; every node is
-  reachable from the start node; every node declares a known `track`; every
-  `agency` is one of the three known values.
+  no duplicate ids; every node declares a known `track`; every `agency` is one of
+  the three known values; every node is reachable from the start node; every node
+  with a `form` has at least one wait row.
 - Visual check in a real browser at 1440×900 and at a narrow viewport: graph
   renders, click opens the correct panel, track filter dims correctly, keyboard
   traversal works.
@@ -212,7 +198,7 @@ detail panel is opened.
 1. `index.html` working from a local static server out of the site repo.
 2. `data/flow.json` covering the four tracks, passing `validate_data.py`.
 3. `tools/validate_data.py` re-runnable.
-4. `README.md` with data sources, both source-article update dates, the 80%-not-
-   median explanation, and the superseded-figures policy.
+4. `README.md` naming the source articles, explaining the 80%-not-median
+   convention, and stating plainly that figures are rounded and not live.
 5. A link from the site calling card at `index.html`, matching the `/pudmap/`
    entry.
