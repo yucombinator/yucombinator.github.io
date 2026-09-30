@@ -3,6 +3,7 @@ import { layoutGraph } from "./layout.js";
 import { renderGraph, updateHighlight } from "./render.js";
 import { detailModel, makeTextMeasurer, TRACKS } from "./model.js";
 import { renderDetail } from "./detail.js";
+import { makeDraggable } from "./pan.js";
 
 const err = document.getElementById("err");
 const fail = (msg) => { err.textContent = msg; err.classList.add("show"); };
@@ -22,6 +23,14 @@ try {
   const laid = layoutGraph(graph, dagre, { measure: makeTextMeasurer() });
   const state = { selected: null, track: null };
   renderGraph(document.getElementById("graph"), laid, d3, state);
+
+  // The canvas is much wider than any viewport. Panning it by dragging is the
+  // difference between "where am I" and "I cannot find the right-hand branch".
+  const wrap = document.getElementById("graph-wrap");
+  makeDraggable(wrap, {
+    onDragStart: () => document.body.classList.add("panning"),
+    onDragEnd: () => document.body.classList.remove("panning"),
+  });
 
   const detail = document.getElementById("detail");
   window.addEventListener("node:select", (e) => {

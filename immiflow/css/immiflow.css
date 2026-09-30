@@ -17,7 +17,14 @@
 }
 
 html, body { margin: 0; background: var(--surface); color: var(--ink); font: 13px/1.45 var(--sans); }
-#graph-wrap { position: relative; height: 100vh; overflow: auto; background: var(--surface); }
+#graph-wrap {
+  position: relative; height: 100vh; overflow: hidden; background: var(--surface);
+  cursor: grab; touch-action: none;
+  /* Panning is a direct manipulation, so a text selection started by the drag
+     must not leave a blue smear across the diagram. */
+  user-select: none; -webkit-user-select: none;
+}
+#graph-wrap.dragging, body.panning #graph-wrap { cursor: grabbing; }
 #graph { display: block; }
 .panel { position: absolute; z-index: 10; background: var(--surface-raised);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
