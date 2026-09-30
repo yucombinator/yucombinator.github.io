@@ -26,7 +26,9 @@ yesterday's ES modules after an edit.
   relative to your chosen benchmark at the selected hour. Green is cheaper,
   red is more expensive, gray is a rate we have not collected yet. Hue says
   who owns the wire — orange is investor-owned, green is public power.
-- **Monthly usage** selector (300–3,000 kWh). The **time-of-day** slider only
+- **Usage** dropdown framed as households — apartment 350 kWh, apartment + heat
+  pump 600, average home 1,000, large all-electric home 1,800, home + EV charging
+  2,600 — because the fixed charge is what actually decides the bill at low usage. The **time-of-day** slider only
   appears in "This hour" view, where it actually means something.
   Only 4 of the 40 utilities publish a time-of-day schedule (Puget Sound
   Energy, City Light, Avista, Pacific Power) and all four sell it as an opt-in
@@ -89,6 +91,14 @@ rate record. Where a county holds several operators (King County has both Puget
 Sound Energy and Seattle City Light) each has its own boundary, which is why
 the county picker is only a shortcut and the utility picker is the real control.
 
+**Overlaps in the source data are cleaned, not hidden.** The published polygons
+are not topologically disjoint — 54 pairs overlap, several badly (Kittitas County
+PUD sat 43.5% inside Puget Sound Energy's polygon). `tools/clean_boundaries.py`
+makes it a proper partition by drawing smallest-first and subtracting what is
+already placed, so a specific operator keeps its own ground and the broad IOU
+sweep is trimmed around it. The downloaded source is left untouched and the
+trims are reported: PSE gives up 3.5%, Tacoma Power 1.1%, Kittitas PUD 0.9%.
+
 **Utilities with no rate render gray, not missing.** Twenty-five of the 65
 operators have no collected residential rate — mostly co-ops and mutuals whose
 rates are not publicly filed (Nespelem Valley Elec Coop, Inland Power & Light,
@@ -122,7 +132,8 @@ residential rate. That is why "All-hours" never colors by TOD.
 
 ```sh
 /tmp/transitenv/bin/python tools/geocode.py            # refresh service-center coords
-/tmp/transitenv/bin/python tools/build_service_areas.py # rebuild boundaries.geojson from WUTC/Ecology
+/tmp/transitenv/bin/python tools/build_service_areas.py # download + name-map the service areas
+/tmp/transitenv/bin/python tools/clean_boundaries.py     # make them a disjoint partition
 /tmp/transitenv/bin/python tools/fetch_city_boundaries.py  # OSM city limits (kept for reference)
 /tmp/transitenv/bin/python tools/normalize_rates.py   # rebuild rates.json from data/raw/
 ```

@@ -38,14 +38,14 @@
   <h2 class="second">Assumptions</h2>
 
   <div class="field">
-    <label id="usage-label">Monthly usage</label>
-    <div class="seg" id="usage" role="group" aria-labelledby="usage-label">
-      <button type="button" data-kwh="300">300</button>
-      <button type="button" data-kwh="500">500</button>
-      <button type="button" data-kwh="1000" aria-pressed="true">1,000</button>
-      <button type="button" data-kwh="2000">2,000</button>
-      <button type="button" data-kwh="3000">3,000</button>
-    </div>
+    <label for="usage">Your usage</label>
+    <select id="usage">
+      <option value="350">Apartment, electric heat · 350 kWh</option>
+      <option value="600">Apartment + heat pump · 600 kWh</option>
+      <option value="1000" selected>Average home · 1,000 kWh</option>
+      <option value="1800">Large all-electric home · 1,800 kWh</option>
+      <option value="2600">Home + EV charging · 2,600 kWh</option>
+    </select>
   </div>
 
   <div class="field" id="hour-field" hidden>
@@ -91,10 +91,8 @@
     <span>no rate collected</span>
   </div>
   <p class="legend-note" id="legend-basis"></p>
-  <p class="legend-note"><b>All-hours</b> colors the standard residential rate.
-  <b>This hour</b> uses time-of-day schedules where published — for Puget Sound Energy,
-  City Light, Avista and Pacific Power those are opt-in products, not what most
-  customers actually pay.</p>
+  <p class="legend-note"><b>All-hours</b> is the standard rate. <b>This hour</b>
+  uses time-of-day rates, which are opt-in where offered.</p>
 </details>
 
 <footer>

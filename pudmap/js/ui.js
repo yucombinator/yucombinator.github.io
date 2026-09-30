@@ -180,12 +180,9 @@ export function setView(which) {
 
 export function initControls(state, onChange, onBasemap) {
   const usage = $("#usage");
-  usage.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-kwh]");
-    if (!btn) return;
-    for (const b of usage.querySelectorAll("button")) b.setAttribute("aria-pressed", "false");
-    btn.setAttribute("aria-pressed", "true");
-    state.usage = Number(btn.dataset.kwh);
+  usage.value = String(state.usage);
+  usage.addEventListener("change", () => {
+    state.usage = Number(usage.value);
     onChange();
   });
 

@@ -535,8 +535,7 @@ footer {
    stretch the panel */
 #controls { width: 268px; }
 
-select#county,
-select#utility {
+#controls select {
   width: 100%;
   min-width: 0;
   padding: 7px 8px;
@@ -548,5 +547,4 @@ select#utility {
   cursor: pointer;
 }
 
-select#utility:focus,
-select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
+#controls select:focus { outline: 2px solid var(--accent-strong); outline-offset: 1px; }

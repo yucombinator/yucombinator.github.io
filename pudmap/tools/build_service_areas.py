@@ -25,6 +25,7 @@ ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "data")
 SOURCE = os.path.join(DATA, "source", "wutc_ecology_service_areas.geojson")
 OUT = os.path.join(DATA, "boundaries.geojson")
+CURATED_OUT = os.path.join(DATA, "service_areas_curated.geojson")
 
 QUERY = ("https://gis.ecology.wa.gov/serverext/rest/services/CPR/CPR/MapServer/0/query"
          "?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson")
@@ -173,6 +174,9 @@ def main():
             },
             "geometry": f["geometry"],
         })
+
+    with open(CURATED_OUT, "w") as fh:
+        json.dump({"source": SOURCE_URL, "features": features}, fh)
 
     with open(OUT, "w") as fh:
         json.dump({
