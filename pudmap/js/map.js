@@ -194,7 +194,7 @@ function tooltipHtml(p) {
     <h3>${escapeHtml(p.name)}</h3>
     <div class="pud-kind">${p.type === "pud" ? "Public utility district"
       : p.type === "municipal" ? "Municipal utility" : "Investor-owned"}</div>
-    <div class="pud-county">${escapeHtml(p.county || p.counties || "")} County</div>
+    <div class="pud-county">${escapeHtml(p.official_name || p.county || "")}</div>
     ${rows.join("")}
   </div>`;
 }

@@ -326,7 +326,7 @@ export function detailHtml(props, state) {
   return `
     <h3>${esc(u.name)}</h3>
     <div class="kind">${TYPE_LABEL[u.type] || u.type}</div>
-    <p class="meta">${esc(u.service_area || (props.county || "") + " County")}</p>
+    <p class="meta">${esc(u.service_area || props.official_name || "")}</p>
     <div class="chips">${chips.join("")}</div>
     <div class="kv">${rows.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join("")}</div>
     ${tod}

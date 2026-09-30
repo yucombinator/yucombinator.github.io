@@ -82,24 +82,20 @@ than the published rate.
 
 Both are surfaced in the UI, not buried here.
 
-**Territories are approximate.** Washington does not publish PUD service
-boundaries as open data. Two models, picked per utility:
+**Territories are the real thing.** The map is drawn from the *Electric Utility
+Service Areas* layer published by the Washington Utilities and Transportation
+Commission and the Department of Ecology — 65 polygons covering every electric
+distribution operator in the state, including co-ops, mutuals and the naval
+bases. `tools/build_service_areas.py` downloads it and maps each polygon onto our
+rate record. Where a county holds several operators (King County has both Puget
+Sound Energy and Seattle City Light) each has its own boundary, which is why
+the county picker is only a shortcut and the utility picker is the real control.
 
-- **Municipal utilities use real boundaries.** A city light department serves
-  its city and nothing else, so `tools/fetch_city_boundaries.py` pulls each
-  city's administrative polygon from OpenStreetMap and uses it verbatim. This
-  is why Seattle City Light stops at the city limits instead of spilling east
-  over Bellevue, which Puget Sound Energy serves.
-- **PUDs and IOUs use a nearest-service-center model.** Each county is clipped
-  from census geometry and split by the perpendicular bisectors between the
-  utilities serving it (a Voronoi partition, so shared borders are straight
-  lines that meet exactly), each limited to a 45 km rounded-square claim
-  around its office. Whatever is left goes to the county's default supplier.
-  The partition is disjoint and gap-free by construction.
-
-The PUD half is still a model, not a legal boundary map — most PUDs serve only
-a fraction of their namesake county — so treat those shapes as a fair
-approximation and the labels as the truth. The municipal half is real.
+**Utilities with no rate render gray, not missing.** Twenty-five of the 65
+operators have no collected residential rate — mostly co-ops and mutuals whose
+rates are not publicly filed (Nespelem Valley Elec Coop, Inland Power & Light,
+Orcas Power & Light, Tanner, the Pierce County mutuals), plus three naval
+installations. They are on the map, selectable, and honest about the gap.
 
 **Rates are curated, not live.** There is no public API for Washington retail
 electricity rates. Every number in `data/rates.json` came from a utility's own
@@ -128,7 +124,8 @@ residential rate. That is why "All-hours" never colors by TOD.
 
 ```sh
 /tmp/transitenv/bin/python tools/geocode.py            # refresh service-center coords
-/tmp/transitenv/bin/python tools/assign_territories.py # rebuild boundaries.geojson
+/tmp/transitenv/bin/python tools/build_service_areas.py # rebuild boundaries.geojson from WUTC/Ecology
+/tmp/transitenv/bin/python tools/fetch_city_boundaries.py  # OSM city limits (kept for reference)
 /tmp/transitenv/bin/python tools/normalize_rates.py   # rebuild rates.json from data/raw/
 ```
 

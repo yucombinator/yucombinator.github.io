@@ -44,9 +44,13 @@ async function main() {
   // recognises as "mine". The roster's county_default is only a fallback: 27 of
   // 41 counties default to Puget Sound Energy, so benchmarking on that made the
   // selector a no-op for two thirds of the state.
+  // Seed from the roster so every county appears, even one whose only
+  // operators we have no rate for: the picker must never lose a county.
   const areas = {};
+  for (const c of Object.keys(roster.county_default || {})) areas[c] = {};
   for (const f of boundaries.features) {
     const c = f.properties.county;
+    if (!c) continue;
     const a = ringArea(f);
     areas[c] = areas[c] || {};
     areas[c][f.properties.id] = Math.max(areas[c][f.properties.id] || 0, a);
