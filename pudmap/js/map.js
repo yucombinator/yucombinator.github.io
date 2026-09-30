@@ -14,6 +14,10 @@ const map = L.map("map", {
   zoom: 7,
 });
 
+// The map is about Washington, so the view stays over Washington. Leaflet
+// clamps both panning and zoom-out to these bounds, so a small window cannot
+// force a world view either.
+
 const opentopo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
   subdomains: "abc",
   maxZoom: 17,
@@ -33,7 +37,8 @@ const BASEMAPS = { terrain: opentopo, light };
 
 let activeBase = "light";
 light.addTo(map);
-L.control.zoom({ position: "bottomright" }).addTo(map);
+// bottom-right is where the legend lives, so the zoom buttons go under the header
+L.control.zoom({ position: "topleft" }).addTo(map);
 L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
 
 export function setBasemap(which) {
@@ -79,9 +84,13 @@ export function initMap(geojson, handlers, sharedState) {
     },
   }).addTo(map);
 
+  // keep the view over the state: bounds come from the data, padded slightly
+  const dataBounds = territories.getBounds().pad(0.15);
+  map.setMaxBounds(dataBounds);
+
   labelLayer = L.layerGroup().addTo(map);
   addLabels(geojson);
-  map.fitBounds(territories.getBounds(), { padding: [12, 12] });
+  map.fitBounds(dataBounds, { padding: [12, 12] });
   addLabels(geojson);                     // re-place after the fit resolves sizes
   map.on("zoomend", () => addLabels(geojson));
 }
@@ -217,7 +226,7 @@ export function setSelection(props) {
       if (l.feature.properties.id === props.id) {
         selected = l;
         l.setStyle({ weight: 3, color: "#1f78b4" });
-        if (l.getBounds) map.fitBounds(l.getBounds(), { maxZoom: 9, padding: [40, 40] });
+        if (l.getBounds) map.fitBounds(l.getBounds(), { maxZoom: 10, padding: [40, 40] });
       }
     });
   }

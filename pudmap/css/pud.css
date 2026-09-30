@@ -548,3 +548,12 @@ footer {
 }
 
 #controls select:focus { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
+
+/* the zoom buttons sit under the header card in the top-left corner */
+.leaflet-top.leaflet-left .leaflet-control-zoom { margin-top: 148px; }
+.leaflet-control-zoom a {
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.leaflet-control-zoom a:hover { background: var(--accent-soft); color: var(--accent); }
