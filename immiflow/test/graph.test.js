@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseGraph, GraphError } from "../js/graph.js";
+import { parseGraph, loadGraph, GraphError } from "../js/graph.js";
 
 const good = {
   nodes: [
@@ -23,6 +23,7 @@ test("duplicate ids are rejected", () => {
 
 test("an edge to a node that does not exist is rejected", () => {
   assert.throws(() => parseGraph({ ...good, edges: [{ v: "start", w: "ghost" }] }), GraphError);
+  assert.throws(() => parseGraph({ ...good, edges: [{ v: "ghost", w: "start" }] }), GraphError);
 });
 
 test("a form with no agency or no waits is rejected", () => {
@@ -32,4 +33,30 @@ test("a form with no agency or no waits is rejected", () => {
 
 test("an unknown agency is rejected", () => {
   assert.throws(() => parseGraph({ ...good, nodes: [good.nodes[0], { ...good.nodes[1], agency: "ICE" }] }), GraphError);
+});
+
+test("an unknown track is rejected, and origin stays legal", () => {
+  assert.throws(() => parseGraph({ ...good, nodes: [good.nodes[0], { ...good.nodes[1], track: "space" }] }), GraphError);
+  assert.doesNotThrow(() => parseGraph(good));
+});
+
+test("loadGraph reports an HTTP failure as a GraphError naming the url", async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 404 });
+  try {
+    await assert.rejects(() => loadGraph("data/flow.json"), (err) =>
+      err instanceof GraphError && /data\/flow\.json/.test(err.message) && /404/.test(err.message));
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+test("loadGraph reports unparseable JSON as a GraphError", async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => { throw new SyntaxError("Unexpected token"); } });
+  try {
+    await assert.rejects(() => loadGraph("data/flow.json"), GraphError);
+  } finally {
+    globalThis.fetch = real;
+  }
 });

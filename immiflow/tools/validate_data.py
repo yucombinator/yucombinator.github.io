@@ -50,6 +50,9 @@ def validate(flow):
             fail(errors, f"{n['id']}: has a form but no wait rows")
         if n["form"] and n["agency"] is None:
             fail(errors, f"{n['id']}: has a form but no agency")
+        # Every step must say something in words, or it renders as a blank box.
+        if not n["form"] and not n.get("chip"):
+            fail(errors, f"{n['id']}: needs a chip or a form so the node says something")
         for shared in n.get("sharedWith", []):
             if shared not in TRACKS:
                 fail(errors, f"{n['id']}: bad sharedWith {shared!r}")

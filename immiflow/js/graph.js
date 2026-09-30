@@ -1,10 +1,12 @@
-import { AGENCIES } from "./model.js";
+import { AGENCIES, TRACKS } from "./model.js";
 
 export class GraphError extends Error {
   constructor(message) { super(message); this.name = "GraphError"; }
 }
 
-const TRACK_IDS = new Set([...["student", "employment", "family", "humanitarian"], "origin"]);
+// Derived from TRACKS so adding a track cannot leave this validator behind.
+// "origin" is the pre-track starting node, not one of the four reader-facing tracks.
+const TRACK_IDS = new Set([...TRACKS.map(t => t.id), "origin"]);
 
 export function parseGraph(raw) {
   if (!raw || !Array.isArray(raw.nodes) || !Array.isArray(raw.edges)) {

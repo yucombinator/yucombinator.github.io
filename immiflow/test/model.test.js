@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chipText, headlineWait, isInTrack, nodeSize, detailModel, TRACKS } from "../js/model.js";
+import { chipText, headlineWait, isInTrack, nodeSize, detailModel, makeTextMeasurer, TRACKS } from "../js/model.js";
 
 const opt = {
   id: "opt", track: "student", label: "Optional Practical Training (OPT)",
@@ -24,10 +24,14 @@ test("an explicit chip overrides the derived form+wait text", () => {
 });
 
 test("a bulletin-only node never merges its bulletin and processing waits", () => {
-  const node = { ...opt, form: "Visa Bulletin", chip: null,
-    waits: [{ category: "F4", regular: null, premium: null, bulletin: "roughly 18 years", backlogs: null, note: null }] };
+  const node = { ...opt, form: "Visa Bulletin", chip: null, waits: [
+    { category: "F4", regular: "about 11 months", premium: null, bulletin: null, backlogs: null, note: null },
+    { category: "F4 — consular processing", regular: null, premium: null,
+      bulletin: "roughly 18 years", backlogs: null, note: null },
+  ] };
   const text = chipText(node);
-  assert.equal(text, "Visa Bulletin · roughly 18 years");
+  assert.equal(text, "Visa Bulletin · about 11 months");
+  assert.ok(!text.includes("roughly 18 years"), "chip must not pull in a second queue's figure");
   assert.doesNotMatch(text, /\d.*\+\s*\d/, "chip must not sum two queues");
 });
 
@@ -40,13 +44,45 @@ test("shared nodes belong to both tracks", () => {
 });
 
 test("node size grows with its longest line", () => {
-  const measure = (label) => ({ labelW: label.length * 7, chipW: 0 });
-  const a = nodeSize({ label: "ab", chip: "" }, measure);
-  const b = nodeSize({ label: "a much longer label", chip: "" }, measure);
+  const measure = (label, chip) => ({
+    labelW: label.length * 7,
+    chipW: chip.length * 7,
+    rows: Math.max(1, Math.ceil(Math.max(label.length, chip.length) * 7 / nodeSize.MAX_LABEL_W)),
+  });
+  const a = nodeSize({ label: "ab", chipText: "" }, measure);
+  const b = nodeSize({ label: "a much longer label", chipText: "" }, measure);
   assert.ok(b.w > a.w);
   assert.ok(a.h > 0);
-  const capped = nodeSize({ label: "x".repeat(400), chip: "" }, measure);
+  const capped = nodeSize({ label: "x".repeat(400), chipText: "" }, measure);
   assert.ok(capped.w <= nodeSize.MAX_LABEL_W + 40, "long labels wrap, they do not stretch the graph");
+});
+
+test("a long chip grows the box's height instead of overflowing it", () => {
+  const measure = (label, chip) => ({
+    labelW: label.length * 7,
+    chipW: chip.length * 7,
+    rows: Math.max(1, Math.ceil(Math.max(label.length, chip.length) * 7 / nodeSize.MAX_LABEL_W)),
+  });
+  const brief = nodeSize({ label: "TPS", chipText: "renew" }, measure);
+  const warning = nodeSize({ label: "TPS", chipText: "temporary — not a path to a card" }, measure);
+  assert.ok(warning.h > brief.h, "an honesty warning must not spill outside its rectangle");
+  assert.ok(warning.w <= nodeSize.MAX_LABEL_W + 28, "the chip wraps; the box never outgrows the cap");
+  const wider = nodeSize({ label: "TPS", chipText: "filed with Labor, not USCIS" }, measure);
+  assert.ok(wider.w > brief.w, "a chip wider than its label widens the box");
+});
+
+test("the measurer wraps an over-long chip into more rows", () => {
+  const real = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ font: "", measureText: (s) => ({ width: s.length * 10 }) }) }) };
+  try {
+    const measure = makeTextMeasurer();
+    const warning = measure("TPS", "temporary — not a path to a card");
+    const brief = measure("TPS", "renew");
+    assert.ok(warning.rows > brief.rows, "a chip too long for one line must wrap");
+    assert.equal(warning.chipW, nodeSize.MAX_LABEL_W, "the chip is capped at the box width");
+  } finally {
+    globalThis.document = real;
+  }
 });
 
 test("detail model carries the gate and every wait column", () => {

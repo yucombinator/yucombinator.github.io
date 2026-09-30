@@ -65,8 +65,10 @@ export function makeTextMeasurer(font = "15px Georgia") {
   ctx.font = font;
   return (label, chip) => {
     const width = (s) => ctx.measureText(s).width;
-    // labels longer than the cap wrap; estimate the wrapped line count
-    const lines = Math.max(1, Math.ceil(width(label) / nodeSize.MAX_LABEL_W));
-    return { labelW: Math.min(width(label), nodeSize.MAX_LABEL_W), chipW: width(chip), rows: lines };
+    // Both the label and the chip wrap at the width cap. The chip is load-bearing text —
+    // "no published figure", "not a path to a card" — so it must grow the box, not overflow it.
+    const cap = nodeSize.MAX_LABEL_W;
+    const rows = Math.max(1, Math.ceil(width(label) / cap), Math.ceil(width(chip) / cap));
+    return { labelW: Math.min(width(label), cap), chipW: Math.min(width(chip), cap), rows };
   };
 }
