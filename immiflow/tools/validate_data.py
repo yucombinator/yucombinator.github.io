@@ -8,6 +8,9 @@ ROOT = Path(__file__).resolve().parent.parent
 FLOW = ROOT / "data" / "flow.json"
 TRACKS = {"student", "employment", "family", "humanitarian", "origin"}
 AGENCIES = {"USCIS", "DOL", "State Dept", None}
+NODE_KEYS = ("id", "track", "label", "form", "agency", "waits")
+EDGE_KEYS = ("v", "w")
+WAIT_FIELDS = ("regular", "premium", "bulletin", "backlogs")
 
 
 def fail(errors, msg):
@@ -16,32 +19,58 @@ def fail(errors, msg):
 
 def validate(flow):
     errors = []
+    for key in ("nodes", "edges"):
+        if not isinstance(flow.get(key), list):
+            fail(errors, f"flow.json: missing or non-list {key!r}")
+    if errors:
+        return errors
+
+    # Pass 1: every node must carry its required keys before it can be judged.
     nodes = {}
-    for n in flow["nodes"]:
+    for i, n in enumerate(flow["nodes"]):
+        if not isinstance(n, dict):
+            fail(errors, f"node #{i}: not an object")
+            continue
+        missing = [k for k in NODE_KEYS if k not in n]
+        if missing:
+            fail(errors, f"node #{i}: missing required key(s) {', '.join(missing)}")
+            continue
         if n["id"] in nodes:
             fail(errors, f"duplicate node id: {n['id']}")
         nodes[n["id"]] = n
 
     for n in flow["nodes"]:
+        if not isinstance(n, dict) or any(k not in n for k in NODE_KEYS):
+            continue  # already reported above; do not pile on
         if n["track"] not in TRACKS:
             fail(errors, f"{n['id']}: unknown track {n['track']!r}")
-        if n.get("agency") not in AGENCIES:
-            fail(errors, f"{n['id']}: bad agency {n.get('agency')!r}")
-        if n.get("form") and not n.get("waits"):
+        if n["agency"] not in AGENCIES:
+            fail(errors, f"{n['id']}: bad agency {n['agency']!r}")
+        if n["form"] and not n["waits"]:
             fail(errors, f"{n['id']}: has a form but no wait rows")
-        if n.get("form") and n.get("agency") is None:
+        if n["form"] and n["agency"] is None:
             fail(errors, f"{n['id']}: has a form but no agency")
         for shared in n.get("sharedWith", []):
             if shared not in TRACKS:
                 fail(errors, f"{n['id']}: bad sharedWith {shared!r}")
-        for w in n.get("waits", []):
+        for w in n["waits"]:
             if not w.get("category"):
                 fail(errors, f"{n['id']}: wait row with no category")
-            for field in ("regular", "premium", "bulletin", "backlogs"):
-                if field in w and not isinstance(w[field], (str, type(None))):
+            # An absent value is an error: absence must be spelled null, not omitted.
+            for field in WAIT_FIELDS:
+                if field not in w:
+                    fail(errors, f"{n['id']}/{w.get('category')}: {field} is missing, use null")
+                elif not isinstance(w[field], (str, type(None))):
                     fail(errors, f"{n['id']}/{w.get('category')}: {field} must be a string or null")
 
-    for e in flow["edges"]:
+    for i, e in enumerate(flow["edges"]):
+        if not isinstance(e, dict):
+            fail(errors, f"edge #{i}: not an object")
+            continue
+        missing = [k for k in EDGE_KEYS if k not in e]
+        if missing:
+            fail(errors, f"edge #{i}: missing required key(s) {', '.join(missing)}")
+            continue
         for end in (e["v"], e["w"]):
             if end not in nodes:
                 fail(errors, f"edge {e['v']}->{e['w']}: unknown node {end!r}")
@@ -49,7 +78,8 @@ def validate(flow):
     # reachability from the start node
     adj = {}
     for e in flow["edges"]:
-        adj.setdefault(e["v"], []).append(e["w"])
+        if isinstance(e, dict) and all(k in e for k in EDGE_KEYS):
+            adj.setdefault(e["v"], []).append(e["w"])
     seen, stack = set(), ["start"]
     while stack:
         cur = stack.pop()

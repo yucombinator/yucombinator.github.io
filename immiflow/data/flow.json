@@ -43,12 +43,12 @@
       "form": "I-129", "agency": "USCIS", "chip": null,
       "gate": "Requires you to have worked for the parent company abroad for a full year in the last three. This is the only employment visa that skips the lottery.",
       "waits": [ { "category": "L-1, regular processing", "regular": "about 5 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null, "note": "" } ] },
+        "bulletin": null, "backlogs": null, "note": null } ] },
     { "id": "o1", "track": "employment", "label": "O-1 extraordinary ability",
       "form": "I-129", "agency": "USCIS", "chip": null,
       "gate": "A high bar: sustained acclaim, awards, publications, or recognition. Not a category most people qualify for, and the file is expensive to build.",
       "waits": [ { "category": "O-1, regular processing", "regular": "about 5 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null, "note": "" } ] },
+        "bulletin": null, "backlogs": null, "note": null } ] },
     { "id": "eb-category", "track": "employment", "label": "Choose an immigrant category (EB-1 to EB-5)",
       "form": null, "agency": null, "chip": "the categories are numbered by how little you are worth",
       "gate": "Five categories, ordered by what the government thinks your labour is worth. EB-1 is extraordinary ability, EB-5 is a $800,000 investment. Where you land decides how long you wait.",
@@ -69,11 +69,11 @@
       "form": "Visa Bulletin", "agency": "State Dept", "chip": "years",
       "gate": "This is a different queue from the one USCIS is processing you in, and it is the one that turns into a decade. It is also the one that can move backwards when the government publishes an update.",
       "waits": [
-        { "category": "EB-1", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": null, "note": "" },
-        { "category": "EB-2", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-2 dates date from 2013", "note": "" },
-        { "category": "EB-3", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-3 dates date from 2013", "note": "" },
+        { "category": "EB-1", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": null, "note": null },
+        { "category": "EB-2", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-2 dates date from 2013", "note": null },
+        { "category": "EB-3", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-3 dates date from 2013", "note": null },
         { "category": "EB-4", "regular": null, "premium": null, "bulletin": "not currently being issued", "backlogs": null, "note": "The government is not granting these at all right now." },
-        { "category": "EB-5", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": "Longer for Chinese and Indian investors, since 2014 and 2019 respectively", "note": "" }
+        { "category": "EB-5", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": "Longer for Chinese and Indian investors, since 2014 and 2019 respectively", "note": null }
       ] },
     { "id": "i485-eb", "track": "employment", "label": "Adjustment of status to permanent residence",
       "form": "I-485", "agency": "USCIS", "chip": null,
@@ -87,7 +87,7 @@
     { "id": "i130", "track": "family", "label": "Petition for an alien relative",
       "form": "I-130", "agency": "USCIS", "chip": null,
       "waits": [
-        { "category": "I-130, US citizen sponsor", "regular": "about 13 months", "premium": null, "bulletin": null, "backlogs": null, "note": "" },
+        { "category": "I-130, US citizen sponsor", "regular": "about 13 months", "premium": null, "bulletin": null, "backlogs": null, "note": null },
         { "category": "I-130, green card holder sponsor", "regular": "three years or more", "premium": null, "bulletin": null, "backlogs": null, "note": "The same form, four times the wait, because the sponsor is waiting their own turn to become a citizen." }
       ] },
     { "id": "immediate-relative", "track": "family", "label": "Immediate relative — no queue",
@@ -103,10 +103,10 @@
     { "id": "bulletin-family", "track": "family", "label": "Wait in the visa-bulletin queue",
       "form": "Visa Bulletin", "agency": "State Dept", "chip": "years to decades",
       "waits": [
-        { "category": "F1 — adult children of citizens", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": "" },
-        { "category": "F2A — spouses of green card holders", "regular": null, "premium": null, "bulletin": "about 3 years", "backlogs": null, "note": "" },
-        { "category": "F2B — adult children of green card holders", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": "" },
-        { "category": "F3 — married children of citizens", "regular": null, "premium": null, "bulletin": "about 13 years", "backlogs": "Longer for Mexico", "note": "" },
+        { "category": "F1 — adult children of citizens", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": null },
+        { "category": "F2A — spouses of green card holders", "regular": null, "premium": null, "bulletin": "about 3 years", "backlogs": null, "note": null },
+        { "category": "F2B — adult children of green card holders", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": null },
+        { "category": "F3 — married children of citizens", "regular": null, "premium": null, "bulletin": "about 13 years", "backlogs": "Longer for Mexico", "note": null },
         { "category": "F4 — siblings of citizens", "regular": null, "premium": null, "bulletin": "roughly 18 years, and far longer for some countries", "backlogs": "Indian siblings date from 2006, Mexican from 2001, Philippine from 2008", "note": "The longest ordinary wait in the system." }
       ] },
     { "id": "i485-fam", "track": "family", "label": "Adjustment of status to permanent residence",
