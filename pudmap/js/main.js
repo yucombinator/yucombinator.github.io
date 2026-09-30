@@ -2,7 +2,7 @@
 
 import { initMap, restyle, setSelection, getSelected, setBasemap, getMap } from "./map.js";
 import { setRates, setBenchmark, benchmarkId, utilityById, headlineCents, hasRate } from "./rates.js";
-import { initControls, initCounty, renderDetail, renderList, setView, showError, clearError, updateBenchmarkCopy } from "./ui.js";
+import { initControls, initCounty, initUtility, syncUtility, renderDetail, renderList, setView, showError, clearError, updateBenchmarkCopy } from "./ui.js";
 
 const state = { period: "flat", usage: 1000, hour: 19, county: "King" };
 
@@ -92,11 +92,18 @@ async function main() {
     renderList(state, countiesById);
   };
 
-  initCounty(counties, state, (row) => {
-    setBenchmark(row.id);
+  // one benchmark setter: county, utility picker and initial state all use it,
+  // so the map, list and both dropdowns can never disagree about who "yours" is
+  const useBenchmark = (id) => {
+    setBenchmark(id);
+    syncUtility(id);
     updateBenchmarkCopy();
     repaint();
-  });
+  };
+
+  initCounty(counties, state, (row) => useBenchmark(row.id));
+  initUtility(useBenchmark);
+  syncUtility(benchmarkId());   // show the starting benchmark in the utility picker
 
   initControls(state, repaint, setBasemap);
 

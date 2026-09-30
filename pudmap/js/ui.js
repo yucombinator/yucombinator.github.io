@@ -26,6 +26,38 @@ export function clearError() {
 }
 
 /** County selector: choosing a county re-benchmarks the whole map. */
+const TYPE_ORDER = ["pud", "municipal", "iou"];
+
+/** Every utility, grouped by who owns it, so Seattle City Light is reachable
+ *  even though it is not King County's default supplier. */
+export function initUtility(onPick) {
+  const sel = $("#utility");
+  const groups = { pud: [], municipal: [], iou: [] };
+  for (const u of RATES.utilities) (groups[u.type] || groups.pud).push(u);
+
+  sel.innerHTML = `<option value="">Choose a utility\u2026</option>` + TYPE_ORDER
+    .filter((t) => groups[t].length)
+    .map((t) => `<optgroup label="${TYPE_LABEL[t]}">${groups[t]
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((u) => `<option value="${u.id}">${escapeOption(u.name)}</option>`)
+      .join("")}</optgroup>`)
+    .join("");
+
+  sel.addEventListener("change", () => {
+    if (sel.value) onPick(sel.value);
+  });
+}
+
+function escapeOption(name) {
+  return String(name).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+export function syncUtility(id) {
+  const sel = $("#utility");
+  if (sel) sel.value = id || "";
+}
+
 export function initCounty(counties, current, onPick) {
   const sel = $("#county");
   sel.innerHTML = counties

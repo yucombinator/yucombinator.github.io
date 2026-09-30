@@ -17,12 +17,14 @@ yesterday's ES modules after an edit.
 
 ## What it shows
 
-- **County selector** at the top. Pick your county and the map re-prices every
-  territory, the legend thresholds, and the tooltips against that county's own
-  public utility. The dropdown names that utility, so "Douglas County" means
+- **Benchmark selector** at the top, two ways. Pick your county and the map
+  re-prices against that county's own public utility, so "Douglas County" means
   Douglas PUD at 2.35¢, not the Puget Sound Energy that covers most of the
-  state. Counties whose main utility has no published rate are labelled
-  `(no rate)` and say so when selected.
+  state. Or pick any of the 40 utilities directly — a county often holds more
+  than one, and King County has both Puget Sound Energy and Seattle City Light.
+  Counties whose main utility has no published rate are labelled `(no rate)`.
+  Both dropdowns stay in sync, so the map, the list and the legend can never
+  disagree about who "yours" is.
 - **Choropleth** of every electric utility territory in Washington, colored
   relative to your chosen benchmark at the selected hour. Green is cheaper,
   red is more expensive, gray is a rate we have not collected yet. Hue says
