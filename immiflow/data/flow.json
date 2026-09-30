@@ -28,9 +28,16 @@
       "waits": [ { "category": "STEM OPT extension", "regular": "about 4 months", "premium": null,
         "bulletin": null, "backlogs": null, "note": "Adds 24 months. The longest runway a student gets." } ] },
     { "id": "h1b-cap", "track": "employment", "sharedWith": ["student"],
-      "label": "H-1B cap registration", "form": null, "agency": null, "chip": "lottery",
+      "label": "H-1B cap registration", "form": null, "agency": null, "chip": "about 2 in 5",
       "gate": "Registration is a lottery, once a year, and not everyone who registers is picked. Being picked only buys you time in the country — it is not a green card. If you are already inside the US, the odds you were not picked in an earlier round are the odds you face now.",
-      "waits": [] },
+      "waits": [
+        { "category": "2027 cap selection rate", "regular": "about 2 in 5", "premium": null, "bulletin": null, "backlogs": null,
+          "note": "About 212,000 eligible registrations for 85,000 places. Two years earlier it was closer to 1 in 4, so the odds have improved rather than worsened — registrations fell by more than two thirds after USCIS began counting each beneficiary once and started policing fraud." },
+        { "category": "2027 cap selection rate, 2026 cap, 2025 cap", "regular": "about 1 in 3, then about 1 in 4", "premium": null, "bulletin": null, "backlogs": null,
+          "note": "The cap has not changed in any of those years. Only the number of people registering for it has." },
+        { "category": "How the draw works", "regular": null, "premium": null, "bulletin": null, "backlogs": null,
+          "note": "Since 2027 the lottery is no longer pure random. Selection is weighted by wage level, so the headline number hides a spread — a well-paid position fares better than a low-paid one. Each employer may register you once a year, but any number of different employers may each register you." }
+      ] },
 
     { "id": "job-offer", "track": "employment", "label": "Get a job offer from a willing employer",
       "form": null, "agency": null, "chip": "sponsorship required",
