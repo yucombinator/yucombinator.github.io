@@ -1,8 +1,8 @@
 // Entry point: load data, wire the map and the panels.
 
-import { initMap, restyle, setSelection, getSelected, setBasemap, getMap } from "./map.js";
+import { initMap, restyle, setSelection, getSelected, setBasemap, getMap, focusUtility } from "./map.js";
 import { setRates, setBenchmark, benchmarkId, utilityById, headlineCents, hasRate } from "./rates.js";
-import { initControls, initCounty, renderDetail, showError, clearError, updateBenchmarkCopy } from "./ui.js";
+import { initControls, initCounty, renderDetail, renderList, setView, showError, clearError, updateBenchmarkCopy } from "./ui.js";
 
 const state = { period: "flat", usage: 1000, hour: 19, county: "King" };
 
@@ -85,11 +85,34 @@ async function main() {
     if (sel) renderDetail(sel, state);
   });
 
-  initControls(state, () => {
+  // county name per utility, for the list view's second line
+  const countiesById = {};
+  for (const f of boundaries.features) {
+    const id = f.properties.id;
+    if (!countiesById[id]) countiesById[id] = `${f.properties.county} County`;
+  }
+
+  const repaint = () => {
     restyle();
     const sel = getSelected();
     if (sel) renderDetail(sel, state);
-  }, setBasemap);
+    renderList(state, countiesById, (id) => {
+      focusUtility(id);          // list row -> jump the map to that territory
+      setView("map");
+    });
+  };
+
+  initControls(state, repaint, setBasemap);
+
+  const view = document.querySelector("#view");
+  view.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-view]");
+    if (!btn) return;
+    for (const b of view.querySelectorAll("button")) b.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-pressed", "true");
+    const isList = setView(btn.dataset.view);
+    if (isList) renderList(state, countiesById, (id) => { focusUtility(id); setView("map"); });
+  });
 
   const missing = boundaries.features
     .map((f) => f.properties.id)

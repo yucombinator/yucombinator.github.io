@@ -38,12 +38,16 @@ yesterday's ES modules after an edit.
   allocation), and bill-level utility taxes. Optional fees and discounts are
   shown but never added to a total.
 - **Hover verdict**: every territory states in words whether it is cheaper or
-  dearer than your selected utility, by percentage and by dollars.
+  more expensive than your selected utility, by percentage and by dollars.
   "All-hours" colors the standard residential rate; "This hour" shows the
   published time-of-day rate where one exists.
 - **Detail card** per utility: cents/kWh, an estimated monthly bill, the fixed
   charge, the delta versus PSE, the effective date, who sets the rate, and a
   link to the source tariff.
+- **List view** — the same numbers as a table: every utility sorted cheapest
+  first, with its per-kWh rate, the bill at your chosen usage, and the gap
+  against your county's utility. Click a row to jump the map to that
+  territory. The two views always agree because they read the same state.
 - **Colour legend** — a single green-to-red bar showing the actual cents per
   kWh, with your selected utility's rate marked in the middle, so the shading
   is readable as numbers rather than vibes.

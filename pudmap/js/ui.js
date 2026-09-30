@@ -42,9 +42,87 @@ export function updateBenchmarkCopy() {
   const b = utilityById(benchmarkId());
   const el = $("#legend-basis");
   if (el && b) {
-    el.textContent = `Every territory is shaded by how its price compares with ${b.name} at the selected hour. Green is cheaper, red is dearer, gray is a rate we have not collected.`;
+    el.textContent = `Every territory is shaded by how its price compares with ${b.name} at the selected hour. Green is cheaper than that, red is more expensive, gray is a rate we have not collected.`;
   }
   buildRamp();
+}
+
+/**
+ * List view: every utility as a sortable row, priced exactly the way the map
+ * is — same benchmark, same usage, same hour — so the two views never disagree.
+ */
+export function renderList(state, countiesById, onPick) {
+  const panel = $("#list");
+  if (panel.hidden) return;
+  const bench = utilityById(benchmarkId());
+  const flat = state.period === "flat";
+
+  const rows = RATES.utilities
+    .map((u) => {
+      const cents = flat ? headlineCents(u) : centsAtHour(u, state.hour);
+      const bill = monthlyBill(u, state.usage);
+      const benchBill = bench ? monthlyBill(bench, state.usage) : null;
+      const delta = (bill != null && benchBill != null) ? bill - benchBill : null;
+      return { u, cents, bill, delta, county: countiesById[u.id] || "" };
+    })
+    .sort((a, b) => {
+      if (a.cents == null && b.cents == null) return a.u.name.localeCompare(b.u.name);
+      if (a.cents == null) return 1;              // unpriced always last
+      if (b.cents == null) return -1;
+      return a.cents - b.cents;                   // cheapest first
+    });
+
+  const benchTotal = bench ? monthlyBill(bench, state.usage) : null;
+  const body = rows.map(({ u, cents, bill, delta, county }) => {
+    const cheaper = delta != null && delta < 0;
+    const same = delta != null && Math.abs(delta) < 0.5;
+    const cls = same ? "even" : cheaper ? "good" : "bad";
+    const pct = (delta != null && benchTotal > 0) ? Math.round(Math.abs(delta) / benchTotal * 100) : null;
+    const word = same ? "same" : `${pct}% ${cheaper ? "cheaper" : "more expensive"}`;
+    const sign = cheaper ? "\u2212" : "+";
+    return `<tr data-id="${u.id}" tabindex="0">
+      <td class="c-name">
+        <a href="${u.site || "#"}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(u.name)}</a>
+        <span class="c-county">${esc(county || TYPE_LABEL[u.type] || u.type)}</span>
+      </td>
+      <td class="c-num">${cents == null ? "&mdash;" : cents.toFixed(2) + "\u00A2"}</td>
+      <td class="c-num">${bill == null ? "&mdash;" : "$" + bill.toFixed(2)}</td>
+      <td class="c-delta ${cls}">${delta == null ? "&mdash;" : `${word} ${sign}$${Math.abs(delta).toFixed(2)}`}</td>
+    </tr>`;
+  }).join("");
+
+  panel.innerHTML = `
+    <header>
+      <h2>Every utility, priced at ${state.usage.toLocaleString()} kWh${flat ? "" : " at " + fmtHourLabel(state.hour)}</h2>
+      <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your county utility")}</b>.
+      Click a row to open it on the map.</p>
+    </header>
+    <table>
+      <thead><tr><th>Utility</th><th>per kWh</th><th>${state.usage.toLocaleString()} kWh</th><th>vs yours</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+
+  for (const tr of panel.querySelectorAll("tbody tr")) {
+    const go = () => onPick(tr.dataset.id);
+    tr.addEventListener("click", go);
+    tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  }
+}
+
+function fmtHourLabel(h) {
+  const ampm = h < 12 ? "am" : "pm";
+  return `${h % 12 === 0 ? 12 : h % 12}:00 ${ampm}`;
+}
+
+export function setView(which) {
+  const map = $("#map"), list = $("#list");
+  const isList = which === "list";
+  list.hidden = !isList;
+  map.style.display = isList ? "none" : "";
+  $("#legend").hidden = isList;
+  $("#detail").classList.toggle("forced-hide", isList);
+  if (!isList) requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+  return isList;
 }
 
 export function initControls(state, onChange, onBasemap) {

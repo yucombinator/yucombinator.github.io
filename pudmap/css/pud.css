@@ -423,7 +423,7 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
 .field-note { margin: 5px 0 0; font-size: 10.5px; line-height: 1.4; color: var(--ink-soft); }
 #controls h2.second { margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
 
-/* plain-language cheaper / dearer verdict in the hover tooltip */
+/* plain-language cheaper / more expensive verdict in the hover tooltip */
 .verdict {
   display: flex;
   align-items: center;
@@ -444,18 +444,67 @@ select#county:focus { outline: 2px solid var(--accent-strong); outline-offset: 1
 .verdict.bad  { background: #fbe9df; color: #9a3412; }
 .verdict.even { background: #eef2ec; color: #4a6b58; }
 
-/* links inside Leaflet tooltips: the tooltip is pointer-events:none by
-   default, so the anchor needs to re-enable events for itself and its row */
-.pud-pop { pointer-events: auto; }
-.pud-pop .pop-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 8px 0 0;
-  padding-top: 7px;
-  border-top: 1px solid var(--line);
-  font-size: 10.5px;
+.pud-pop { pointer-events: none; }
+
+/* ---------- list view ---------- */
+
+#list {
+  position: absolute;
+  inset: 0;
+  z-index: 1200;
+  overflow-y: auto;
+  padding: 26px 26px 60px;
+  background: var(--surface);
 }
 
-.pud-pop .pop-links a { color: var(--accent-mid); text-decoration: none; font-weight: 600; }
-.pud-pop .pop-links a:hover { text-decoration: underline; }
+#list header { max-width: 940px; margin: 0 auto 18px; }
+#list h2 { margin: 0 0 4px; font: 600 20px/1.25 var(--serif); }
+#list header p { margin: 0; font-size: 12px; color: var(--ink-soft); }
+#list header b { color: var(--ink); }
+
+#list table {
+  max-width: 940px;
+  margin: 0 auto;
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+#list th {
+  text-align: left;
+  padding: 9px 12px;
+  font: 700 9.5px/1 var(--sans);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--accent-mid);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+#list td { padding: 8px 12px; border-top: 1px solid var(--line); font-size: 12.5px; }
+#list tbody tr:first-child td { border-top: 0; }
+#list tbody tr:hover { background: var(--accent-soft); cursor: pointer; }
+#list tbody tr:focus { outline: 2px solid var(--accent-strong); outline-offset: -2px; }
+
+#list .c-name a { color: var(--ink); text-decoration: none; font-weight: 600; }
+#list .c-name a:hover { color: var(--accent); text-decoration: underline; }
+#list .c-county { display: block; font-size: 10.5px; color: var(--ink-soft); margin-top: 1px; }
+#list .c-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#list .c-delta { text-align: right; white-space: nowrap; }
+#list .c-delta.good { color: var(--accent); }
+#list .c-delta.bad { color: var(--rust); }
+#list .c-delta.even { color: var(--ink-soft); }
+
+#detail.forced-hide { display: none !important; }
+
+/* the list is a full-bleed overlay, but the header and controls must stay
+   reachable above it or the view is a dead end */
+#head, #controls { z-index: 1300; }
+
+@media (max-width: 1240px) {
+  #list { padding-top: 210px; }   /* clear the floating header + controls */
+}

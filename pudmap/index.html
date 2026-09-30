@@ -24,6 +24,14 @@
   <h2>Compare against</h2>
 
   <div class="field">
+    <label id="view-label">View</label>
+    <div class="seg" id="view" role="group" aria-labelledby="view-label">
+      <button type="button" data-view="map" aria-pressed="true">Map</button>
+      <button type="button" data-view="list">List</button>
+    </div>
+  </div>
+
+  <div class="field">
     <label for="county">Your county</label>
     <select id="county" aria-describedby="county-note"></select>
     <p class="field-note" id="county-note">The map re-prices every territory
@@ -71,6 +79,8 @@
 
 <section id="detail" class="panel" aria-live="polite"></section>
 
+<section id="list" hidden aria-label="Utilities by rate"></section>
+
 <details id="legend" class="panel" open>
   <summary>Legend</summary>
   <div class="legend-bar" id="legend-bar"></div>
@@ -79,7 +89,7 @@
     <span class="legend-mid" id="ramp-mid"></span>
     <span id="ramp-hi">&mdash;</span>
   </div>
-  <div class="legend-ends"><span>cheaper than yours</span><span>dearer</span></div>
+  <div class="legend-ends"><span>cheaper than yours</span><span>more expensive</span></div>
   <div class="legend-none">
     <i class="swatch" style="background:#d9ddd3"></i>
     <span>no rate collected</span>
