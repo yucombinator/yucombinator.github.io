@@ -57,6 +57,9 @@ yesterday's ES modules after an edit.
 - **Colour legend** — a single green-to-red bar showing the actual cents per
   kWh, with your selected utility's rate marked in the middle, so the shading
   is readable as numbers rather than vibes.
+- **View stays over Washington.** The map's max bounds come from the data itself
+  (state extent, padded), so neither panning nor zooming out can drift to the
+  ocean or a world view on a wide screen.
 - **Basemap toggle** — Esri light gray (default, so the colors read) or
   OpenTopoMap terrain.
 
