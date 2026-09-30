@@ -4,6 +4,8 @@ import { loadGraph } from "./graph.js";
 import { layoutGraph } from "./layout.js";
 import { renderGraph, updateHighlight } from "./render.js";
 import { makeTextMeasurer, TRACKS } from "./model.js";
+import { renderDetail } from "./detail.js";
+import { detailModel } from "./model.js";
 
 const err = document.getElementById("err");
 const fail = (msg) => { err.textContent = msg; err.classList.add("show"); };
@@ -13,6 +15,15 @@ try {
   const laid = layoutGraph(graph, dagre, { measure: makeTextMeasurer() });
   const state = { selected: null, track: null };
   renderGraph(document.getElementById("graph"), laid, d3, state);
+
+  const detail = document.getElementById("detail");
+  window.addEventListener("node:select", (e) => {
+    state.selected = e.detail;
+    paint();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { state.selected = null; paint(); }
+  });
 
   const seg = document.getElementById("track");
   const mk = (id, label) => {
@@ -32,6 +43,7 @@ try {
   function paint() {
     updateHighlight(document.getElementById("graph"), d3, state);
     for (const b of seg.children) b.setAttribute("aria-pressed", String(b.dataset.track === state.track));
+    renderDetail(detail, state.selected ? detailModel(graph.nodes.get(state.selected)) : null);
   }
 } catch (e) {
   fail(`Could not draw the flowchart: ${e.message}`);
