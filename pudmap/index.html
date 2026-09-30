@@ -15,14 +15,11 @@
 
 <header id="head" class="panel">
   <h1>Washington rate map</h1>
-  <p class="sub">Residential electricity rates by service territory, shaded by how each one
-  compares with the utility you select. Every label carries the actual cents. Tap a
-  territory for detail.</p>
+  <p class="sub">Residential rates by service territory, shaded against the utility
+  you select. Labels carry the actual cents.</p>
 </header>
 
 <section id="controls" class="panel" aria-label="Rate assumptions">
-  <h2>Compare against</h2>
-
   <div class="field">
     <label id="view-label">View</label>
     <div class="seg" id="view" role="group" aria-labelledby="view-label">
@@ -31,14 +28,11 @@
     </div>
   </div>
 
-
   <div class="field">
     <label for="utility">Select your utility</label>
-    <select id="utility" aria-describedby="utility-note">
+    <select id="utility" aria-describedby="legend-basis">
       <option value="">Choose a utility&hellip;</option>
     </select>
-    <p class="field-note" id="utility-note">Everything re-prices against the one
-    you pick.</p>
   </div>
 
   <h2 class="second">Assumptions</h2>
@@ -67,8 +61,7 @@
       <button type="button" data-mode="tod">This hour</button>
     </div>
     <p class="field-note" id="tod-note" hidden>Only 4 of 40 utilities publish a
-    time-of-day schedule &mdash; Puget Sound Energy, City Light, Avista and Pacific
-    Power. The rest charge one price at every hour, so only those four move.</p>
+    time-of-day rate. The rest charge one price at every hour.</p>
   </div>
 
   <div class="field">
@@ -97,7 +90,7 @@
     <i class="swatch" style="background:#d9ddd3"></i>
     <span>no rate collected</span>
   </div>
-  <p class="legend-note" id="legend-basis">Every territory is shaded by how its price compares with the utility you selected.</p>
+  <p class="legend-note" id="legend-basis"></p>
   <p class="legend-note"><b>All-hours</b> colors the standard residential rate.
   <b>This hour</b> uses time-of-day schedules where published — for Puget Sound Energy,
   City Light, Avista and Pacific Power those are opt-in products, not what most
@@ -105,12 +98,10 @@
 </details>
 
 <footer>
-  Boundaries are the <b>Electric Utility Service Areas</b> published by the
-  Washington UTC and Department of Ecology. Rates are curated from each utility's
-  own published tariff and do not update on their own; see the README for sources
-  and effective dates. Co-ops, mutuals and naval bases render gray because we have
-  no residential rate for them. PUD and municipal rates are set by locally elected
-  boards, not the WUTC.
+  Boundaries: <b>Electric Utility Service Areas</b>, Washington UTC and Department
+  of Ecology. Rates are curated from each utility's own tariff and do not update
+  themselves. Co-ops, mutuals and naval bases have no rate on file and render
+  gray. PUD and municipal rates are set by locally elected boards, not the WUTC.
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

@@ -71,7 +71,7 @@ export function updateBenchmarkCopy() {
   const b = utilityById(benchmarkId());
   const el = $("#legend-basis");
   if (el && b) {
-    el.textContent = `Every territory is shaded by how its price compares with ${b.name} at the selected hour. Green is cheaper than that, red is more expensive, gray is a rate we have not collected.`;
+    el.textContent = `Shaded against ${b.name}. Green is cheaper, red dearer, gray is no rate on file.`;
   }
   buildRamp();
 }
@@ -134,9 +134,8 @@ export function renderList(state, countiesById, onPick) {
 
   panel.innerHTML = `
     <header>
-      <h2>Every utility, priced at ${state.usage.toLocaleString()} kWh${flat ? "" : " at " + fmtHourLabel(state.hour)}</h2>
-      <p>sorted cheapest first, against <b>${esc(bench ? short(bench.name) : "your utility")}</b>.
-      Click a row to expand its rate breakdown.</p>
+      <h2>${state.usage.toLocaleString()} kWh a month, cheapest first</h2>
+      <p>Against <b>${esc(bench ? short(bench.name) : "your utility")}</b>. Click a row for detail.</p>
       <div class="list-legend">
         <div class="legend-bar"></div>
         <div class="legend-scale"><span>${lo}\u00A2</span><span class="legend-mid">${benchCents ? benchCents.toFixed(2) + "\u00A2" : ""}</span><span>${hi}\u00A2</span></div>
@@ -268,7 +267,7 @@ export function detailHtml(props, state) {
   if (!u) {
     return `<h3>${esc(props.name)}</h3>
       <div class="kind">${TYPE_LABEL[props.type] || ""}</div>
-      <p class="meta">Rate not yet collected for this utility.</p>`;
+      <p class="meta">No rate on file.</p>`;
   }
 
   const r = u.residential || {};
