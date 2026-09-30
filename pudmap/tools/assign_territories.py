@@ -36,6 +36,7 @@ COUNTIES = os.environ.get("PUD_COUNTIES", os.path.join(ROOT, "data", "us_countie
 UTILITIES = os.path.join(ROOT, "data", "utilities.json")
 CENTERS = os.path.join(ROOT, "data", "centers.json")
 OUT = os.path.join(ROOT, "data", "boundaries.geojson")
+CITY_BOUNDARIES = os.path.join(ROOT, "data", "boundaries", "municipal_boundaries.geojson")
 
 CLAIM_KM = 45.0     # how far a service center reaches before the default takes over
 SIMPLIFY = 0.0015   # degrees — trims float noise, keeps borders straight
@@ -68,10 +69,31 @@ def claim_radius(uid, center, rivals, limit_km):
     return limit_km
 
 
-def split_county(county, county_geom, candidates, default_uid):
-    """Voronoi partition of one county, clipped to each public utility's reach."""
+def split_county(county, county_geom, candidates, default_uid, city_bounds=None):
+    """Voronoi partition of one county, clipped to each public utility's reach.
+
+    A utility with a real city boundary uses it verbatim — a municipal utility's
+    service area is the city limit, so no radius, bisector or disc applies.
+    """
     if not candidates:
         return [(default_uid, county_geom)]
+
+    if city_bounds:
+        pinned = []
+        rest = []
+        for uid, center in candidates:
+            geom = city_bounds.get(uid)
+            if geom is not None:
+                city = shape(geom).intersection(county_geom)
+                if not city.is_empty and city.area > 0:
+                    pinned.append((uid, city))
+                    continue
+            rest.append((uid, center))
+        if pinned:
+            taken = unary_union([g for _, g in pinned])
+            out = pinned + [(default_uid, county_geom.difference(taken))]
+            return [(u, g) for u, g in out if not g.is_empty]
+        candidates = rest
 
     # the default supplier is the county-wide fallback, not a rival to bisect
     publics = spread_coincident([(uid, c) for uid, c in candidates if uid != default_uid])
@@ -161,6 +183,13 @@ def main():
         roster = json.load(fh)
     with open(CENTERS) as fh:
         centers = json.load(fh)
+    # Municipal utilities serve a city, not a radius around their office.
+    # Without this, Seattle City Light's 45 km claim reached east over Bellevue,
+    # which Puget Sound Energy actually serves.
+    city_bounds = {}
+    if os.path.exists(CITY_BOUNDARIES):
+        with open(CITY_BOUNDARIES) as fh:
+            city_bounds = json.load(fh)
 
     utils = {u["id"]: u for u in roster["utilities"]}
     by_county = {}
@@ -194,7 +223,7 @@ def main():
         default_uid = default_by_county.get(county, "pse")
         if default_uid not in utils:
             default_uid = "pse"
-        for uid, geom in split_county(county, county_geom, candidates, default_uid):
+        for uid, geom in split_county(county, county_geom, candidates, default_uid, city_bounds):
             if not geom.is_empty:
                 claims.append((uid, county, geom))
 
