@@ -101,12 +101,12 @@ export function initMap(geojson, handlers, sharedState) {
   }).addTo(map);
 
   // keep the view over the state: bounds come from the data, padded slightly
-  const dataBounds = territories.getBounds().pad(0.15);
-  map.setMaxBounds(dataBounds);
+  map.setMaxBounds(territories.getBounds().pad(0.15));
 
   labelLayer = L.layerGroup().addTo(map);
   addLabels(geojson);
-  map.fitBounds(dataBounds, { padding: [12, 12] });
+  // default framing: the state's own extent, filled but not swimming in margin
+  map.fitBounds(territories.getBounds(), { padding: [8, 8], maxZoom: 9 });
   addLabels(geojson);                     // re-place after the fit resolves sizes
   map.on("zoomend", () => addLabels(geojson));
 }
