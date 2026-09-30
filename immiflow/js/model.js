@@ -35,8 +35,10 @@ nodeSize.MAX_LABEL_W = 210;
 export function nodeSize(node, measure) {
   const m = measure(node.label, node.chipText ?? "");
   const content = Math.max(m.labelW, m.chipW) + 28;
-  // `rows` is optional: a measure fn reporting only widths describes a single-line label.
-  const rows = m.rows ?? 1;
+  // The label and the chip are stacked inside the box, not alternatives, so the box
+  // has to be tall enough for both blocks. A measure fn that reports only `rows`
+  // describes a single-line label and no chip.
+  const rows = m.labelRows === undefined ? (m.rows ?? 1) : m.labelRows + (m.chipRows ?? 0);
   return { w: Math.min(Math.max(content, 130), nodeSize.MAX_LABEL_W + 28), h: rows * 22 + 26 };
 }
 
@@ -60,15 +62,29 @@ export function detailModel(node) {
   };
 }
 
-export function makeTextMeasurer(font = "15px Georgia") {
+// The chip is painted uppercase, 700 9.5px sans, .06em letter-spaced (see
+// css/immiflow.css). Measuring it in the label's 15px Georgia over-counts its width,
+// and over-counted chip rows are what push a chip out through the bottom of its box.
+const CHIP_FONT = '700 9.5px -apple-system, "Segoe UI", sans-serif';
+const CHIP_LETTER_SPACING = 0.06 * 9.5;
+
+export function makeTextMeasurer(labelFont = "15px Georgia", chipFont = CHIP_FONT) {
   const ctx = document.createElement("canvas").getContext("2d");
-  ctx.font = font;
   return (label, chip) => {
-    const width = (s) => ctx.measureText(s).width;
-    // Both the label and the chip wrap at the width cap. The chip is load-bearing text —
+    const width = (s, font, extra = 0) => { ctx.font = font; return ctx.measureText(s).width + extra * s.length; };
+    // The label and the chip both wrap at the width cap. The chip is load-bearing text —
     // "no published figure", "not a path to a card" — so it must grow the box, not overflow it.
     const cap = nodeSize.MAX_LABEL_W;
-    const rows = Math.max(1, Math.ceil(width(label) / cap), Math.ceil(width(chip) / cap));
-    return { labelW: Math.min(width(label), cap), chipW: Math.min(width(chip), cap), rows };
+    const raw = chip.toUpperCase();
+    const labelW = width(label, labelFont);
+    const chipW = width(raw, chipFont, CHIP_LETTER_SPACING);
+    // Ceil, so a line the SVG measurer wraps is never a hair wider than the box it wraps into.
+    const labelRows = Math.max(1, Math.ceil(labelW / cap));
+    const chipRows = raw ? Math.max(1, Math.ceil(chipW / cap)) : 0;
+    return {
+      labelW: Math.min(Math.ceil(labelW), cap),
+      chipW: Math.min(Math.ceil(chipW), cap),
+      labelRows, chipRows, rows: labelRows + chipRows,
+    };
   };
 }

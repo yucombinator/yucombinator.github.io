@@ -71,6 +71,15 @@ test("a long chip grows the box's height instead of overflowing it", () => {
   assert.ok(wider.w > brief.w, "a chip wider than its label widens the box");
 });
 
+test("a node holding both a wrapped label and a wrapped chip is tall enough for the two stacked", () => {
+  const both = nodeSize({ label: "x", chipText: "y" }, () => ({ labelW: 400, chipW: 400, labelRows: 2, chipRows: 2 }));
+  const labelOnly = nodeSize({ label: "x", chipText: "" }, () => ({ labelW: 400, chipW: 0, labelRows: 2, chipRows: 0 }));
+  const chipOnly = nodeSize({ label: "x", chipText: "y" }, () => ({ labelW: 0, chipW: 400, labelRows: 1, chipRows: 2 }));
+  assert.ok(both.h > labelOnly.h, "the chip block adds height below the label block, not beside it");
+  assert.ok(both.h > chipOnly.h, "the label block adds height above the chip block, not beside it");
+  assert.equal(both.h, (2 + 2) * 22 + 26, "rows is the sum of the two blocks, not the larger one");
+});
+
 test("the measurer wraps an over-long chip into more rows", () => {
   const real = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ font: "", measureText: (s) => ({ width: s.length * 10 }) }) }) };
@@ -79,6 +88,9 @@ test("the measurer wraps an over-long chip into more rows", () => {
     const warning = measure("TPS", "temporary — not a path to a card");
     const brief = measure("TPS", "renew");
     assert.ok(warning.rows > brief.rows, "a chip too long for one line must wrap");
+    assert.equal(warning.labelRows, 1, "the short label stays on one line");
+    assert.equal(warning.chipRows, 2, "the over-long chip wraps to two lines");
+    assert.equal(warning.rows, warning.labelRows + warning.chipRows, "rows is the sum of the two blocks");
     assert.equal(warning.chipW, nodeSize.MAX_LABEL_W, "the chip is capped at the box width");
   } finally {
     globalThis.document = real;

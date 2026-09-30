@@ -41,7 +41,7 @@
         "bulletin": null, "backlogs": null, "note": "Premium processing is a large extra fee and only buys speed, not eligibility." } ] },
     { "id": "l1", "track": "employment", "label": "L-1 intracompany transferee",
       "form": "I-129", "agency": "USCIS", "chip": null,
-      "gate": "Requires you to have worked for the parent company abroad for a full year in the last three. This is the only employment visa that skips the lottery.",
+      "gate": "Requires you to have worked for the parent company abroad for a full year in the last three. It is cap-exempt: you do not have to win the H-1B cap lottery the way an H-1B applicant does.",
       "waits": [ { "category": "L-1, regular processing", "regular": "about 5 months", "premium": "15 business days",
         "bulletin": null, "backlogs": null, "note": null } ] },
     { "id": "o1", "track": "employment", "label": "O-1 extraordinary ability",
@@ -88,7 +88,7 @@
       "form": "I-130", "agency": "USCIS", "chip": null,
       "waits": [
         { "category": "I-130, US citizen sponsor", "regular": "about 13 months", "premium": null, "bulletin": null, "backlogs": null, "note": null },
-        { "category": "I-130, green card holder sponsor", "regular": "three years or more", "premium": null, "bulletin": null, "backlogs": null, "note": "The same form, four times the wait, because the sponsor is waiting their own turn to become a citizen." }
+        { "category": "I-130, green card holder sponsor", "regular": "three years or more", "premium": null, "bulletin": null, "backlogs": null, "note": "The same form, roughly three times the wait, because the sponsor is waiting their own turn to become a citizen." }
       ] },
     { "id": "immediate-relative", "track": "family", "label": "Immediate relative — no queue",
       "form": null, "agency": null, "chip": "skips the queue entirely",

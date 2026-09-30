@@ -36,10 +36,12 @@ html, body { margin: 0; background: var(--surface); color: var(--ink); font: 13p
 #filters { padding: 12px 14px; }
 #filters .seg { display: flex; flex-wrap: wrap; gap: 4px; }
 .seg button { padding: 5px 9px; font: 600 11px/1 var(--sans); color: var(--ink);
-  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+  background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--track-hue, var(--line));
+  border-radius: 4px; cursor: pointer; }
 .seg button:hover { background: var(--accent-soft); }
-.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-strong);
-  color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-strong); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft);
+  border-color: var(--track-hue, var(--accent-strong));
+  color: var(--accent); box-shadow: inset 0 0 0 1px var(--track-hue, var(--accent-strong)); }
 #detail { padding: 12px 14px; max-height: 62vh; overflow: auto; }
 #detail:empty { display: none; }
 #detail .formline { font: 600 12px var(--sans); margin: 0 0 2px; }
@@ -80,6 +82,9 @@ path.edge { stroke: var(--line); stroke-width: 1.5; fill: none; }
 path.edge.conditional { stroke-dasharray: 3 3; }
 path.edge.dim { opacity: .2; }
 .arrowhead { fill: var(--line); }
+text.edge-label { font: 600 10px var(--sans); fill: var(--ink-soft); text-transform: none;
+  paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+text.edge-label.dim { opacity: .2; }
 text.measure-label { font: 15px var(--serif); visibility: hidden; }
 text.measure-chip { font: 700 9.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; visibility: hidden; }
 #err { display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 16px;
