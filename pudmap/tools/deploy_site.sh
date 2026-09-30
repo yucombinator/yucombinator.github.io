@@ -20,6 +20,20 @@ if [[ ! -d "$SITE/.git" ]]; then
   exit 1
 fi
 
+# Push to main and nothing else. An earlier version pushed to whatever branch
+# happened to be checked out, which put a commit on a feature branch and nearly
+# published unrelated unfinished work.
+BRANCH="$(git -C "$SITE" branch --show-current)"
+if [[ "$BRANCH" != "main" && "${PUD_SITE_BRANCH:-}" != "main" ]]; then
+  echo "refusing to deploy: site repo is on '$BRANCH', not 'main'" >&2
+  echo "check out main, or re-run from a worktree of it" >&2
+  exit 1
+fi
+if [[ -n "$(git -C "$SITE" status --porcelain)" ]]; then
+  echo "refusing to deploy: site repo has uncommitted changes" >&2
+  exit 1
+fi
+
 mkdir -p "$DEST"
 rsync -a --delete \
   --exclude '.git/' \
@@ -37,8 +51,8 @@ fi
 
 if [[ "${1:-}" == "--push" ]]; then
   git -C "$SITE" add pudmap index.html
-  git -C "$SITE" commit -m "Add WA electric rate map at /pudmap/"
-  git -C "$SITE" push origin "$(git -C "$SITE" branch --show-current)"
+  git -C "$SITE" commit -m "Update WA electric rate map at /pudmap/"
+  git -C "$SITE" push origin main
   echo "pushed"
 else
   echo "preview: python3 -m http.server $PORT --directory $SITE"

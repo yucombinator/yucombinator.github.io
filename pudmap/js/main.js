@@ -32,6 +32,10 @@ async function main() {
   clearError();
 
   setBasemap("light");   // choropleth has to read over the basemap
+  // the legend is a summary; on a phone it competes with the map for space
+  if (window.matchMedia("(max-width: 860px)").matches) {
+    document.querySelector("#legend")?.removeAttribute("open");
+  }
   initMap(boundaries, {
     onSelect: (props) => renderDetail(props, state),
   }, state);

@@ -57,7 +57,23 @@ let current = { period: "flat", usage: 1000, hour: 19 };
 let selected = null;
 const onSelect = [];
 
+const isPhone = () => window.matchMedia("(max-width: 860px)").matches;
+
+/** Measure the control sheet and hand its height to CSS, so the map occupies
+ *  exactly the space above it and nothing opens a gap between the two. */
+function syncSheet() {
+  const sheet = document.getElementById("controls");
+  if (!sheet) return;
+  const h = Math.min(sheet.getBoundingClientRect().height, window.innerHeight * 0.62);
+  document.documentElement.style.setProperty("--sheet-h", `${Math.round(h)}px`);
+  map.invalidateSize();
+}
+
 export function initMap(geojson, handlers, sharedState) {
+  // the sheet covers the lower half on a phone, so the map is sized to what is
+  // left of it
+  if (isPhone()) syncSheet();
+  window.addEventListener("resize", () => { if (isPhone()) syncSheet(); });
   if (sharedState) current = sharedState;   // one source of truth for assumptions
   sourceGeojson = geojson;
   territories = L.geoJSON(geojson, {
@@ -97,6 +113,7 @@ export function initMap(geojson, handlers, sharedState) {
 
 function addLabels(geojson) {
   labelLayer.clearLayers();
+  if (isPhone()) return;          // labels cannot fit or be read at this size
   const best = new Map();
   for (const f of geojson.features) {
     const p = f.properties;

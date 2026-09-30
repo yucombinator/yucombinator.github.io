@@ -57,6 +57,12 @@ yesterday's ES modules after an edit.
 - **Colour legend** — a single green-to-red bar showing the actual cents per
   kWh, with your selected utility's rate marked in the middle, so the shading
   is readable as numbers rather than vibes.
+- **Phone layout.** Below 860px the floating panels become one bottom sheet with
+  a grab handle, the map takes exactly the space above it (measured, not guessed),
+  panels are fixed rather than absolute so they cannot scroll off, labels are
+  dropped (they cannot fit or be read at that width), touch targets grow to
+  34px, and the list drops the county line and shows the percentage instead of
+  the dollar delta.
 - **View stays over Washington.** The map's max bounds come from the data itself
   (state extent, padded), so neither panning nor zooming out can drift to the
   ocean or a world view on a wide screen.

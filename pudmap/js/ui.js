@@ -113,6 +113,11 @@ export function renderList(state, countiesById, onPick) {
     const pct = (delta != null && benchTotal > 0) ? Math.round(Math.abs(delta) / benchTotal * 100) : null;
     const word = same ? "same" : `${pct}% ${cheaper ? "cheaper" : "more expensive"}`;
     const sign = cheaper ? "\u2212" : "+";
+    // on a phone the dollar amount does not fit beside the percentage
+    const shown = delta == null ? "&mdash;"
+      : (window.innerWidth < 860
+        ? `${pct}% ${cheaper ? "cheaper" : "dearer"}`
+        : `${word} ${sign}$${Math.abs(delta).toFixed(2)}`);
     const { fill } = colorForRate(cents, benchmarkCents(state.hour, state.period));
     const rowTint = cents == null ? "transparent" : tint(fill, 0.82);
     return `<tr data-id="${u.id}" tabindex="0" style="background:${rowTint}">
@@ -123,7 +128,7 @@ export function renderList(state, countiesById, onPick) {
       </td>
       <td class="c-num">${cents == null ? "&mdash;" : cents.toFixed(2) + "\u00A2"}</td>
       <td class="c-num">${bill == null ? "&mdash;" : "$" + bill.toFixed(2)}</td>
-      <td class="c-delta ${cls}">${delta == null ? "&mdash;" : `${word} ${sign}$${Math.abs(delta).toFixed(2)}`}</td>
+      <td class="c-delta ${cls}">${shown}</td>
     </tr>
     ${open ? `<tr class="c-expand"><td colspan="5">${detailHtml({ id: u.id, type: u.type, county }, state)}</td></tr>` : ""}`;
   }).join("");
