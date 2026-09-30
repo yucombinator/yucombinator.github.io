@@ -18,6 +18,14 @@
 - Design tokens are copied **verbatim** from `pudmap/css/pud.css`: `--ink #18362d`, `--ink-soft #4a6b58`, `--accent #0c5237`, `--accent-mid #1a6b4a`, `--accent-soft #eef6ef`, `--accent-strong #2f7d4f`, `--surface #eef2ec`, `--surface-raised #f7faf6`, `--line #d9ddd3`, `--sans -apple-system, "Segoe UI", sans-serif`, `--serif Georgia, "Times New Roman", serif`, and the `--shadow` pair. Do not invent new colors.
 - Track hues, held constant across node border, track filter, and legend: student `#1f78b4`, employment `#0c5237`, family `#8a6512`, humanitarian `#9a3412`. Origin/terminal nodes use `--ink`.
 - **Approximate periods only.** "about 4 months", "over a year", "around 3 years". Never "3.7 mo", never a decimal, never a day count.
+- **Exception — posted service guarantees.** A published service standard is not an estimate and is
+  not rounded. Premium processing's "15 business days" (45 for EB-1C and EB-2 NIW) is a USCIS
+  commitment, shown verbatim. Rendering it as "about 2 to 3 weeks" would dress a guarantee as a
+  guess, which misleads in the other direction.
+- `waits` is either a non-empty list of wait rows or the empty list `[]`; there is no third state. A
+  node whose `waits` is `[]` states its situation in words via `chip` — every such node carries one.
+- Absent values are `null`, never `""`. An empty string and `null` would otherwise both mean
+  "nothing here", and a renderer cannot tell them apart.
 - **Never sum** a visa-bulletin wait and a USCIS processing wait into one figure. They are separate columns and stay separate.
 - A step with no known wait says so **in words** ("No published figure", "lottery", "depends on the bulletin"). It never renders `0`, `null`, an empty cell, or a dash.
 - `agency` is one of `USCIS`, `DOL`, `State Dept`, or `null`. `null` is correct for a decision or gate node that has no form yet.
@@ -329,7 +337,7 @@ Full content below. Three correctness rules are load-bearing and encoded here: *
         "bulletin": null, "backlogs": null,
         "note": "TPS is not a route to permanent residence. It defers the question; it does not answer it." } ] },
     { "id": "u-visa", "track": "humanitarian", "label": "U visa — crime victim",
-      "form": "I-918", "agency": "USCIS", "chip": "no published figure",
+      "form": "I-918", "agency": "USCIS", "chip": "no published wait",
       "gate": "Requires cooperation with law enforcement in a qualifying crime investigation. After four years you can adjust to permanent residence.",
       "waits": [ { "category": "U visa petition", "regular": "No published figure", "premium": null,
         "bulletin": null, "backlogs": null, "note": "A path to a green card, unlike TPS and DACA." } ] },
@@ -481,8 +489,8 @@ test("an explicit chip overrides the derived form+wait text", () => {
 });
 
 test("a bulletin-only node never merges its bulletin and processing waits", () => {
-  const node = { ...opt, form: "Visa Bulletin", chip: "years",
-    waits: [{ category: "F4", regular: null, premium: null, bulletin: "roughly 18 years", backlogs: null, note: "" }] };
+  const node = { ...opt, form: "Visa Bulletin", chip: null,
+    waits: [{ category: "F4", regular: null, premium: null, bulletin: "roughly 18 years", backlogs: null, note: null }] };
   const text = chipText(node);
   assert.equal(text, "Visa Bulletin · roughly 18 years");
   assert.doesNotMatch(text, /\d.*\+\s*\d/, "chip must not sum two queues");
@@ -565,7 +573,7 @@ test("an unknown agency is rejected", () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test test/`
+Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test`
 Expected: FAIL — `Cannot find module .../js/model.js`.
 
 - [ ] **Step 3: Write `js/model.js`**
@@ -691,7 +699,7 @@ export async function loadGraph(url) {
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test test/`
+Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test`
 Expected: PASS, all 12 tests, exit 0.
 
 - [ ] **Step 6: Commit**
@@ -910,10 +918,12 @@ export function renderGraph(svg, laid, d3, state) {
       .selectAll("tspan").data(lines).join("tspan")
       .attr("x", 14).attr("dy", 19).text(t => t);
     if (d.chipText) {
+      const chipLines = wrap(d.chipText, Math.floor((d.w - 28) / 5.6));
       sel.append("text").attr("class", "chip")
         .attr("x", 14).attr("y", 22 + perLine * 19 + 4)
         .attr("fill", HUE[d.track] ?? HUE.origin)
-        .text(d.chipText);
+        .selectAll("tspan").data(chipLines).join("tspan")
+        .attr("x", 14).attr("dy", 12).text(t => t);
     }
   });
 
@@ -1046,7 +1056,7 @@ try {
 
 - [ ] **Step 8: Run the unit tests**
 
-Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test test/`
+Run: `cd ~/dev/yucombinator.github.io/immiflow && node --test`
 Expected: PASS including the two `edgePath` tests.
 
 - [ ] **Step 9: Verify in a real browser**
@@ -1251,7 +1261,7 @@ The layout is computed at runtime by dagre, so adding a node means adding data a
 
 ```sh
 python3 tools/validate_data.py    # edge endpoints, duplicate ids, agencies, reachability
-node --test test/                 # the pure logic: parsing, chips, filtering, geometry
+node --test                 # the pure logic: parsing, chips, filtering, geometry
 ```
 
 ## Stack
@@ -1281,7 +1291,7 @@ Run the full check, then look at the page one last time:
 
 ```sh
 cd ~/dev/yucombinator.github.io/immiflow
-python3 tools/validate_data.py && node --test test/
+python3 tools/validate_data.py && node --test
 ```
 Expected: `OK: 28 nodes, 39 edges, all reachable` and all tests passing.
 
