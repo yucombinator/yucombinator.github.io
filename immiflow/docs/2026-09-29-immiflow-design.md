@@ -166,7 +166,6 @@ detail panel is opened.
 - **Track filter** — four chips above the canvas, plus "All". Selecting a track
   dims every node not on it rather than removing them, so the reader still sees
   what the other paths were.
-- **Hover** → tooltip with the form and headline figure.
 - **Keyboard** — nodes are focusable in rank order, Enter/Space opens the
   detail panel, Escape closes it.
 - **One repaint path.** State is `{selected, track}`; every visual change goes
