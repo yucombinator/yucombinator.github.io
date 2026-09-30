@@ -1,205 +1,840 @@
 {
   "nodes": [
-    { "id": "start", "track": "origin", "label": "In the US, no legal status, wants to stay",
-      "form": null, "agency": null, "gate": null, "chip": "the starting point", "waits": [] },
-
-    { "id": "study-enroll", "track": "student", "label": "Enroll in a school that sponsors F-1 students",
-      "form": null, "agency": null, "chip": "a school has to agree to sponsor you",
-      "gate": "The school must be certified to sponsor international students. Most community colleges are not. You need a real degree, not a certificate mill — the government audits for exactly that.", "waits": [] },
-    { "id": "f1-status", "track": "student", "label": "F-1 student status",
-      "form": "I-539 + I-901", "agency": "USCIS",
+    {
+      "id": "start",
+      "track": "origin",
+      "label": "In the US, no legal status, wants to stay",
+      "form": null,
+      "agency": null,
+      "gate": null,
+      "chip": "the starting point",
+      "waits": []
+    },
+    {
+      "id": "study-enroll",
+      "track": "student",
+      "label": "Enroll in a school that sponsors F-1 students",
+      "form": null,
+      "agency": null,
+      "chip": "a school has to agree to sponsor you",
+      "gate": "The school must be certified to sponsor international students. Most community colleges are not. You need a real degree, not a certificate mill — the government audits for exactly that.",
+      "waits": []
+    },
+    {
+      "id": "f1-status",
+      "track": "student",
+      "label": "F-1 student status",
+      "form": "I-539 + I-901",
+      "agency": "USCIS",
       "gate": "The school files the SEVIS I-901 for you and requests the status change; you do not file alone.",
       "chip": null,
-      "waits": [ { "category": "Change of status to F-1", "regular": "about 2 to 3 months", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "The I-901 fee is paid by the school; the I-539 is filed with USCIS." } ] },
-    { "id": "cpt", "track": "student", "label": "Co-op or internship (CPT)",
-      "form": null, "agency": null, "chip": "dead end",
-      "gate": "Curricular practical training: work tied directly to your coursework, no extension, and no route to a green card. Useful while studying, useless afterwards.", "waits": [] },
-    { "id": "opt", "track": "student", "label": "Optional Practical Training (OPT)",
-      "form": "I-765", "agency": "USCIS",
+      "waits": [
+        {
+          "category": "Change of status to F-1",
+          "regular": "about 2 to 3 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "The I-901 fee is paid by the school; the I-539 is filed with USCIS."
+        }
+      ]
+    },
+    {
+      "id": "cpt",
+      "track": "student",
+      "label": "Co-op or internship (CPT)",
+      "form": null,
+      "agency": null,
+      "chip": "dead end",
+      "gate": "Curricular practical training: work tied directly to your coursework, no extension, and no route to a green card. Useful while studying, useless afterwards.",
+      "waits": []
+    },
+    {
+      "id": "opt",
+      "track": "student",
+      "label": "Optional Practical Training (OPT)",
+      "form": "I-765",
+      "agency": "USCIS",
       "gate": "Requires one full academic year, or two if your English was not your native language.",
       "chip": null,
-      "waits": [ { "category": "OPT, post-completion", "regular": "about 4 months", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "You get at most 12 months, and 90 days of unemployment." } ] },
-    { "id": "stem-opt", "track": "student", "label": "24-month STEM OPT extension",
-      "form": "I-765", "agency": "USCIS",
+      "waits": [
+        {
+          "category": "OPT, post-completion",
+          "regular": "about 4 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "You get at most 12 months, and 90 days of unemployment."
+        }
+      ]
+    },
+    {
+      "id": "stem-opt",
+      "track": "student",
+      "label": "24-month STEM OPT extension",
+      "form": "I-765",
+      "agency": "USCIS",
       "gate": "Three things, not one: a bachelor's or higher in a STEM field on the eligible list, you are already inside a period of post-completion OPT, and an employer enrolled in E-Verify. That last one is why your school's partner list is short.",
       "chip": null,
-      "waits": [ { "category": "STEM OPT extension", "regular": "about 4 months", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "Adds 24 months. The longest runway a student gets." } ] },
-    { "id": "h1b-cap", "track": "employment", "sharedWith": ["student"],
-      "label": "H-1B cap registration", "form": null, "agency": null, "chip": "about 2 in 5",
+      "waits": [
+        {
+          "category": "STEM OPT extension",
+          "regular": "about 4 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "Adds 24 months. The longest runway a student gets."
+        }
+      ]
+    },
+    {
+      "id": "h1b-cap",
+      "track": "employment",
+      "sharedWith": [
+        "student"
+      ],
+      "label": "H-1B cap registration",
+      "form": null,
+      "agency": null,
+      "chip": "about 2 in 5",
       "gate": "Registration is a lottery, once a year, and not everyone who registers is picked. Being picked only buys you time in the country — it is not a green card. If you are already inside the US, the odds you were not picked in an earlier round are the odds you face now.",
       "waits": [
-        { "category": "2027 cap selection rate", "regular": "about 2 in 5", "premium": null, "bulletin": null, "backlogs": null,
-          "note": "About 212,000 eligible registrations for 85,000 places. Two years earlier it was closer to 1 in 4, so the odds have improved rather than worsened — registrations fell by more than two thirds after USCIS began counting each beneficiary once and started policing fraud." },
-        { "category": "2027 cap selection rate, 2026 cap, 2025 cap", "regular": "about 1 in 3, then about 1 in 4", "premium": null, "bulletin": null, "backlogs": null,
-          "note": "The cap has not changed in any of those years. Only the number of people registering for it has." },
-        { "category": "How the draw works", "regular": null, "premium": null, "bulletin": null, "backlogs": null,
-          "note": "Since 2027 the lottery is no longer pure random. Selection is weighted by wage level, so the headline number hides a spread — a well-paid position fares better than a low-paid one. Each employer may register you once a year, but any number of different employers may each register you." }
-      ] },
-
-    { "id": "job-offer", "track": "employment", "label": "Get a job offer from a willing employer",
-      "form": null, "agency": null, "chip": "sponsorship required",
-      "gate": "The employer has to agree to sponsor you, and to stay with you. Most employers will not. Sponsorship attaches to the job, so you cannot freely switch employers the way a citizen can.", "waits": [] },
-    { "id": "h1b-petition", "track": "employment", "label": "H-1B petition",
-      "form": "I-129", "agency": "USCIS", "chip": null,
-      "waits": [ { "category": "H-1B, regular processing", "regular": "about 5 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null, "note": "Premium processing is a large extra fee and only buys speed, not eligibility. An H-1B is temporary: it does not lead to a green card. Your employer has to file a separate immigrant petition, and the six-year buy-back clock is already running." } ] },
-    { "id": "l1", "track": "employment", "label": "L-1 intracompany transferee",
-      "form": "I-129", "agency": "USCIS", "chip": null,
+        {
+          "category": "2027 cap selection rate",
+          "regular": "about 2 in 5",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "About 212,000 eligible registrations for 85,000 places. Two years earlier it was closer to 1 in 4, so the odds have improved rather than worsened — registrations fell by more than two thirds after USCIS began counting each beneficiary once and started policing fraud."
+        },
+        {
+          "category": "2027 cap selection rate, 2026 cap, 2025 cap",
+          "regular": "about 1 in 3, then about 1 in 4",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "The cap has not changed in any of those years. Only the number of people registering for it has."
+        },
+        {
+          "category": "How the draw works",
+          "regular": null,
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "Since 2027 the lottery is no longer pure random. Selection is weighted by wage level, so the headline number hides a spread — a well-paid position fares better than a low-paid one. Each employer may register you once a year, but any number of different employers may each register you."
+        }
+      ]
+    },
+    {
+      "id": "job-offer",
+      "track": "employment",
+      "label": "Get a job offer from a willing employer",
+      "form": null,
+      "agency": null,
+      "chip": "sponsorship required",
+      "gate": "The employer has to agree to sponsor you, and to stay with you. Most employers will not. Sponsorship attaches to the job, so you cannot freely switch employers the way a citizen can.",
+      "waits": []
+    },
+    {
+      "id": "h1b-petition",
+      "track": "employment",
+      "label": "H-1B petition",
+      "form": "I-129",
+      "agency": "USCIS",
+      "chip": null,
+      "waits": [
+        {
+          "category": "H-1B, regular processing",
+          "regular": "about 5 months",
+          "premium": "15 business days",
+          "bulletin": null,
+          "backlogs": null,
+          "note": "Premium processing is a large extra fee and only buys speed, not eligibility. An H-1B is temporary: it does not lead to a green card. Your employer has to file a separate immigrant petition, and the six-year buy-back clock is already running."
+        }
+      ]
+    },
+    {
+      "id": "l1",
+      "track": "employment",
+      "label": "L-1 intracompany transferee",
+      "form": "I-129",
+      "agency": "USCIS",
+      "chip": null,
       "gate": "Requires you to have worked for the parent company abroad for a full year in the last three. It is cap-exempt: you do not have to win the H-1B cap lottery the way an H-1B applicant does.",
-      "waits": [ { "category": "L-1, regular processing", "regular": "about 5 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null, "note": "An L-1 is temporary too, and does not lead to a green card by itself. The employer files a separate immigrant petition." } ] },
-    { "id": "o1", "track": "employment", "label": "O-1 extraordinary ability",
-      "form": "I-129", "agency": "USCIS", "chip": null,
+      "waits": [
+        {
+          "category": "L-1, regular processing",
+          "regular": "about 5 months",
+          "premium": "15 business days",
+          "bulletin": null,
+          "backlogs": null,
+          "note": "An L-1 is temporary too, and does not lead to a green card by itself. The employer files a separate immigrant petition."
+        }
+      ]
+    },
+    {
+      "id": "o1",
+      "track": "employment",
+      "label": "O-1 extraordinary ability",
+      "form": "I-129",
+      "agency": "USCIS",
+      "chip": null,
       "gate": "A high bar: sustained acclaim, awards, publications, or recognition. Not a category most people qualify for, and the file is expensive to build.",
-      "waits": [ { "category": "O-1, regular processing", "regular": "about 5 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null, "note": "An O-1 is temporary as well. What makes it the strongest work visa is what it lets you skip later: extraordinary ability maps onto EB-1, which needs no PERM and is current in the bulletin." } ] },
-    { "id": "eb-category", "track": "employment", "label": "Choose an immigrant category (EB-1 to EB-5)",
-      "form": null, "agency": null, "chip": "the categories are numbered by how little you are worth",
+      "waits": [
+        {
+          "category": "O-1, regular processing",
+          "regular": "about 5 months",
+          "premium": "15 business days",
+          "bulletin": null,
+          "backlogs": null,
+          "note": "An O-1 is temporary as well. What makes it the strongest work visa is what it lets you skip later: extraordinary ability maps onto EB-1, which needs no PERM and is current in the bulletin."
+        }
+      ]
+    },
+    {
+      "id": "eb-category",
+      "track": "employment",
+      "label": "Choose an immigrant category (EB-1 to EB-5)",
+      "form": null,
+      "agency": null,
+      "chip": "the categories are numbered by how little you are worth",
       "gate": "Five categories, ordered by what the government thinks your labour is worth. EB-1 is extraordinary ability, EB-5 is a $800,000 investment. Where you land decides how long you wait.",
-      "waits": [] },
-    { "id": "perm", "track": "employment", "label": "PERM labor certification",
-      "form": "ETA-9089", "agency": "DOL", "chip": "filed with Labor, not USCIS",
+      "waits": []
+    },
+    {
+      "id": "perm",
+      "track": "employment",
+      "label": "PERM labor certification",
+      "form": "ETA-9089",
+      "agency": "DOL",
+      "chip": "filed with Labor, not USCIS",
       "gate": "The employer must run a recruitment process first: pick a wage level, post the ad, wait out the 30 and 60 day minimums, sift resumes. Months of employer admin before the government even looks at it.",
-      "waits": [ { "category": "PERM labor certification", "regular": "over a year, often considerably more",
-        "premium": null, "bulletin": null, "backlogs": null,
-        "note": "A Department of Labor form, not a USCIS one. Audit reviews take substantially longer than analyst reviews. Not eligible for premium processing." } ] },
-    { "id": "i140", "track": "employment", "label": "Immigrant petition for an alien worker",
-      "form": "I-140", "agency": "USCIS", "chip": null,
+      "waits": [
+        {
+          "category": "PERM labor certification",
+          "regular": "over a year, often considerably more",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "A Department of Labor form, not a USCIS one. Audit reviews take substantially longer than analyst reviews. Not eligible for premium processing."
+        }
+      ]
+    },
+    {
+      "id": "i140",
+      "track": "employment",
+      "label": "Immigrant petition for an alien worker",
+      "form": "I-140",
+      "agency": "USCIS",
+      "chip": null,
       "gate": "This is the step that sets your priority date. Everything you wait afterwards is counted from the day this is filed, not from the day you get the card.",
-      "waits": [ { "category": "I-140, regular processing", "regular": "about 4 months", "premium": "15 business days",
-        "bulletin": null, "backlogs": null,
-        "note": "45 business days for EB-1C and EB-2 National Interest Waiver under premium processing." } ] },
-    { "id": "bulletin-eb", "track": "employment", "label": "Wait in the visa-bulletin queue",
-      "form": "Visa Bulletin", "agency": "State Dept", "chip": "years",
+      "waits": [
+        {
+          "category": "I-140, regular processing",
+          "regular": "about 4 months",
+          "premium": "15 business days",
+          "bulletin": null,
+          "backlogs": null,
+          "note": "45 business days for EB-1C and EB-2 National Interest Waiver under premium processing."
+        }
+      ]
+    },
+    {
+      "id": "bulletin-eb",
+      "track": "employment",
+      "label": "Wait in the visa-bulletin queue",
+      "form": "Visa Bulletin",
+      "agency": "State Dept",
+      "chip": "years",
       "gate": "This is a different queue from the one USCIS is processing you in, and it is the one that turns into a decade. It is also the one that can move backwards when the government publishes an update.",
       "waits": [
-        { "category": "EB-1", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": null, "note": null },
-        { "category": "EB-2", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-2 dates date from 2013", "note": null },
-        { "category": "EB-3", "regular": null, "premium": null, "bulletin": "several years", "backlogs": "China and India far longer — Indian EB-3 dates date from 2013", "note": null },
-        { "category": "EB-4", "regular": null, "premium": null, "bulletin": "not currently being issued", "backlogs": null, "note": "The government is not granting these at all right now." },
-        { "category": "EB-5", "regular": null, "premium": null, "bulletin": "current — no wait", "backlogs": "Longer for Chinese and Indian investors, since 2014 and 2019 respectively", "note": null }
-      ] },
-    { "id": "i485-eb", "track": "employment", "label": "Adjustment of status to permanent residence",
-      "form": "I-485", "agency": "USCIS", "chip": "may be barred outright",
+        {
+          "category": "EB-1",
+          "regular": null,
+          "premium": null,
+          "bulletin": "current, worldwide — no wait",
+          "backlogs": "China about 3 years behind, India about 3 years behind",
+          "note": null
+        },
+        {
+          "category": "EB-2",
+          "regular": null,
+          "premium": null,
+          "bulletin": "over a year worldwide",
+          "backlogs": "India over a decade behind, China about 4 years behind",
+          "note": "EB-2 went from current to January 2025 worldwide between September and October 2026. The queue came back for everybody, not just for anyone."
+        },
+        {
+          "category": "EB-3",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 2 years worldwide",
+          "backlogs": "India over a decade behind, China about 2 years behind, Philippines about 9 months behind",
+          "note": "The unskilled EB-3 subcategory is far worse than this — about 4 and a half years worldwide, with no country doing better."
+        },
+        {
+          "category": "EB-4",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 4 years, for every country",
+          "backlogs": null,
+          "note": "Nobody is exempt from this one. It stalled in December 2022 for every nationality at once."
+        },
+        {
+          "category": "EB-5",
+          "regular": null,
+          "premium": null,
+          "bulletin": "current, worldwide — no wait",
+          "backlogs": "China over a decade behind, India about 3 years behind",
+          "note": "China's EB-5 queue dates to December 2016 and is the worst single cell on this page."
+        }
+      ],
+      "countries": {
+        "asOf": "October 2026",
+        "columns": [
+          "Category",
+          "Worldwide",
+          "India",
+          "China",
+          "Mexico",
+          "Philippines"
+        ],
+        "rows": [
+          [
+            "EB-1",
+            "current",
+            "a few years",
+            "a few years",
+            "current",
+            "current"
+          ],
+          [
+            "EB-2",
+            "a few years",
+            "over a decade",
+            "a few years",
+            "a few years",
+            "a few years"
+          ],
+          [
+            "EB-3",
+            "a few years",
+            "over a decade",
+            "a few years",
+            "a few years",
+            "under a year"
+          ],
+          [
+            "EB-3 other",
+            "many years",
+            "over a decade",
+            "many years",
+            "many years",
+            "many years"
+          ],
+          [
+            "EB-4",
+            "many years",
+            "many years",
+            "many years",
+            "many years",
+            "many years"
+          ],
+          [
+            "EB-5",
+            "current",
+            "a few years",
+            "over a decade",
+            "current",
+            "current"
+          ]
+        ],
+        "note": "Cut-off dates for October 2026. These move every month and can go backwards. 'Worldwide' is the queue for everyone except the four named countries, and it is not always clear."
+      }
+    },
+    {
+      "id": "i485-eb",
+      "track": "employment",
+      "label": "Adjustment of status to permanent residence",
+      "form": "I-485",
+      "agency": "USCIS",
+      "chip": "may be barred outright",
       "gate": "Adjusting status means staying in the US for it. If you have ever worked in the US without authorization, this door is shut: the bar survives you leaving and coming back, and counts every previous period you have been here. There is one narrow exemption for employment-based applicants, and only where the violation was 180 days or less.",
-      "waits": [ { "category": "I-485, employment-based", "regular": "about 6 months", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "You can only file once your priority date is current. This wait is separate from the queue above and does not include it." } ] },
-
-    { "id": "family-relative", "track": "family", "label": "A relative files for you",
-      "form": null, "agency": null, "chip": "needs a qualifying relative",
+      "waits": [
+        {
+          "category": "I-485, employment-based",
+          "regular": "about 6 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "You can only file once your priority date is current. This wait is separate from the queue above and does not include it."
+        }
+      ]
+    },
+    {
+      "id": "family-relative",
+      "track": "family",
+      "label": "A relative files for you",
+      "form": null,
+      "agency": null,
+      "chip": "needs a qualifying relative",
       "gate": "A US citizen or a green card holder has to petition for you. Someone with no qualifying relative in the US has no family path at all — this is the single largest fork in the whole system.",
-      "waits": [] },
-    { "id": "i130", "track": "family", "label": "Petition for an alien relative",
-      "form": "I-130", "agency": "USCIS", "chip": null,
+      "waits": []
+    },
+    {
+      "id": "i130",
+      "track": "family",
+      "label": "Petition for an alien relative",
+      "form": "I-130",
+      "agency": "USCIS",
+      "chip": null,
       "waits": [
-        { "category": "I-130, US citizen sponsor", "regular": "about 13 months", "premium": null, "bulletin": null, "backlogs": null, "note": null },
-        { "category": "I-130, green card holder sponsor", "regular": "three years or more", "premium": null, "bulletin": null, "backlogs": null, "note": "The same form, roughly three times the wait, because the sponsor is waiting their own turn to become a citizen." }
-      ] },
-    { "id": "immediate-relative", "track": "family", "label": "Immediate relative — no queue",
-      "form": null, "agency": null, "chip": "skips the queue entirely",
+        {
+          "category": "I-130, US citizen sponsor",
+          "regular": "about 13 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": null
+        },
+        {
+          "category": "I-130, green card holder sponsor",
+          "regular": "three years or more",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "The same form, roughly three times the wait, because the sponsor is waiting their own turn to become a citizen."
+        }
+      ]
+    },
+    {
+      "id": "immediate-relative",
+      "track": "family",
+      "label": "Immediate relative — no queue",
+      "form": null,
+      "agency": null,
+      "chip": "skips the queue entirely",
       "gate": "Spouse, parent, or unmarried child under 21 of a US citizen. This is the only kind of applicant who never waits in the visa bulletin. Everyone on every other path is behind someone. It is also the one path that is exempt from the unauthorized-work bar, so an undocumented work history does not close this door.",
-      "waits": [ { "category": "Immediate relatives", "regular": "about 8 months inside the US", "premium": null,
-        "bulletin": "no wait — exempt from the bulletin", "backlogs": null,
-        "note": "The bulletin wait and the processing wait are shown separately on purpose; only one of them applies here." } ] },
-    { "id": "family-preference", "track": "family", "label": "Family preference category — you are in line",
-      "form": null, "agency": null, "chip": "behind everyone ahead of you",
-      "gate": "Everyone who is not an immediate relative is in a numbered preference category, and the number decides which queue you are in.",
-      "waits": [] },
-    { "id": "bulletin-family", "track": "family", "label": "Wait in the visa-bulletin queue",
-      "form": "Visa Bulletin", "agency": "State Dept", "chip": "years to decades",
       "waits": [
-        { "category": "F1 — adult children of citizens", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": null },
-        { "category": "F2A — spouses of green card holders", "regular": null, "premium": null, "bulletin": "about 3 years", "backlogs": null, "note": null },
-        { "category": "F2B — adult children of green card holders", "regular": null, "premium": null, "bulletin": "about 8 years", "backlogs": "Longer for Mexico", "note": null },
-        { "category": "F3 — married children of citizens", "regular": null, "premium": null, "bulletin": "about 13 years", "backlogs": "Longer for Mexico", "note": null },
-        { "category": "F4 — siblings of citizens", "regular": null, "premium": null, "bulletin": "roughly 18 years, and far longer for some countries", "backlogs": "Indian siblings date from 2006, Mexican from 2001, Philippine from 2008", "note": "The longest ordinary wait in the system." }
-      ] },
-    { "id": "i485-fam", "track": "family", "label": "Adjustment of status to permanent residence",
-      "form": "I-485", "agency": "USCIS", "chip": "may be barred outright",
+        {
+          "category": "Immediate relatives",
+          "regular": "about 8 months inside the US",
+          "premium": null,
+          "bulletin": "no wait — exempt from the bulletin",
+          "backlogs": null,
+          "note": "The bulletin wait and the processing wait are shown separately on purpose; only one of them applies here."
+        }
+      ]
+    },
+    {
+      "id": "family-preference",
+      "track": "family",
+      "label": "Family preference category — you are in line",
+      "form": null,
+      "agency": null,
+      "chip": "behind everyone ahead of you",
+      "gate": "Everyone who is not an immediate relative is in a numbered preference category, and the number decides which queue you are in.",
+      "waits": []
+    },
+    {
+      "id": "bulletin-family",
+      "track": "family",
+      "label": "Wait in the visa-bulletin queue",
+      "form": "Visa Bulletin",
+      "agency": "State Dept",
+      "chip": "years to decades",
+      "waits": [
+        {
+          "category": "F1 — adult children of citizens",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 6 years worldwide",
+          "backlogs": "Mexico over a decade behind, Philippines about 6 years behind",
+          "note": null
+        },
+        {
+          "category": "F2A — spouses of green card holders",
+          "regular": null,
+          "premium": null,
+          "bulletin": "current — no wait",
+          "backlogs": "Mexico about half a year behind",
+          "note": "F2A is effectively clear. Its numbers are largely exempt from the per-country caps, so for once nearly everyone is treated alike."
+        },
+        {
+          "category": "F2B — adult children of green card holders",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 7 years worldwide",
+          "backlogs": "Mexico over a decade behind, Philippines about 6 years behind",
+          "note": null
+        },
+        {
+          "category": "F3 — married children of citizens",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 12 years worldwide",
+          "backlogs": "Mexico over a decade behind, Philippines over a decade behind",
+          "note": null
+        },
+        {
+          "category": "F4 — siblings of citizens",
+          "regular": null,
+          "premium": null,
+          "bulletin": "about 15 years worldwide",
+          "backlogs": "Mexico a generation behind, Philippines a generation behind, India about 15 years behind",
+          "note": "The longest ordinary wait in the system. Mexico's date is April 2001 — longer than most applicants have been alive in the country."
+        }
+      ],
+      "countries": {
+        "asOf": "October 2026",
+        "columns": [
+          "Category",
+          "Worldwide",
+          "India",
+          "China",
+          "Mexico",
+          "Philippines"
+        ],
+        "rows": [
+          [
+            "F1",
+            "about 6 years",
+            "about 6 years",
+            "about 6 years",
+            "over a decade",
+            "about 6 years"
+          ],
+          [
+            "F2A",
+            "current",
+            "current",
+            "current",
+            "under a year",
+            "current"
+          ],
+          [
+            "F2B",
+            "about 7 years",
+            "about 7 years",
+            "about 7 years",
+            "over a decade",
+            "about 6 years"
+          ],
+          [
+            "F3",
+            "about 12 years",
+            "about 12 years",
+            "about 12 years",
+            "over a decade",
+            "over a decade"
+          ],
+          [
+            "F4",
+            "about 15 years",
+            "about 15 years",
+            "about 15 years",
+            "a generation",
+            "a generation"
+          ]
+        ],
+        "note": "Cut-off dates for October 2026. These move every month and can go backwards. 'Worldwide' is the queue for everyone except the four named countries, and it is not always clear. China is at the worldwide date in every family category — the China story is entirely about jobs, not family."
+      }
+    },
+    {
+      "id": "i485-fam",
+      "track": "family",
+      "label": "Adjustment of status to permanent residence",
+      "form": "I-485",
+      "agency": "USCIS",
+      "chip": "may be barred outright",
       "gate": "Same bar as the employment route, with no exemption at all here. If you have worked in the US without authorization, a family preference category no longer lets you adjust in country — you leave and consular process instead, which is a different and much longer queue.",
-      "waits": [ { "category": "I-485, family-based", "regular": "about 6 months", "premium": null,
-        "bulletin": null, "backlogs": null,
-        "note": "Filed only once the bulletin date is current. This wait does not include the queue." } ] },
-    { "id": "k1", "track": "family", "label": "Fiancé(e) of a US citizen",
-      "form": "I-129F", "agency": "USCIS", "chip": "half the wait",
+      "waits": [
+        {
+          "category": "I-485, family-based",
+          "regular": "about 6 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "Filed only once the bulletin date is current. This wait does not include the queue."
+        }
+      ]
+    },
+    {
+      "id": "k1",
+      "track": "family",
+      "label": "Fiancé(e) of a US citizen",
+      "form": "I-129F",
+      "agency": "USCIS",
+      "chip": "half the wait",
       "gate": "This petition is only half of it. The visa interview at a US consulate abroad is the other half, and that part is not shown on this page because we do not have reliable figures for it.",
-      "waits": [ { "category": "I-129F fiancé(e) petition", "regular": "about 8 months", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "USCIS approval only. Consular processing follows." } ] },
-
-    { "id": "asylum", "track": "humanitarian", "label": "Apply for asylum",
-      "form": "I-589", "agency": "USCIS", "chip": "no published figure",
+      "waits": [
+        {
+          "category": "I-129F fiancé(e) petition",
+          "regular": "about 8 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "USCIS approval only. Consular processing follows."
+        }
+      ]
+    },
+    {
+      "id": "asylum",
+      "track": "humanitarian",
+      "label": "Apply for asylum",
+      "form": "I-589",
+      "agency": "USCIS",
+      "chip": "no published figure",
       "gate": "You must apply within a year of arriving, or within 180 days if you are already in removal proceedings. Missing that deadline is usually fatal to the claim.",
-      "waits": [ { "category": "Asylum application", "regular": "No published figure", "premium": null,
-        "bulletin": null, "backlogs": null,
-        "note": "Timing depends entirely on the adjudication schedule, and an approved grant is not a green card — it is protection plus work permission." } ] },
-    { "id": "tps", "track": "humanitarian", "label": "Temporary Protected Status",
-      "form": "I-765", "agency": "USCIS", "chip": "temporary — not a path to a card",
+      "waits": [
+        {
+          "category": "Asylum application",
+          "regular": "No published figure",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "Timing depends entirely on the adjudication schedule, and an approved grant is not a green card — it is protection plus work permission."
+        }
+      ]
+    },
+    {
+      "id": "tps",
+      "track": "humanitarian",
+      "label": "Temporary Protected Status",
+      "form": "I-765",
+      "agency": "USCIS",
+      "chip": "temporary — not a path to a card",
       "gate": "Only if your country of origin is currently designated, and you have been continuously present in the US since the designation. The designation is reviewed every year and can end.",
-      "waits": [ { "category": "TPS employment authorization", "regular": "about 4 months", "premium": null,
-        "bulletin": null, "backlogs": null,
-        "note": "TPS is not a route to permanent residence. It defers the question; it does not answer it." } ] },
-    { "id": "u-visa", "track": "humanitarian", "label": "U visa — crime victim",
-      "form": "I-918", "agency": "USCIS", "chip": "no published figure",
+      "waits": [
+        {
+          "category": "TPS employment authorization",
+          "regular": "about 4 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "TPS is not a route to permanent residence. It defers the question; it does not answer it."
+        }
+      ]
+    },
+    {
+      "id": "u-visa",
+      "track": "humanitarian",
+      "label": "U visa — crime victim",
+      "form": "I-918",
+      "agency": "USCIS",
+      "chip": "no published figure",
       "gate": "Requires cooperation with law enforcement in a qualifying crime investigation. After four years you can adjust to permanent residence.",
-      "waits": [ { "category": "U visa petition", "regular": "No published figure", "premium": null,
-        "bulletin": null, "backlogs": null, "note": "A path to a green card, unlike TPS and DACA." } ] },
-    { "id": "daca", "track": "humanitarian", "label": "DACA",
-      "form": "I-765", "agency": "USCIS", "chip": "temporary — not a path to a card",
+      "waits": [
+        {
+          "category": "U visa petition",
+          "regular": "No published figure",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "A path to a green card, unlike TPS and DACA."
+        }
+      ]
+    },
+    {
+      "id": "daca",
+      "track": "humanitarian",
+      "label": "DACA",
+      "form": "I-765",
+      "agency": "USCIS",
+      "chip": "temporary — not a path to a card",
       "gate": "Arrived in the US before 16, under 31 today, in school or graduated, and no felony conviction on record. Every one of those has to be true at once.",
-      "waits": [ { "category": "DACA work permit", "regular": "about 4 months", "premium": null,
-        "bulletin": null, "backlogs": null,
-        "note": "DACA gives work permission. It does not lead to a green card." } ] },
-
-    { "id": "green-card", "track": "origin", "label": "Lawful permanent resident",
-      "form": null, "agency": null, "chip": "the point", "waits": [] }
+      "waits": [
+        {
+          "category": "DACA work permit",
+          "regular": "about 4 months",
+          "premium": null,
+          "bulletin": null,
+          "backlogs": null,
+          "note": "DACA gives work permission. It does not lead to a green card."
+        }
+      ]
+    },
+    {
+      "id": "green-card",
+      "track": "origin",
+      "label": "Lawful permanent resident",
+      "form": null,
+      "agency": null,
+      "chip": "the point",
+      "waits": []
+    }
   ],
-
   "edges": [
-    { "v": "start", "w": "study-enroll" },
-    { "v": "start", "w": "job-offer" },
-    { "v": "start", "w": "family-relative" },
-    { "v": "start", "w": "asylum" },
-    { "v": "start", "w": "tps" },
-    { "v": "start", "w": "u-visa" },
-    { "v": "start", "w": "daca" },
-
-    { "v": "study-enroll", "w": "f1-status" },
-    { "v": "f1-status", "w": "cpt" },
-    { "v": "f1-status", "w": "opt" },
-    { "v": "opt", "w": "stem-opt" },
-    { "v": "opt", "w": "h1b-cap", "conditional": true },
-    { "v": "stem-opt", "w": "h1b-cap", "conditional": true },
-
-    { "v": "job-offer", "w": "h1b-cap", "conditional": true },
-    { "v": "job-offer", "w": "h1b-petition" },
-    { "v": "job-offer", "w": "l1" },
-    { "v": "job-offer", "w": "o1" },
-    { "v": "job-offer", "w": "eb-category" },
-    { "v": "h1b-cap", "w": "h1b-petition" },
-    { "v": "h1b-petition", "w": "eb-category", "label": "employer files PERM + I-140", "conditional": true },
-    { "v": "l1", "w": "eb-category", "label": "employer files PERM + I-140", "conditional": true },
-    { "v": "o1", "w": "eb-category", "label": "EB-1, no PERM needed", "conditional": true },
-    { "v": "eb-category", "w": "perm", "label": "most EB-2 and EB-3", "conditional": true },
-    { "v": "eb-category", "w": "i140", "label": "EB-1, EB-4, EB-5, EB-2 NIW", "conditional": true },
-    { "v": "perm", "w": "i140" },
-    { "v": "i140", "w": "bulletin-eb" },
-    { "v": "bulletin-eb", "w": "i485-eb" },
-    { "v": "i485-eb", "w": "green-card" },
-
-    { "v": "family-relative", "w": "i130" },
-    { "v": "family-relative", "w": "k1" },
-    { "v": "i130", "w": "immediate-relative" },
-    { "v": "i130", "w": "family-preference" },
-    { "v": "immediate-relative", "w": "green-card" },
-    { "v": "family-preference", "w": "bulletin-family" },
-    { "v": "bulletin-family", "w": "i485-fam" },
-    { "v": "i485-fam", "w": "green-card" },
-    { "v": "k1", "w": "immediate-relative", "label": "after you marry", "conditional": true },
-
-    { "v": "asylum", "w": "green-card" },
-    { "v": "u-visa", "w": "green-card" }
+    {
+      "v": "start",
+      "w": "study-enroll"
+    },
+    {
+      "v": "start",
+      "w": "job-offer"
+    },
+    {
+      "v": "start",
+      "w": "family-relative"
+    },
+    {
+      "v": "start",
+      "w": "asylum"
+    },
+    {
+      "v": "start",
+      "w": "tps"
+    },
+    {
+      "v": "start",
+      "w": "u-visa"
+    },
+    {
+      "v": "start",
+      "w": "daca"
+    },
+    {
+      "v": "study-enroll",
+      "w": "f1-status"
+    },
+    {
+      "v": "f1-status",
+      "w": "cpt"
+    },
+    {
+      "v": "f1-status",
+      "w": "opt"
+    },
+    {
+      "v": "opt",
+      "w": "stem-opt"
+    },
+    {
+      "v": "opt",
+      "w": "h1b-cap",
+      "conditional": true
+    },
+    {
+      "v": "stem-opt",
+      "w": "h1b-cap",
+      "conditional": true
+    },
+    {
+      "v": "job-offer",
+      "w": "h1b-cap",
+      "conditional": true
+    },
+    {
+      "v": "job-offer",
+      "w": "h1b-petition"
+    },
+    {
+      "v": "job-offer",
+      "w": "l1"
+    },
+    {
+      "v": "job-offer",
+      "w": "o1"
+    },
+    {
+      "v": "job-offer",
+      "w": "eb-category"
+    },
+    {
+      "v": "h1b-cap",
+      "w": "h1b-petition"
+    },
+    {
+      "v": "h1b-petition",
+      "w": "eb-category",
+      "label": "employer files PERM + I-140",
+      "conditional": true
+    },
+    {
+      "v": "l1",
+      "w": "eb-category",
+      "label": "employer files PERM + I-140",
+      "conditional": true
+    },
+    {
+      "v": "o1",
+      "w": "eb-category",
+      "label": "EB-1, no PERM needed",
+      "conditional": true
+    },
+    {
+      "v": "eb-category",
+      "w": "perm",
+      "label": "most EB-2 and EB-3",
+      "conditional": true
+    },
+    {
+      "v": "eb-category",
+      "w": "i140",
+      "label": "EB-1, EB-4, EB-5, EB-2 NIW",
+      "conditional": true
+    },
+    {
+      "v": "perm",
+      "w": "i140"
+    },
+    {
+      "v": "i140",
+      "w": "bulletin-eb"
+    },
+    {
+      "v": "bulletin-eb",
+      "w": "i485-eb"
+    },
+    {
+      "v": "i485-eb",
+      "w": "green-card"
+    },
+    {
+      "v": "family-relative",
+      "w": "i130"
+    },
+    {
+      "v": "family-relative",
+      "w": "k1"
+    },
+    {
+      "v": "i130",
+      "w": "immediate-relative"
+    },
+    {
+      "v": "i130",
+      "w": "family-preference"
+    },
+    {
+      "v": "immediate-relative",
+      "w": "green-card"
+    },
+    {
+      "v": "family-preference",
+      "w": "bulletin-family"
+    },
+    {
+      "v": "bulletin-family",
+      "w": "i485-fam"
+    },
+    {
+      "v": "i485-fam",
+      "w": "green-card"
+    },
+    {
+      "v": "k1",
+      "w": "immediate-relative",
+      "label": "after you marry",
+      "conditional": true
+    },
+    {
+      "v": "asylum",
+      "w": "green-card"
+    },
+    {
+      "v": "u-visa",
+      "w": "green-card"
+    }
   ]
 }

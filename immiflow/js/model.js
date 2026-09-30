@@ -59,6 +59,7 @@ export function detailModel(node) {
       backlogs: r.backlogs ?? null,
       note: r.note ?? "",
     })),
+    countries: node.countries ?? null,
   };
 }
 

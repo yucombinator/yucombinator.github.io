@@ -30,7 +30,7 @@ is no queue to join — there is a draw, once a year, and being picked only buys
 
 ## Where the numbers come from
 
-Figures are **rounded and approximate**, compiled September 2026 from:
+Figures are **rounded and approximate**, compiled October 2026 from:
 
 - [Boundless — USCIS Processing Times](https://www.boundless.com/immigration-resources/uscis-processing-times) (updated August 2026)
 - [Boundless — Average Green Card Wait Times](https://www.boundless.com/immigration-resources/average-green-card-wait-times) (updated April 2025)

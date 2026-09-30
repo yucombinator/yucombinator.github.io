@@ -34,3 +34,46 @@ test("renderDetail with a null model clears the element", () => {
   renderDetail(el, null);
   assert.equal(el.innerHTML, "");
 });
+
+test("a node with no country data renders no country table", () => {
+  const el = { innerHTML: "" };
+  renderDetail(el, { ...model, countries: null });
+  assert.doesNotMatch(el.innerHTML, /ctable/);
+  assert.doesNotMatch(el.innerHTML, /By country of birth/);
+});
+
+test("the country grid renders one row per category and labels the snapshot month", () => {
+  const el = { innerHTML: "" };
+  renderDetail(el, {
+    ...model,
+    countries: {
+      asOf: "October 2026",
+      columns: ["Category", "Worldwide", "India"],
+      rows: [
+        ["EB-1", "current", "a few years"],
+        ["EB-2", "a few years", "over a decade"],
+      ],
+      note: "these move monthly",
+    },
+  });
+  assert.match(el.innerHTML, /class="ctable"/);
+  assert.match(el.innerHTML, /October 2026/);
+  assert.match(el.innerHTML, /these move monthly/);
+  const grid = el.innerHTML.split('class="ctable"')[1].split("</table>")[0];
+  assert.equal((grid.match(/<tr>/g) ?? []).length, 3, "one header row plus two categories");
+});
+
+test("a country cell containing markup is escaped, not injected", () => {
+  const el = { innerHTML: "" };
+  renderDetail(el, {
+    ...model,
+    countries: {
+      asOf: "October 2026",
+      columns: ["Category", "Worldwide"],
+      rows: [[`EB-1 ${payload}`, "current"]],
+      note: "n",
+    },
+  });
+  assert.doesNotMatch(el.innerHTML, /<script/);
+  assert.match(el.innerHTML, /&lt;script&gt;/);
+});
