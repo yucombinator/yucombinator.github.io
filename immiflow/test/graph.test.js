@@ -6,7 +6,7 @@ const good = {
   nodes: [
     { id: "start", track: "origin", label: "s", form: null, agency: null, waits: [] },
     { id: "a", track: "student", label: "a", form: "I-765", agency: "USCIS",
-      waits: [{ category: "c", regular: "about 4 months", premium: null, bulletin: null, backlogs: null, note: "" }] },
+      waits: [{ category: "c", regular: "about 4 months", premium: null, bulletin: null, backlogs: null, note: null }] },
   ],
   edges: [{ v: "start", w: "a" }],
 };

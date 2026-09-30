@@ -5,7 +5,7 @@ import { chipText, headlineWait, isInTrack, nodeSize, detailModel, TRACKS } from
 const opt = {
   id: "opt", track: "student", label: "Optional Practical Training (OPT)",
   form: "I-765", agency: "USCIS", gate: "one academic year", chip: null,
-  waits: [{ category: "OPT", regular: "about 4 months", premium: null, bulletin: null, backlogs: null, note: "" }],
+  waits: [{ category: "OPT", regular: "about 4 months", premium: null, bulletin: null, backlogs: null, note: null }],
 };
 const cap = { id: "h1b-cap", track: "employment", sharedWith: ["student"], label: "H-1B cap registration",
   form: null, agency: null, gate: "it is a lottery", chip: "lottery", waits: [] };
@@ -13,7 +13,7 @@ const cap = { id: "h1b-cap", track: "employment", sharedWith: ["student"], label
 test("headline wait prefers regular, then bulletin, then backlogs", () => {
   assert.equal(headlineWait(opt), "about 4 months");
   assert.equal(headlineWait({ ...opt, waits: [{ category: "EB-1", regular: null, premium: null,
-    bulletin: "current — no wait", backlogs: null, note: "" }] }), "current — no wait");
+    bulletin: "current — no wait", backlogs: null, note: null }] }), "current — no wait");
   assert.equal(headlineWait({ ...opt, waits: [] }), null);
 });
 
@@ -24,8 +24,8 @@ test("an explicit chip overrides the derived form+wait text", () => {
 });
 
 test("a bulletin-only node never merges its bulletin and processing waits", () => {
-  const node = { ...opt, form: "Visa Bulletin", chip: "years",
-    waits: [{ category: "F4", regular: null, premium: null, bulletin: "roughly 18 years", backlogs: null, note: "" }] };
+  const node = { ...opt, form: "Visa Bulletin", chip: null,
+    waits: [{ category: "F4", regular: null, premium: null, bulletin: "roughly 18 years", backlogs: null, note: null }] };
   const text = chipText(node);
   assert.equal(text, "Visa Bulletin · roughly 18 years");
   assert.doesNotMatch(text, /\d.*\+\s*\d/, "chip must not sum two queues");
