@@ -43,7 +43,8 @@ try {
   function paint() {
     updateHighlight(document.getElementById("graph"), d3, state);
     for (const b of seg.children) b.setAttribute("aria-pressed", String(b.dataset.track === state.track));
-    renderDetail(detail, state.selected ? detailModel(graph.nodes.get(state.selected)) : null);
+    const node = graph.nodes.get(state.selected);
+    renderDetail(detail, node ? detailModel(node) : null);
   }
 } catch (e) {
   fail(`Could not draw the flowchart: ${e.message}`);
