@@ -349,6 +349,9 @@ Full content below. Three correctness rules are load-bearing and encoded here: *
     { "v": "start", "w": "job-offer" },
     { "v": "start", "w": "family-relative" },
     { "v": "start", "w": "asylum" },
+    { "v": "start", "w": "tps" },
+    { "v": "start", "w": "u-visa" },
+    { "v": "start", "w": "daca" },
 
     { "v": "study-enroll", "w": "f1-status" },
     { "v": "f1-status", "w": "cpt" },
@@ -394,9 +397,11 @@ Full content below. Three correctness rules are load-bearing and encoded here: *
 - [ ] **Step 4: Run the validator to verify it passes**
 
 Run: `cd ~/dev/yucombinator.github.io/immiflow && python3 tools/validate_data.py`
-Expected: `OK: 30 nodes, 38 edges, all reachable`
+Expected: `OK: 28 nodes, 39 edges, all reachable`
 
-If the node count differs from 30 you have added or dropped a node — recount against the list above before continuing.
+If the counts differ from 28 nodes / 39 edges you have added or dropped something — recount against the
+list above before continuing. The only nodes with no outgoing edge are `cpt`, `tps`, `daca` and
+`green-card`; that is the design, not an omission.
 
 - [ ] **Step 5: Prove the validator actually catches breakage**
 
@@ -740,7 +745,7 @@ Expected: FAIL — `Cannot find module .../js/layout.js`.
 - [ ] **Step 3: Write `js/layout.js`**
 
 ```js
-import { chipText, isInTrack } from "./model.js";
+import { chipText, nodeSize } from "./model.js";
 
 export function edgePath(points) {
   return points.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" ");
@@ -755,7 +760,7 @@ export function layoutGraph(graph, dagreLib, opts = {}) {
   const laid = new Map();
   for (const n of graph.nodes.values()) {
     const text = chipText(n);
-    const { w, h } = nodeSizeOf(n, text, measure);
+    const { w, h } = nodeSize({ ...n, chipText: text }, measure);
     laid.set(n.id, { ...n, chipText: text, w, h });
     g.setNode(n.id, { width: w, height: h });
   }
@@ -769,19 +774,23 @@ export function layoutGraph(graph, dagreLib, opts = {}) {
   });
   const edges = graph.edges.map(e => {
     const p = g.edge(e.v, e.w, e.conditional ? "cond" : undefined);
-    return { ...e, points: p.points.map(pt => ({ x: pt.x, y: pt.y })) };
+    const v = graph.nodes.get(e.v), w = graph.nodes.get(e.w);
+    return {
+      ...e,
+      points: p.points.map(pt => ({ x: pt.x, y: pt.y })),
+      vTrack: v.track, wTrack: w.track,
+      vShared: v.sharedWith ?? [], wShared: w.sharedWith ?? [],
+    };
   });
   const size = g.graph();
   return { nodes, edges, width: size.width, height: size.height };
 }
 
-function nodeSizeOf(node, text, measure) {
-  const m = measure(node.label, text);
-  return { w: Math.min(Math.max(m.labelW, m.chipW) + 28, 238), h: m.rows * 22 + 26 };
-}
 ```
 
-Delete the unused `isInTrack` import on line 1 — only `chipText` is used.
+`nodeSize` is imported from `model.js` — do not define a second width formula here. It is the one
+Task 2's tests cover, and a second copy is exactly the kind of drift that makes a graph lie about
+its own geometry.
 
 - [ ] **Step 4: Write `css/immiflow.css`**
 
@@ -926,51 +935,17 @@ export function updateHighlight(svg, state) {
     .classed("sel", d => d.id === state.selected)
     .classed("dim", d => !isInTrack(d, state.track));
   S.selectAll("path.edge")
-    .attr("class", function (d) {
-      const base = `edge${d.conditional ? " conditional" : ""}`;
-      const onTrack = isInTrack(d.v_node ?? {}, state.track);
-      return onTrack ? base : `${base} dim`;
+    .classed("dim", d => {
+      const on = (t, s) => !state.track || t === state.track || s.includes(state.track);
+      return !(on(d.vTrack, d.vShared) || on(d.wTrack, d.wShared));
     });
 }
 ```
 
-The `updateHighlight` edge dimming above is wrong as written — it references a node that does not exist there. Replace that final `S.selectAll("path.edge")` block with:
-
-```js
-export function updateHighlight(svg, state) {
-  const S = d3.select(svg);
-  S.selectAll("g.node")
-    .classed("sel", d => d.id === state.selected)
-    .classed("dim", d => !isInTrack(d, state.track));
-  S.selectAll("path.edge")
-    .classed("dim", d => !(isInTrack(nodeById(d.v), state.track) || isInTrack(nodeById(d.w), state.track)));
-}
-```
-
-and add `nodeById` to the `layoutGraph` return so each edge carries its endpoint tracks:
-
-```js
-// in layoutGraph, when mapping edges:
-const edges = graph.edges.map(e => ({
-  ...e,
-  points: p.points.map(pt => ({ x: pt.x, y: pt.y })),
-  vTrack: graph.nodes.get(e.v).track,
-  wTrack: graph.nodes.get(e.w).track,
-  vShared: graph.nodes.get(e.v).sharedWith ?? [],
-  wShared: graph.nodes.get(e.w).sharedWith ?? [],
-}));
-```
-
-then in `updateHighlight` use those directly:
-
-```js
-S.selectAll("path.edge").classed("dim", d => {
-  const on = (t, s) => !state.track || t === state.track || s.includes(state.track);
-  return !(on(d.vTrack, d.vShared) || on(d.wTrack, d.wShared));
-});
-```
-
-Keep this final version. Delete the two earlier drafts of `updateHighlight` rather than leaving them in the file.
+`updateHighlight` dims an edge when *neither* endpoint is on the active track, using the
+`vTrack`/`wTrack`/`vShared`/`wShared` fields that `layoutGraph` puts on every edge. An edge is
+visible if either end is visible, which keeps a shared node like the H-1B cap connected to both
+the student and employment branches when either is filtered on.
 
 - [ ] **Step 6: Write `index.html`**
 
@@ -1133,6 +1108,7 @@ export function renderDetail(el, model) {
     <h2>${esc(model.label)}</h2>
     ${model.form ? `<p class="formline">${esc(model.form)}</p>` : ""}
     ${model.agency ? `<p class="agency">${esc(model.agency)}</p>` : ""}
+    ${model.chip && !model.form ? `<p class="formline">${esc(model.chip)}</p>` : ""}
     ${model.gate ? `<p class="gate">${esc(model.gate)}</p>` : ""}
     ${model.hasWaits ? `
       <table>
@@ -1178,7 +1154,8 @@ renderDetail(detail, state.selected ? detailModel(graph.nodes.get(state.selected
 With the server from Task 3 still running, open `http://127.0.0.1:8899/`:
 - click the PERM node → the panel shows `ETA-9089`, the `DOL` agency label, the gate about the 30/60-day recruitment minimums, and "over a year" in the processing column;
 - click the EB-1/EB-5 visa-bulletin node → the Queue column is populated and the Processing column reads a dash, never a number;
-- click a decision node like `job-offer` → the panel shows the gate and the "no form, no wait" line;
+- click a decision node like `job-offer` → the panel shows its chip ("sponsorship required"), the
+  gate, and the "no form, no wait" line;
 - press Escape → the panel empties;
 - Tab to a node and press Enter → the panel opens for that node.
 
@@ -1306,7 +1283,7 @@ Run the full check, then look at the page one last time:
 cd ~/dev/yucombinator.github.io/immiflow
 python3 tools/validate_data.py && node --test test/
 ```
-Expected: `OK: 30 nodes, 38 edges, all reachable` and all tests passing.
+Expected: `OK: 28 nodes, 39 edges, all reachable` and all tests passing.
 
 In the browser: filter to "Student" and confirm only the student track plus the shared H-1B cap node
 stay bright; filter to "Family" and confirm the two multi-year bulletin rows render; switch back to
@@ -1316,7 +1293,7 @@ stay bright; filter to "Family" and confirm the two multi-year bulletin rows ren
 
 ```sh
 cd ~/dev/yucombinator.github.io
-git add immiflow README.md 2>/dev/null; git add immiflow index.html
+git add immiflow index.html
 git commit -m "Document the immigration flowchart and link it from the calling card"
 ```
 
@@ -1329,6 +1306,10 @@ bullet 1 (four tracks) → Task 1. Bullet 2 (form, agency, wait) → Tasks 1 and
 never summed) → Global Constraints, Task 1's data, Task 4's panel copy, asserted by a test in Task 2
 and verified in Task 5. Bullet 4 (country backlogs) → Task 1's `backlogs` field, rendered in Task 4. Bullet 5 (premium) → Task 1, Task 4's Premium column. Bullet 6 (gates: lottery, sponsorship, degree, immediate-relative exemption) → Task 1's `gate` and `chip`, dashed border in Task 3's CSS. Scope "Out" → respected; consular processing appears only as a named omission in the K-1 and I-485 nodes. "Approximate by design" → Global Constraints, the honesty panel in Task 3, the README in Task 5. Design language table → Task 3's CSS and the track hues in `TRACKS`. Graph model → Task 1, validated by `parseGraph`. Interaction (click, filter, hover, keyboard, one paint path) → Task 4 for click/keys, Task 3 for the single `paint()`; **hover is not implemented** — the CSS has no tooltip and no task builds one. Fix: drop "Hover" from the spec's Interaction list, since the chip already carries the headline figure and a tooltip would duplicate it. Failure handling (bad data, CDN down, no wait, no wait data) → Task 1's validator, Task 3's `#err` banner, Task 4's "no form, no wait" line, Task 2's `headlineWait` returning `null`. The spec's "stale after 90 days" rule was removed in the revision and has no task, correctly. Testing → Tasks 2, 3, 4, 5. Deliverables 1–5 → Tasks 3, 1, 1, 5, 5.
 
-**Placeholder scan.** No TBD or TODO. Two deliberate mid-task corrections in Task 3 Step 5 (the `updateHighlight` rewrite and the edge track fields) are shown as failed-then-fixed drafts with an explicit "keep this final version, delete the earlier drafts" instruction, because the first draft genuinely does not work and silently shipping it would ship a broken edge-dimming rule. Task 1's node count and edge count are stated so a drifted file is caught at Step 4.
+**Placeholder scan.** No TBD or TODO. The plan's earlier draft contained a knowingly-broken
+`updateHighlight` and a duplicated node-width formula; both were removed during the pre-flight
+scan and the plan now carries only the working version. Task 1 states its node and edge counts so a
+drifted file is caught at Step 4, and names the four terminal nodes so their missing out-edges read
+as design rather than omission.
 
 **Type consistency.** `chipText`, `headlineWait`, `isInTrack`, `nodeSize`, `detailModel`, `TRACKS` are used by the same names in Tasks 2, 3, 4, 5. `detail.rows[].{regular,premium,bulletin,backlogs,note}` is defined in Task 2 and read in Task 4. `laid.nodes[].{x,y,w,h,chipText,gate,track,id}` and `laid.edges[].{v,w,points,conditional,vTrack,wTrack,vShared,wShared}` are produced in Task 3 and consumed by `renderGraph` in the same task. `state = {selected, track}` is consistent across Tasks 3 and 4.
