@@ -1,7 +1,7 @@
 // Offline app shell. Checklist and trip planning work with no signal;
 // map tiles are cached opportunistically after they have been viewed.
 
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `park-checklist-${VERSION}`;
 const DATA_CACHE = `park-checklist-data-${VERSION}`;
 
@@ -50,7 +50,8 @@ const isTile = (url) =>
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
-    const res = await fetch(request);
+    // revalidate: GitHub Pages serves assets with a 10-minute cache
+    const res = await fetch(request, { cache: "no-cache" });
     if (res && res.ok) cache.put(request, res.clone());
     return res;
   } catch {
@@ -64,7 +65,7 @@ async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
   if (hit) return hit;
-  const res = await fetch(request);
+  const res = await fetch(request, { cache: "no-cache" });
   if (res && res.ok) cache.put(request, res.clone());
   return res;
 }

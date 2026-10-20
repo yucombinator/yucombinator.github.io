@@ -1,10 +1,10 @@
 // Entry point: load data, wire map, list, search, filters, trip planner, share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js";
-import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js";
-import { matches, matchScore, haversineMi } from "./filter.js";
-import { planTrip, fmtDuration } from "./trip.js";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019171323";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019171323";
+import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019171323";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261019171323";
+import { planTrip, fmtDuration } from "./trip.js?v=20261019171323";
 
 const REGION_ORDER = [
   "Alaska",

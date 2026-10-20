@@ -1,7 +1,7 @@
 // Park rendering: polygon styles and detail-card markup.
 
-import { isVisited } from "./store.js";
-import { fmtDuration } from "./trip.js";
+import { isVisited } from "./store.js?v=20261019171323";
+import { fmtDuration } from "./trip.js?v=20261019171323";
 
 export const PALETTE = {
   US: { open: "#74c69d", openLine: "#52b788", visited: "#f59e0b", visitedLine: "#92400e" },
