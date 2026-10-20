@@ -945,7 +945,14 @@ footer {
   body.detail-open #controls { display: none; }
   body.detail-open #trip { display: none; }
 
-  #controls { display: flex; flex-direction: column; }
+  #controls {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px 12px;
+  }
+  #controls .field { margin-bottom: 9px; }
+  /* the US/CA labels already say what the bars are */
+  #controls .progress-field > label { display: none; }
   .sheet-handle { display: flex; }
 
   /* everything past search + view lives behind the handle on a phone */
