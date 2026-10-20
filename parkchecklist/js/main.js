@@ -281,12 +281,7 @@ function gatewayCell(items, fmt) {
     .join("<br>");
 }
 
-function renderList() {
-  const el = $("#list");
-  const visible = sortParks(parks.filter((p) => matches(p, state)));
-
-  const rows = visible
-    .map((p) => {
+function rowHtml(p) {
       const isV = state.visited.has(p.code);
       const inTrip = trip.codes.includes(p.code);
       const cities = gatewayCell(
@@ -322,6 +317,40 @@ function renderList() {
             aria-pressed="${inTrip}" aria-label="${inTrip ? "Remove from" : "Add to"} trip">${inTrip ? "−" : "+"}</button>
         </td>
       </tr>`;
+}
+
+function renderList() {
+  const el = $("#list");
+  const visible = sortParks(parks.filter((p) => matches(p, state)));
+
+  const totals = { US: [0, 0], CA: [0, 0] };
+  for (const park of parks) {
+    const bucket = totals[park.country] || (totals[park.country] = [0, 0]);
+    bucket[1] += 1;
+    if (state.visited.has(park.code)) bucket[0] += 1;
+  }
+
+  const groupOrder =
+    state.country === "all" ? ["US", "CA"] : [state.country];
+  const groups = groupOrder
+    .map((country) => ({
+      country,
+      list: visible.filter((p) => p.country === country),
+    }))
+    .filter((g) => g.list.length);
+
+  const rows = groups
+    .map((g) => {
+      const [seen, total] = totals[g.country] || [0, 0];
+      const label = g.country === "CA" ? "Canada" : "United States";
+      const head = `
+        <tr class="group-row ${g.country === "CA" ? "ca" : "us"}">
+          <th colspan="6">
+            ${label}
+            <span class="group-count">${seen} of ${total} visited · ${g.list.length} shown</span>
+          </th>
+        </tr>`;
+      return head + g.list.map(rowHtml).join("");
     })
     .join("");
 
@@ -361,6 +390,9 @@ function renderList() {
       <tbody>${rows || `<tr><td colspan="6" class="empty">No parks match those filters.</td></tr>`}</tbody>
     </table>
   `;
+
+  const bar = el.querySelector(".list-bar");
+  if (bar) el.style.setProperty("--bar-h", `${bar.offsetHeight}px`);
 
   el.querySelector("#back-map").addEventListener("click", () => showView("map"));
   el.querySelector("#print").addEventListener("click", () => window.print());

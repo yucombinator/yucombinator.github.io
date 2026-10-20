@@ -742,6 +742,32 @@ body.trip-open #legend { display: none; }
 
 #list .empty { padding: 32px; text-align: center; color: var(--ink-soft); }
 
+/* country sections */
+#list tr.group-row { cursor: default; }
+#list tr.group-row:hover { background: transparent; }
+#list tr.group-row th {
+  position: sticky;
+  top: var(--bar-h, 52px);
+  z-index: 4;
+  background: #f4f7f5;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  font: 700 11px/1.2 var(--sans);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+#list tr.group-row.ca th { background: #fff4f4; color: var(--ca-dark); }
+#list .group-count {
+  margin-left: 8px;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+
 .check-btn {
   width: 26px;
   height: 26px;
