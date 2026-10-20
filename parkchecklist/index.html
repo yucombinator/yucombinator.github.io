@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#2d6a4f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="css/park.css?v=20261019173318">
+<link rel="stylesheet" href="css/park.css?v=20261019173439">
 </head>
 <body>
 
@@ -21,53 +21,10 @@
 </header>
 
 <section id="controls" class="panel" aria-label="Controls">
-  <button id="sheet-handle" class="sheet-handle" aria-expanded="true" aria-controls="controls">
-    <span></span>
+  <button id="sheet-handle" class="sheet-handle" aria-expanded="false" aria-controls="sheet-more">
+    <span class="grab" aria-hidden="true"></span>
+    <span class="sheet-label">More options</span>
   </button>
-
-  <div class="field">
-    <label for="search">Find a park</label>
-    <input id="search" type="search" placeholder="Yosemite, Utah, Moab…" autocomplete="off" spellcheck="false">
-  </div>
-
-  <div class="field">
-    <label>View</label>
-    <div class="seg">
-      <button id="view-map" aria-pressed="true">Map</button>
-      <button id="view-list" aria-pressed="false">List</button>
-    </div>
-  </div>
-
-  <div class="field">
-    <label>Country</label>
-    <div class="seg">
-      <button id="country-all" aria-pressed="true">Both</button>
-      <button id="country-us" aria-pressed="false">US</button>
-      <button id="country-ca" aria-pressed="false">Canada</button>
-    </div>
-  </div>
-
-  <div class="field">
-    <label>Visited</label>
-    <div class="seg">
-      <button id="filter-all" aria-pressed="true">All</button>
-      <button id="filter-visited" aria-pressed="false">Yes</button>
-      <button id="filter-unvisited" aria-pressed="false">No</button>
-    </div>
-  </div>
-
-  <div class="field">
-    <label id="region-label">Region</label>
-    <div class="chips" id="region-chips" role="group" aria-labelledby="region-label"></div>
-  </div>
-
-  <div class="field">
-    <label>Basemap</label>
-    <div class="seg" id="base-seg">
-      <button data-base="light" aria-pressed="true">Light</button>
-      <button data-base="terrain" aria-pressed="false">Terrain</button>
-    </div>
-  </div>
 
   <div class="field progress-field">
     <label>Progress</label>
@@ -90,10 +47,56 @@
     <div id="progress-text" class="sr-only" aria-live="polite">0 visited</div>
   </div>
 
-  <div class="field actions-row">
-    <button id="trip-toggle" class="link-btn">Plan a trip</button>
-    <button id="share-control" class="link-btn">Share</button>
-    <button id="reset" class="link-btn">Reset</button>
+  <div class="field">
+    <label for="search">Find a park</label>
+    <input id="search" type="search" placeholder="Yosemite, Utah, Moab…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="field">
+    <label>View</label>
+    <div class="seg">
+      <button id="view-map" aria-pressed="true">Map</button>
+      <button id="view-list" aria-pressed="false">List</button>
+    </div>
+  </div>
+
+  <div id="sheet-more">
+    <div class="field">
+      <label>Country</label>
+      <div class="seg">
+        <button id="country-all" aria-pressed="true">Both</button>
+        <button id="country-us" aria-pressed="false">US</button>
+        <button id="country-ca" aria-pressed="false">Canada</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Visited</label>
+      <div class="seg">
+        <button id="filter-all" aria-pressed="true">All</button>
+        <button id="filter-visited" aria-pressed="false">Yes</button>
+        <button id="filter-unvisited" aria-pressed="false">No</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="region-label">Region</label>
+      <div class="chips" id="region-chips" role="group" aria-labelledby="region-label"></div>
+    </div>
+
+    <div class="field">
+      <label>Basemap</label>
+      <div class="seg" id="base-seg">
+        <button data-base="light" aria-pressed="true">Light</button>
+        <button data-base="terrain" aria-pressed="false">Terrain</button>
+      </div>
+    </div>
+
+    <div class="field actions-row">
+      <button id="trip-toggle" class="link-btn">Plan a trip</button>
+      <button id="share-control" class="link-btn">Share</button>
+      <button id="reset" class="link-btn">Reset</button>
+    </div>
   </div>
 </section>
 
@@ -122,6 +125,6 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="js/main.js?v=20261019173318"></script>
+<script type="module" src="js/main.js?v=20261019173439"></script>
 </body>
 </html>

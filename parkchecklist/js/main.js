@@ -1,10 +1,10 @@
 // Entry point: load data, wire map, list, search, filters, trip planner, share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019173318";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019173318";
-import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019173318";
-import { matches, matchScore, haversineMi } from "./filter.js?v=20261019173318";
-import { planTrip, fmtDuration } from "./trip.js?v=20261019173318";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019173439";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019173439";
+import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019173439";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261019173439";
+import { planTrip, fmtDuration } from "./trip.js?v=20261019173439";
 
 const REGION_ORDER = [
   "Alaska",
@@ -659,8 +659,10 @@ async function main() {
   $("#share-control").addEventListener("click", share);
 
   $("#sheet-handle").addEventListener("click", () => {
-    const collapsed = document.body.classList.toggle("sheet-collapsed");
-    $("#sheet-handle").setAttribute("aria-expanded", String(!collapsed));
+    const expanded = document.body.classList.toggle("sheet-expanded");
+    const handle = $("#sheet-handle");
+    handle.setAttribute("aria-expanded", String(expanded));
+    handle.querySelector(".sheet-label").textContent = expanded ? "Fewer options" : "More options";
   });
 
   $("#reset").addEventListener("click", () => {
