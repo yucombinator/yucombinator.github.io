@@ -1,7 +1,7 @@
 // Map layer: basemap, park polygons, collision-aware labels, gateway hints.
 
-import { parkStyle, driveLabel, SERVICE_COLOR, SERVICE_LABEL } from "./park-data.js?v=20261019230031";
-import { matches } from "./filter.js?v=20261019230031";
+import { parkStyle, driveLabel, SERVICE_COLOR, SERVICE_LABEL } from "./park-data.js?v=20261019230657";
+import { matches } from "./filter.js?v=20261019230657";
 
 const map = L.map("map", {
   center: [39.8, -98.5],
@@ -35,7 +35,7 @@ let labelLayer = null;
 let gatewayLayer = null;
 let onSelect = null;
 let labelMarkers = [];
-let state = { filter: "all", search: "", region: "all", visited: new Set() };
+let state = { filter: "all", search: "", region: "all", visited: new Set(), wishlist: new Set() };
 
 export function initMap(geojson, handlers, sharedState) {
   onSelect = handlers.onSelect;
@@ -161,6 +161,7 @@ export function layoutLabels() {
     }
 
     el.classList.toggle("visited", state.visited.has(m.parkCode));
+    el.classList.toggle("wish", !state.visited.has(m.parkCode) && state.wishlist.has(m.parkCode));
     el.classList.toggle("ca", m.parkProps?.country === "CA");
 
     const pt = map.latLngToContainerPoint(m.getLatLng());
