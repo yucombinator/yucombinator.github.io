@@ -1,10 +1,10 @@
 // Entry point: load data, wire map, list, search, filters, trip planner, share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019171524";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019171524";
-import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019171524";
-import { matches, matchScore, haversineMi } from "./filter.js?v=20261019171524";
-import { planTrip, fmtDuration } from "./trip.js?v=20261019171524";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019173318";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019173318";
+import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019173318";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261019173318";
+import { planTrip, fmtDuration } from "./trip.js?v=20261019173318";
 
 const REGION_ORDER = [
   "Alaska",
@@ -25,7 +25,6 @@ const state = {
   region: "all",
   country: "all",
   visited: new Set(),
-  near: null,
 };
 
 const US_REGION_ORDER = [
@@ -551,65 +550,6 @@ function readHash() {
   return params.get("p");
 }
 
-// ---------- near me ----------
-
-function applyNear() {
-  const note = $("#near-note");
-  const btn = $("#near-btn");
-  const radius = $("#near-radius");
-
-  if (!state.near) {
-    note.hidden = true;
-    radius.hidden = true;
-    btn.textContent = "Use my location";
-    return;
-  }
-
-  radius.hidden = false;
-  radius.value = String(state.near.radius);
-  note.hidden = false;
-  note.textContent = `Within ${state.near.radius} mi (straight line) of you`;
-  btn.textContent = "Clear location";
-}
-
-function initNear() {
-  $("#near-btn").addEventListener("click", () => {
-    if (state.near) {
-      state.near = null;
-      applyNear();
-      refresh();
-      return;
-    }
-    if (!navigator.geolocation) {
-      showToast("Location is not available in this browser");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        state.near = {
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          radius: Number($("#near-radius").value) || 250,
-        };
-        applyNear();
-        refresh();
-        fitVisible(parks.filter((p) => matches(p, state)));
-        showToast("Showing parks near you");
-      },
-      () => showToast("Could not read your location"),
-      { maximumAge: 600000, timeout: 10000 },
-    );
-  });
-
-  $("#near-radius").addEventListener("change", (e) => {
-    if (!state.near) return;
-    state.near.radius = Number(e.target.value);
-    applyNear();
-    refresh();
-    fitVisible(parks.filter((p) => matches(p, state)));
-  });
-}
-
 // ---------- matrix ----------
 
 function syntheticMatrix(list) {
@@ -729,8 +669,6 @@ async function main() {
     resetVisited();
     refresh();
   });
-
-  initNear();
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && openCode) renderDetail(null);

@@ -32,11 +32,6 @@ export function matches(props, state) {
 
   if (state.region && state.region !== "all" && props.region !== state.region) return false;
 
-  if (state.near) {
-    const [lon, lat] = props.centroid;
-    if (haversineMi(state.near.lat, state.near.lon, lat, lon) > state.near.radius) return false;
-  }
-
   const q = (state.search || "").trim().toLowerCase();
   if (!q) return true;
 
