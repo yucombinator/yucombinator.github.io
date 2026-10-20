@@ -1,10 +1,10 @@
 // Entry point: load data, wire map, list, search, filters, trip planner, share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019171323";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019171323";
-import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019171323";
-import { matches, matchScore, haversineMi } from "./filter.js?v=20261019171323";
-import { planTrip, fmtDuration } from "./trip.js?v=20261019171323";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019171524";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019171524";
+import { getVisited, toggleVisited, setVisited, resetVisited, encodeVisited, decodeVisited } from "./store.js?v=20261019171524";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261019171524";
+import { planTrip, fmtDuration } from "./trip.js?v=20261019171524";
 
 const REGION_ORDER = [
   "Alaska",
@@ -751,7 +751,11 @@ async function main() {
   }
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    // updateViaCache: the worker script itself must never come from the HTTP
+    // cache, or a new deploy can take up to ten minutes to take over.
+    navigator.serviceWorker
+      .register("sw.js", { updateViaCache: "none" })
+      .catch(() => {});
   }
 }
 
