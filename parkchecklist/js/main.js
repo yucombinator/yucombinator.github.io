@@ -1,7 +1,7 @@
 // Entry point: load data, wire map, list, search, filters and share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019230657";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019230657";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261019231028";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261019231028";
 import {
   getVisited,
   getWishlist,
@@ -13,8 +13,8 @@ import {
   resetWishlist,
   encodeMask,
   decodeMask,
-} from "./store.js?v=20261019230657";
-import { matches, matchScore, haversineMi } from "./filter.js?v=20261019230657";
+} from "./store.js?v=20261019231028";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261019231028";
 
 const REGION_ORDER = [
   "Alaska",
@@ -155,7 +155,9 @@ function renderDetail(props) {
     renderDetail(parksByCode.get(props.code));
   });
 
-  el.querySelector(".wish-btn").addEventListener("click", () => {
+  el.querySelector(".wish-btn")?.addEventListener("click", () => {
+    // a park you have already visited is not one you still want to visit
+    if (getVisited().includes(props.code)) return;
     toggleWishlist(props.code);
     refresh();
     renderDetail(parksByCode.get(props.code));
@@ -460,7 +462,10 @@ function readHash() {
   const v = params.get("v");
   if (v !== null) setVisited(decodeMask(v, codes));
   const w = params.get("w");
-  if (w !== null) setWishlist(decodeMask(w, codes));
+  if (w !== null) {
+    const visited = new Set(getVisited());
+    setWishlist(decodeMask(w, codes).filter((code) => !visited.has(code)));
+  }
   return params.get("p");
 }
 
