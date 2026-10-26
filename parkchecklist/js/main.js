@@ -1,7 +1,7 @@
 // Entry point: load data, wire map, list, search, filters and share.
 
-import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261021002059";
-import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261021002059";
+import { initMap, setState, focusPark, fitVisible, fitMainland, showGateways, clearGateways, setBasemap, getMap } from "./map.js?v=20261025230350";
+import { detailHtml, escapeHtml, escapeAttr, driveLabel, serviceBadge } from "./park-data.js?v=20261025230350";
 import {
   getVisited,
   getWishlist,
@@ -13,8 +13,8 @@ import {
   resetWishlist,
   encodeMask,
   decodeMask,
-} from "./store.js?v=20261021002059";
-import { matches, matchScore, haversineMi } from "./filter.js?v=20261021002059";
+} from "./store.js?v=20261025230350";
+import { matches, matchScore, haversineMi } from "./filter.js?v=20261025230350";
 
 const REGION_ORDER = [
   "Alaska",
@@ -291,11 +291,11 @@ function renderList() {
       <thead>
         <tr>
           <th class="c-check"><span class="sr-only">Visited</span></th>
-          <th class="c-wish"><span class="sr-only">Wishlist</span></th>
           <th>Park</th>
           <th>State</th>
           <th>Gateway towns</th>
           <th>Airports</th>
+          <th class="c-wish"><span class="sr-only">Wishlist</span></th>
         </tr>
       </thead>
       <tbody>${rows || `<tr><td colspan="7" class="empty">No parks match those filters.</td></tr>`}</tbody>
