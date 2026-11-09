@@ -46,6 +46,21 @@ QUERY_LANES = f"""[out:json][timeout:180];
 );
 out tags geom;"""
 
+# Documented BAT stretch on SR 99/Evergreen Way in Snohomish County: WSDOT's
+# 2026 SR 99 study lists complete BAT lanes from 156th to 212th St SW. OSM
+# does not tag those lanes, so this corridor is clipped from the road's own
+# geometry by latitude instead of by lane tags.
+BAT_BOUNDS = "(47.795,-122.37,47.87,-122.25)"
+BAT_LAT = (47.8055, 47.8585)
+BAT_NAME = "Swift Blue · SR 99 BAT lanes (156th–212th)"
+QUERY_BAT = f"""[out:json][timeout:120];
+(
+ way["name"~"Pacific Highway|Evergreen Way|Highway 99"]{BAT_BOUNDS};
+ way["ref"="SR 99"]{BAT_BOUNDS};
+);
+out tags geom;"""
+
+
 ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -140,6 +155,25 @@ def collect(elements, groups, stats, source):
 LANE_GROUP_PREFIXES = {label for _, label in BUS_CORRIDORS}
 
 
+def collect_bat(elements, groups, stats):
+    lo, hi = BAT_LAT
+    lines = []
+    for el in elements:
+        geom = [(p["lat"], p["lon"]) for p in el.get("geometry", [])]
+        seg = [(lat, lon) for lat, lon in geom if lo <= lat <= hi]
+        if len(seg) < 2:
+            continue
+        lat0 = seg[0][0]
+        scale = (111320.0, 111320.0 * math.cos(math.radians(lat0)))
+        xy = [(lon * scale[1], lat * scale[0]) for lat, lon in seg]
+        simp = dp(xy, 8.0)
+        lines.append([[round(y / scale[0], 6), round(x / scale[1], 6)]
+                      for x, y in simp])
+    if lines:
+        groups[BAT_NAME] = lines
+        stats[BAT_NAME] = len(lines)
+
+
 def main():
     old = {}
     if os.path.exists(OUT):
@@ -151,20 +185,25 @@ def main():
             old = {}
 
     groups, stats = {}, {}
-    for label, query in (("dedicated", QUERY_DEDICATED), ("lanes", QUERY_LANES)):
+    for label, query in (("dedicated", QUERY_DEDICATED), ("lanes", QUERY_LANES),
+                         ("bat", QUERY_BAT)):
         try:
             data = overpass(query)
         except Exception as exc:              # noqa: BLE001
             print(f"  ! {label}: {type(exc).__name__}: {exc} "
                   f"(keeping the previous {label} corridors)", file=sys.stderr)
-            keep = (lambda n: True) if label == "dedicated" \
-                else (lambda n: n in LANE_GROUP_PREFIXES)
+            keep = ((lambda n: True) if label == "dedicated" else
+                    (lambda n: n == BAT_NAME) if label == "bat" else
+                    (lambda n: n in LANE_GROUP_PREFIXES))
             for name, lines in old.items():
                 if keep(name):
                     groups[name] = lines
                     stats[name] = len(lines)
             continue
-        collect(data.get("elements", []), groups, stats, label)
+        if label == "bat":
+            collect_bat(data.get("elements", []), groups, stats)
+        else:
+            collect(data.get("elements", []), groups, stats, label)
 
     out = {"groups": [{"name": n, "lines": ls} for n, ls in sorted(groups.items())]}
     with open(OUT, "w", encoding="utf-8") as fh:
