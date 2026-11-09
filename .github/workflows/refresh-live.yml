@@ -14,9 +14,10 @@ name: Refresh live vehicle positions
 
 on:
   schedule:
-    # Offset from the top of the hour: GitHub drops/delays jobs queued at :00
-    # under load, and */5 lands on :00 every hour.
-    - cron: "2-57/5 * * * *"
+    # Explicit minute list, five-minute cadence, offset from :00 (GitHub is
+    # busiest at the top of the hour). Spelled out rather than */5 so the
+    # schedule is unambiguous to every cron parser.
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
   workflow_dispatch:
 
 permissions:
