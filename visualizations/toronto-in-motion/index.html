@@ -182,7 +182,7 @@
 </head>
 <body>
 <main id="app">
-  <div id="map" aria-label="Map of Toronto with animated TTC vehicles"></div>
+  <div id="map" tabindex="-1" aria-label="Map of scheduled transit across the Greater Golden Horseshoe"></div>
   <div class="basemap-scrim" aria-hidden="true"></div>
   <canvas id="rail" aria-hidden="true"></canvas>
   <canvas id="overlay" aria-hidden="true"></canvas>
@@ -264,13 +264,13 @@
       </span>
     </div>
     </div>
-    <div id="routePanel" hidden>
+    <div id="routePanel" role="region" aria-labelledby="rName" hidden>
       <div class="rhead">
         <span class="rdot" id="rDot" aria-hidden="true"></span>
         <div class="rtitle"><b id="rName">Route</b><span id="rMeta"></span></div>
         <button class="rclose" id="rClose" aria-label="Close route details">×</button>
       </div>
-      <div class="rstats" id="rStats"></div>
+      <div class="rstats" id="rStats" aria-live="polite"></div>
     </div>
   </section>
 
@@ -287,6 +287,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109o"></script>
+<script src="app.js?v=20261109p"></script>
 </body>
 </html>

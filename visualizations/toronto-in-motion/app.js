@@ -55,6 +55,7 @@
   let hourBuckets = null;     // trip indices grouped by start hour
   let startTimes = null;      // sorted Int32Array of t0
   let px = null, py = null, pAng = null, pTrip = null;
+  let slotBuckets = null, slotCounts = null;
   let activeCount = 0;       // dots currently drawn (viewport)
   let activeTotal = 0;       // trips running, on screen or not
   const modeTotals = new Array(MODES.length).fill(0);
@@ -73,6 +74,7 @@
   let last = 0, lastDraw = 0, lastMoveAt = 0;
   let routeSig = -1, lastLineRefresh = 0;
   let uiAccum = 0;
+  let chartW = 0, chartH = 0, lastCursorT = -1;
   let dayCache = {};
   let selected = -1;               // route pointer, -1 = none
   let selectedActive = 0;          // vehicles running on the selected route
@@ -218,13 +220,16 @@
       if (!busy || now - lastDraw >= 32) { draw(); state.dirty = false; lastDraw = now; }
     }
 
-    lineCtx.clearRect(0, 0, chartLine.clientWidth, chartLine.clientHeight);
-    const cx = (state.t / DAY) * chartLine.clientWidth;
-    lineCtx.strokeStyle = 'rgba(245,194,107,.85)';
-    lineCtx.lineWidth = 1;
-    lineCtx.beginPath(); lineCtx.moveTo(cx, 0); lineCtx.lineTo(cx, chartLine.clientHeight); lineCtx.stroke();
-    lineCtx.fillStyle = 'rgba(245,194,107,.9)';
-    lineCtx.beginPath(); lineCtx.arc(cx, chartLine.clientHeight - 2, 2.5, 0, Math.PI * 2); lineCtx.fill();
+    if (chartW && state.t !== lastCursorT) {
+      lineCtx.clearRect(0, 0, chartW, chartH);
+      const cx = (state.t / DAY) * chartW;
+      lineCtx.strokeStyle = 'rgba(245,194,107,.85)';
+      lineCtx.lineWidth = 1;
+      lineCtx.beginPath(); lineCtx.moveTo(cx, 0); lineCtx.lineTo(cx, chartH); lineCtx.stroke();
+      lineCtx.fillStyle = 'rgba(245,194,107,.9)';
+      lineCtx.beginPath(); lineCtx.arc(cx, chartH - 2, 2.5, 0, Math.PI * 2); lineCtx.fill();
+      lastCursorT = state.t;
+    }
 
     uiAccum += dt;
     if (uiAccum > 0.12) { updateUI(); uiAccum = 0; }
@@ -274,6 +279,7 @@
     modeTotals.fill(0);
     const t = state.t;
     selectedActive = 0;
+    if (slotCounts) slotCounts.fill(0);
     activeRoutes.clear();
     let routeSigCount = 0, routeSigSum = 0;
     const hEnd = t / 3600 | 0;
@@ -314,6 +320,10 @@
         px[activeCount] = X; py[activeCount] = Y;
         pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx);
         pTrip[activeCount] = i;
+        const slot = slotOfTrip[i];
+        if (slotCounts && slot < slotCounts.length) {
+          slotBuckets[slot][slotCounts[slot]++] = activeCount;
+        }
         activeCount++;
       }
     }
@@ -394,9 +404,10 @@
       octx.fillStyle = slotColors[si];
       octx.globalAlpha = isBus(mode) ? 0.055 : 0.13;
       const glowR = MODE_RADIUS[mode] * 2.7 * zf;
+      const bucket = slotBuckets[si], cnt = slotCounts[si];
       octx.beginPath();
-      for (let k = 0; k < activeCount; k++) {
-        if (slotOfTrip[pTrip[k]] !== si) continue;
+      for (let j = 0; j < cnt; j++) {
+        const k = bucket[j];
         if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         octx.moveTo(px[k] + glowR, py[k]);
         octx.arc(px[k], py[k], glowR, 0, Math.PI * 2);
@@ -413,9 +424,10 @@
       const r = MODE_RADIUS[mode] * zf;
       const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
       const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
+      const bucket = slotBuckets[si], cnt = slotCounts[si];
       octx.beginPath();
-      for (let k = 0; k < activeCount; k++) {
-        if (slotOfTrip[pTrip[k]] !== si) continue;
+      for (let j = 0; j < cnt; j++) {
+        const k = bucket[j];
         arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.fill();
@@ -434,8 +446,9 @@
         const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
         octx.beginPath();
         let any = false;
-        for (let k = 0; k < activeCount; k++) {
-          if (slotOfTrip[pTrip[k]] !== si) continue;
+        const bucket = slotBuckets[si], cnt = slotCounts[si];
+        for (let j = 0; j < cnt; j++) {
+          const k = bucket[j];
           if (trips[pTrip[k] * 4 + 3] !== selected) continue;
           any = true;
           arrowPath(octx, px[k], py[k], pAng[k], len, wid);
@@ -460,9 +473,10 @@
       const r = MODE_RADIUS[mode] * zf;
       const len = isTrain(mode) ? r * 4.0 : r * 2.9;
       const wid = isTrain(mode) ? r * 1.6 : r * 1.15;
+      const bucket = slotBuckets[si], cnt = slotCounts[si];
       octx.beginPath();
-      for (let k = 0; k < activeCount; k++) {
-        if (slotOfTrip[pTrip[k]] !== si) continue;
+      for (let j = 0; j < cnt; j++) {
+        const k = bucket[j];
         if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
@@ -664,6 +678,8 @@
     const cw = chart.clientWidth, ch = chart.clientHeight;
     chart.width = Math.round(cw * dpr); chart.height = Math.round(ch * dpr);
     chartLine.width = chart.width; chartLine.height = chart.height;
+    chartW = chartLine.clientWidth; chartH = chartLine.clientHeight;
+    lastCursorT = -1;
     chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     lineCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
@@ -758,7 +774,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109o`);
+        const res = await fetch(`data-${key}.json?v=20261109p`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -796,6 +812,7 @@
       const v = MODES.reduce((sum, m) => sum + (curHist[m]?.[b] || 0), 0);
       if (v > bestV) { bestV = v; bestB = b; }
     }
+    state.dirty = true;
     if (selected >= 0) fillRoutePanel(selected);
     const hh = String(Math.floor(bestB / 6)).padStart(2, '0');
     document.querySelector('.stats').children[2].innerHTML =
@@ -827,7 +844,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109o');
+      const res = await fetch('busways.json?v=20261109p');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -866,6 +883,9 @@
       const m = byShape[h];
       const shape = trips[i * 4];
       m.set(shape, (m.get(shape) || 0) + 1);
+    }
+    if (tripsN === 0) {
+      return { trips: 0, first: 0, last: 0, peak: 0, peakHour: -1, headway: 0 };
     }
     let peakHour = -1, peakCount = 0;
     for (let h = 5; h <= 23; h++) {
@@ -928,6 +948,8 @@
     setPanelCollapsed(false);
     $('panelMain').hidden = true;
     $('routePanel').hidden = false;
+    const closeBtn = $('rClose');
+    if (closeBtn) closeBtn.focus();
     fillRoutePanel(idx);
     state.dirty = true;
 
@@ -938,9 +960,10 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109o`);
+        const res = await fetch(`stops-${feed}.json?v=20261109p`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
+      if (selected !== idx) return;
       const entry = doc && doc.r && doc.r[rid];
       const ids = entry && entry[0];
       if (ids && ids.length >= 2) {
@@ -969,6 +992,7 @@
     selStops = null;
     $('panelMain').hidden = false;
     $('routePanel').hidden = true;
+    if (mapEl && mapEl.focus) mapEl.focus();
     state.dirty = true;
   }
 
@@ -1188,7 +1212,19 @@
       pickAt(e.clientX, e.clientY);
     });
     $('rClose').addEventListener('click', clearSelection);
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { clearSelection(); return; }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea,dialog')) return;
+      if (!activeRoutes || !activeRoutes.size) return;
+      const list = [...activeRoutes].sort((a, b) => routeIds[a].localeCompare(routeIds[b]));
+      const at = list.indexOf(selected);
+      const next = at < 0
+        ? (e.key === 'ArrowDown' ? list[0] : list[list.length - 1])
+        : list[(at + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length];
+      selectRoute(next);
+      e.preventDefault();
+    });
 
     $('panelToggle').addEventListener('click', () => {
       setPanelCollapsed(!panelEl.classList.contains('collapsed'));
@@ -1301,7 +1337,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109o');
+    const res = await fetch('data.json?v=20261109p');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1329,11 +1365,14 @@
       const route = D.routes[routeIds[r]];
       const mode = route?.m || 'localbus';
       const modeIdx = Math.max(0, MODES.indexOf(mode));
-      const hex = route?.c ? '#' + route.c : MODE_COLOR[MODES[modeIdx]];
+      const hex = /^[0-9a-f]{6}$/i.test(route?.c || '')
+        ? '#' + route.c : MODE_COLOR[MODES[modeIdx]];
       routeMode[r] = modeIdx;
       routeSlot[r] = slotFor(hex, modeIdx);
     }
 
+    slotBuckets = Array.from({ length: slotColors.length }, () => new Int32Array(6000));
+    slotCounts = new Uint16Array(slotColors.length);
     px = new Float32Array(6000); py = new Float32Array(6000);
     pAng = new Float32Array(6000); pTrip = new Int32Array(6000);
 

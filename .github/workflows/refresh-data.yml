@@ -65,6 +65,22 @@ jobs:
           if (today - stamp).days > 8:
               sys.exit(f"weekday snapshot is {day.get('label')}, too old")
 
+          # Aggregate floors cannot see a single mid-size agency disappearing
+          # (losing MiWay still leaves 73k trips). Compare feed ids with the
+          # data currently deployed and refuse to ship a build that lost one.
+          import subprocess
+
+          def feeds(doc):
+              return {k.split(":", 1)[0] for k in (doc.get("routes") or {})}
+
+          prev = json.loads(subprocess.run(
+              ["git", "show", "HEAD:visualizations/toronto-in-motion/data.json"],
+              capture_output=True, text=True, check=True).stdout)
+          lost = feeds(prev) - feeds(data)
+          if lost:
+              sys.exit(f"feeds missing from this build: {sorted(lost)}")
+          print(f"feeds: {len(feeds(data))} present, none dropped")
+
           for name in ("saturday", "sunday"):
               other = json.load(open(base + f"data-{name}.json"))
               n = len(other.get("trips") or [])
