@@ -7,9 +7,11 @@ and an activity histogram per mode. Coordinates are integer metres in a single
 shared equirectangular projection.
 """
 import csv
+import html as htmlmod
 import json
 import math
 import os
+import re
 import sys
 import urllib.request
 import zipfile
@@ -431,22 +433,27 @@ for feed in FEEDS:
                 )
 
 # --- Toronto Island Ferry -------------------------------------------------
-# The City publishes the ferry timetable as an HTML table, not GTFS. These are
-# the winter departures (14 October - mid-April, Ward's Island is the only
-# winter route) copied from toronto.ca on 2026-11-08. Summer adds Centre
-# Island and Hanlan's Point; each crossing is modelled as 10 minutes.
+# The City publishes the ferry timetable as HTML tables, one per route, and
+# swaps them seasonally (summer adds Centre Island and Hanlan's Point). The
+# build scrapes the page so the daily refresh tracks the season; the winter
+# table below is only a fallback if the page cannot be parsed.
+FERRY_PAGE = ("https://www.toronto.ca/explore-enjoy/toronto-island-ferries/"
+              "ferry-routes-schedules/")
 FERRY_CITY_TERMINAL = (43.64036, -79.37508)     # Jack Layton Ferry Terminal
-FERRY_WARD_DOCK = (43.63143, -79.35764)
-FERRY_FROM_CITY = ["06:30", "07:00", "07:30", "08:15", "09:00", "09:30",
-                   "10:30", "11:30", "12:00", "12:30", "13:30", "14:00",
-                   "14:30", "15:30", "16:00", "16:30", "17:30", "18:00",
-                   "18:30", "19:30", "20:30", "21:30", "22:30", "23:00",
-                   "23:30"]
-FERRY_FROM_WARD = ["06:45", "07:15", "07:45", "08:30", "09:15", "09:45",
-                   "10:45", "11:45", "12:15", "12:45", "13:45", "14:15",
-                   "14:45", "15:45", "16:15", "16:45", "17:45", "18:15",
-                   "18:45", "19:45", "20:45", "21:45", "22:45", "23:15",
-                   "23:45"]
+FERRY_TERMINALS = {
+    "centre island": ("CENTRE", "Centre Island", (43.62196, -79.37889)),
+    "hanlan's point": ("HANLANS", "Hanlan's Point", (43.62789, -79.38907)),
+    "ward's island": ("WARD", "Ward's Island", (43.63143, -79.35764)),
+}
+FERRY_FALLBACK = [("06:30", "06:45"), ("07:00", "07:15"), ("07:30", "07:45"),
+                  ("08:15", "08:30"), ("09:00", "09:15"), ("09:30", "09:45"),
+                  ("10:30", "10:45"), ("11:30", "11:45"), ("12:00", "12:15"),
+                  ("12:30", "12:45"), ("13:30", "13:45"), ("14:00", "14:15"),
+                  ("14:30", "14:45"), ("15:30", "15:45"), ("16:00", "16:15"),
+                  ("16:30", "16:45"), ("17:30", "17:45"), ("18:00", "18:15"),
+                  ("18:30", "18:45"), ("19:30", "19:45"), ("20:30", "20:45"),
+                  ("21:30", "21:45"), ("22:30", "22:45"), ("23:00", "23:15"),
+                  ("23:30", "23:45")]
 
 
 def hhmm(value):
@@ -454,50 +461,107 @@ def hhmm(value):
     return int(h) * 3600 + int(m) * 60
 
 
-routes["ferry:WARD"] = {
-    "s": "Ward's Island", "l": "Toronto Island Ferry", "m": "ferry",
-    "c": "1f8a9e", "a": "Toronto Island Ferry",
-}
-raw_shapes[("ferry", "to-ward")] = [
-    (1, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
-    (2, FERRY_WARD_DOCK[0], FERRY_WARD_DOCK[1]),
-]
-raw_shapes[("ferry", "to-city")] = [
-    (1, FERRY_WARD_DOCK[0], FERRY_WARD_DOCK[1]),
-    (2, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
-]
+def ferry_clock(text):
+    s = text.lower().replace("*", "").replace("\u202f", " ").strip()
+    s = s.replace("noon", "12:00 p.m.").replace("midnight", "12:00 a.m.")
+    m = re.search(r"(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m", s)
+    if not m:
+        return None
+    h = int(m.group(1)) % 12
+    if m.group(3) == "p":
+        h += 12
+    return h * 3600 + int(m.group(2) or 0) * 60
 
 
-def add_ferry_day(spec, times, shape, start_lat, start_lon, end_lat, end_lon):
-    hist = day_hist[spec["key"]]
-    for dep in times:
-        t0 = hhmm(dep)
-        t1 = t0 + 600
-        day_trips[spec["key"]].append(("ferry", shape, t0, t1, "ferry:WARD"))
-        for b in range(t0 // 600, (t1 - 1) // 600 + 1):
-            lo = max(t0, b * 600)
-            hi = min(t1, (b + 1) * 600)
-            if hi > lo:
-                hist["ferry"][b % 144] += hi - lo
+def parse_ferry_page(text):
+    """Return {terminal_key: [(city_seconds, island_seconds), ...]}."""
+    tokens = re.compile(r"<h[2-4][^>]*>([\s\S]*?)</h[2-4]>|<table[\s\S]*?</table>", re.I)
+    heading = ""
+    out = {}
+    for m in tokens.finditer(text):
+        tok = m.group(0)
+        if tok.lower().startswith("<h"):
+            heading = re.sub(r"\s+", " ",
+                             htmlmod.unescape(re.sub(r"<[^>]+>", " ", m.group(1)))
+                             ).strip().lower()
+            heading = heading.replace("\u2019", "'").replace("\u2018", "'")
+            continue
+        key = next((k for k in FERRY_TERMINALS if k in heading), None)
+        if not key:
+            continue
+        times = []
+        for row in re.findall(r"<tr[\s\S]*?</tr>", tok, re.I):
+            cells = [re.sub(r"\s+", " ",
+                            htmlmod.unescape(re.sub(r"<[^>]+>", " ", c))).strip()
+                     for c in re.findall(r"<t[dh][^>]*>[\s\S]*?</t[dh]>", row, re.I)]
+            cells = [c for c in cells if c]
+            if len(cells) < 2:
+                continue
+            a, b = ferry_clock(cells[0]), ferry_clock(cells[1])
+            if a is not None and b is not None:
+                times.append((a, b))
+        if len(times) >= 5:
+            out[key] = times
+    return out
 
 
-for spec in DAY_SPECS:
-    add_ferry_day(spec, FERRY_FROM_CITY, "to-ward", *FERRY_CITY_TERMINAL, *FERRY_WARD_DOCK)
-    add_ferry_day(spec, FERRY_FROM_WARD, "to-city", *FERRY_WARD_DOCK, *FERRY_CITY_TERMINAL)
+def fetch_ferry_page():
+    try:
+        req = urllib.request.Request(FERRY_PAGE, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            return resp.read().decode("utf-8", "replace")
+    except Exception as exc:                     # noqa: BLE001
+        print(f"  ! ferry page: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return ""
 
-ferry_km = haversine_km(*FERRY_CITY_TERMINAL, *FERRY_WARD_DOCK)
-ferry_stops = {
-    "s": [[round(FERRY_CITY_TERMINAL[0], 5), round(FERRY_CITY_TERMINAL[1], 5),
-           "Jack Layton Ferry Terminal"],
-          [round(FERRY_WARD_DOCK[0], 5), round(FERRY_WARD_DOCK[1], 5),
-           "Ward's Island"]],
-    "r": {"WARD": [[0, 1], round(ferry_km, 1), 600]},
-}
+
+ferry_schedule = parse_ferry_page(fetch_ferry_page())
+if ferry_schedule:
+    print(f"  ferry      timetable: {len(ferry_schedule)} route(s) from toronto.ca",
+          file=sys.stderr)
+else:
+    ferry_schedule = {k: [(hhmm(a), hhmm(b)) for a, b in FERRY_FALLBACK]
+                      for k in FERRY_TERMINALS if k == "ward's island"}
+    print("  ! ferry: using the built-in winter timetable", file=sys.stderr)
+
+ferry_stop_rows = [[round(FERRY_CITY_TERMINAL[0], 5), round(FERRY_CITY_TERMINAL[1], 5),
+                    "Jack Layton Ferry Terminal"]]
+ferry_stops = {}
+for term, times in ferry_schedule.items():
+    slug, label, dock = FERRY_TERMINALS[term]
+    route_key = f"ferry:{slug}"
+    routes[route_key] = {"s": label, "l": "Toronto Island Ferry", "m": "ferry",
+                         "c": "1f8a9e", "a": "Toronto Island Ferry"}
+    raw_shapes[("ferry", f"to-{slug}")] = [
+        (1, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
+        (2, dock[0], dock[1]),
+    ]
+    raw_shapes[("ferry", f"from-{slug}")] = [
+        (1, dock[0], dock[1]),
+        (2, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
+    ]
+    dock_idx = len(ferry_stop_rows)
+    ferry_stop_rows.append([round(dock[0], 5), round(dock[1], 5), label])
+    km = haversine_km(*FERRY_CITY_TERMINAL, *dock)
+    ferry_stops[slug] = [[0, dock_idx], round(km, 1), 600]
+
+    for spec in DAY_SPECS:
+        hist = day_hist[spec["key"]]
+        for city_dep, island_dep in times:
+            for t0, shape in ((city_dep, f"to-{slug}"), (island_dep, f"from-{slug}")):
+                t1 = t0 + 600
+                day_trips[spec["key"]].append(("ferry", shape, t0, t1, route_key))
+                for b in range(t0 // 600, (t1 - 1) // 600 + 1):
+                    lo = max(t0, b * 600)
+                    hi = min(t1, (b + 1) * 600)
+                    if hi > lo:
+                        hist["ferry"][b % 144] += hi - lo
+
 with open(os.path.join(os.path.dirname(OUT), "stops-ferry.json"), "w",
           encoding="utf-8") as fh:
-    json.dump(ferry_stops, fh, separators=(",", ":"))
-print(f"  ferry      stops: 2 terminals, 1 route, {ferry_km:.1f} km crossing",
-      file=sys.stderr)
+    json.dump({"s": ferry_stop_rows, "r": ferry_stops}, fh, separators=(",", ":"))
+print(f"  ferry      stops: {len(ferry_stop_rows)} terminals, "
+      f"{len(ferry_stops)} route(s)", file=sys.stderr)
 
 print(f"routes: {len(routes)}  shapes: {len(raw_shapes)}  "
       + "  ".join(f"{k}: {len(v)} trips" for k, v in day_trips.items()), file=sys.stderr)
@@ -571,6 +635,7 @@ def pct(arr, f):
 
 doc = {
     "city": "Greater Golden Horseshoe",
+    "built": datetime.now(ZoneInfo("America/Toronto")).isoformat(timespec="seconds"),
     "source": "GTFS feeds: " + ", ".join(f["agency"] for f in FEEDS)
               + " (" + ", ".join(spec["label"] for spec in DAY_SPECS) + ")",
     "fit": [pct(allxs, 0.002), pct(allys, 0.002), pct(allxs, 0.998), pct(allys, 0.998)],

@@ -209,10 +209,10 @@
 
     lineCtx.clearRect(0, 0, chartLine.clientWidth, chartLine.clientHeight);
     const cx = (state.t / DAY) * chartLine.clientWidth;
-    lineCtx.strokeStyle = 'rgba(110,231,183,.85)';
+    lineCtx.strokeStyle = 'rgba(245,194,107,.85)';
     lineCtx.lineWidth = 1;
     lineCtx.beginPath(); lineCtx.moveTo(cx, 0); lineCtx.lineTo(cx, chartLine.clientHeight); lineCtx.stroke();
-    lineCtx.fillStyle = 'rgba(110,231,183,.9)';
+    lineCtx.fillStyle = 'rgba(245,194,107,.9)';
     lineCtx.beginPath(); lineCtx.arc(cx, chartLine.clientHeight - 2, 2.5, 0, Math.PI * 2); lineCtx.fill();
 
     uiAccum += dt;
@@ -544,8 +544,8 @@
     if (!max) return;
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
-    grad.addColorStop(0, 'rgba(110,231,183,.20)');
-    grad.addColorStop(1, 'rgba(110,231,183,.90)');
+    grad.addColorStop(0, 'rgba(245,194,107,.20)');
+    grad.addColorStop(1, 'rgba(245,194,107,.90)');
     chartCtx.fillStyle = grad;
     for (let b = 0; b < buckets; b++) {
       const v = smooth[b];
@@ -600,7 +600,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108v`);
+        const res = await fetch(`data-${key}.json?v=20261108y`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -623,6 +623,14 @@
     $('dayLabel').textContent = d.label;
     $('zone').textContent = d.tz || 'EST';
     $('s-total').textContent = d.n.toLocaleString();
+    if (D.built) {
+      const when = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Toronto', day: 'numeric', month: 'short',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date(D.built));
+      const el = $('updated');
+      if (el) el.textContent = 'Updated ' + when;
+    }
     let bestB = 0, bestV = 0;
     for (let b = 0; b < 144; b++) {
       const v = MODES.reduce((sum, m) => sum + (curHist[m]?.[b] || 0), 0);
@@ -717,7 +725,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261108v`);
+        const res = await fetch(`stops-${feed}.json?v=20261108y`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1030,7 +1038,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108v');
+    const res = await fetch('data.json?v=20261108y');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
