@@ -520,11 +520,25 @@
 
   /* ---------- live mode ---------- */
 
+  // The map clock is Toronto schedule time, so a viewer in another zone must
+  // not get the snapshot's local-to-them hour (or seek to it).
+  function torontoClock(ms) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Toronto', hourCycle: 'h23',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(new Date(ms));
+    const out = {};
+    for (const p of parts) out[p.type] = p.value;
+    const h = +out.hour % 24;
+    return {
+      h, m: +out.minute, s: +out.second,
+      hm: String(h).padStart(2, '0') + ':' + out.minute,
+    };
+  }
+
   function liveNoteText() {
     if (!live) return '';
-    const d = new Date(live.generated);
-    const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    return `Live snapshot · ${hm} · ${live.v.length.toLocaleString()} vehicles`;
+    return `Live snapshot · ${torontoClock(live.generated).hm} · ${live.v.length.toLocaleString()} vehicles`;
   }
 
   // The RT feeds block browser reads, so a scheduled workflow publishes a
@@ -573,8 +587,8 @@
     state.liveOn = on;
     if (on) {
       setPlaying(false);
-      const d = new Date(live.generated);
-      seek(d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds());
+      const c = torontoClock(live.generated);
+      seek(c.h * 3600 + c.m * 60 + c.s);
       computeLiveScreen();
     }
     const btn = $('liveBtn');
