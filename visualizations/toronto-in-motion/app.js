@@ -757,7 +757,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109l`);
+        const res = await fetch(`data-${key}.json?v=20261109m`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -826,7 +826,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109l');
+      const res = await fetch('busways.json?v=20261109m');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -924,6 +924,7 @@
     if (idx < 0 || idx >= routeIds.length) return;
     selected = idx;
     selStops = null;
+    setPanelCollapsed(false);
     $('panelMain').hidden = true;
     $('routePanel').hidden = false;
     fillRoutePanel(idx);
@@ -936,7 +937,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109l`);
+        const res = await fetch(`stops-${feed}.json?v=20261109m`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1133,6 +1134,18 @@
     $('scrub').value = Math.round(state.t);
   }
 
+  const panelEl = document.querySelector('.panel');
+
+  function setPanelCollapsed(collapsed) {
+    panelEl.classList.toggle('collapsed', collapsed);
+    const btn = $('panelToggle');
+    if (btn) {
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+    }
+    try { localStorage.setItem('tim-panel-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
+  }
+
   function setPlaying(on) {
     state.playing = on;
     state.dirty = true;
@@ -1175,6 +1188,16 @@
     });
     $('rClose').addEventListener('click', clearSelection);
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+
+    $('panelToggle').addEventListener('click', () => {
+      setPanelCollapsed(!panelEl.classList.contains('collapsed'));
+    });
+    try {
+      if (localStorage.getItem('tim-panel-collapsed') === '1'
+          && matchMedia('(max-width: 680px)').matches) {
+        setPanelCollapsed(true);
+      }
+    } catch { /* private mode */ }
 
     $('days').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-day]');
@@ -1277,7 +1300,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109l');
+    const res = await fetch('data.json?v=20261109m');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

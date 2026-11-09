@@ -122,6 +122,23 @@
   .rstats{margin-top:6px;font-size:11px;color:#8ea5aa;display:flex;gap:14px;flex-wrap:wrap}
   .rstats b{color:#c3d5d1;font-weight:500}
 
+  .panel-toggle{display:none}
+  @media (max-width:680px){
+    .panel-toggle{display:grid;place-items:center;position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+      width:48px;height:15px;padding:0;border-radius:9px;background:#12232c;border:1px solid #27404a;color:#9db3b8;z-index:1}
+    .panel-toggle svg{width:13px;height:9px}
+    .panel-toggle:hover{color:var(--accent);border-color:#3f5b66}
+    .panel.collapsed{padding:6px 10px 4px}
+    .panel.collapsed .panel-toggle svg{transform:rotate(180deg)}
+    .panel.collapsed .legend,
+    .panel.collapsed .chartwrap,
+    .panel.collapsed .scrub,
+    .panel.collapsed .ticks,
+    .panel.collapsed .foot,
+    .panel.collapsed #routePanel,
+    .panel.collapsed .days{display:none}
+    .panel.collapsed .row{justify-content:flex-end;gap:8px}
+  }
   #tip{position:absolute;z-index:6;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
   #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
   #tip .cd{width:6px;height:6px;border-radius:50%;display:inline-block}
@@ -183,6 +200,9 @@
   <div id="tip" role="status" aria-live="polite"></div>
 
   <section class="panel">
+    <button class="panel-toggle" id="panelToggle" aria-expanded="true" aria-controls="panelMain" aria-label="Collapse panel">
+      <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 6.5 L6 1.5 L11 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div id="panelMain">
     <div class="row">
       <div class="legend" id="legend">
@@ -260,6 +280,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109l"></script>
+<script src="app.js?v=20261109m"></script>
 </body>
 </html>
