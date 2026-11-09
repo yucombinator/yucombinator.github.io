@@ -28,8 +28,14 @@ MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
                "August", "September", "October", "November", "December"]
 
 
+def toronto_today():
+    # Service days are local dates; a 05:17 UTC cron is still the previous day
+    # in Toronto, and choosing the weekday on the UTC date would skip ahead.
+    return datetime.now(ZoneInfo("America/Toronto")).date()
+
+
 def recent(weekday_index, today=None):
-    today = today or date.today()
+    today = today or toronto_today()
     return today - timedelta(days=(today.weekday() - weekday_index) % 7)
 
 

@@ -479,7 +479,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108h`);
+        const res = await fetch(`data-${key}.json?v=20261108i`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -526,14 +526,28 @@
     return `Live snapshot · ${hm} · ${live.v.length.toLocaleString()} vehicles`;
   }
 
+  // The RT feeds block browser reads, so a scheduled workflow publishes a
+  // snapshot to the live-data branch; raw.githubusercontent serves it with
+  // CORS. Same-origin live.json stays first for local runs and manual drops,
+  // and the newest of the two wins.
+  const LIVE_URLS = [
+    'live.json',
+    'https://raw.githubusercontent.com/yucombinator/yucombinator.github.io/live-data/live.json',
+  ];
+
   async function loadLive() {
-    let doc;
-    try {
-      const res = await fetch('live.json?ts=' + Date.now());
-      if (!res.ok) return;
-      doc = await res.json();
-    } catch { return; }
-    if (!doc || !doc.v || !doc.v.length) return;
+    let doc = null;
+    await Promise.all(LIVE_URLS.map(async (base) => {
+      try {
+        const url = base + (base.includes('?') ? '&' : '?') + 'ts=' + Date.now();
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) return;
+        const got = await res.json();
+        if (!got || !got.v || !got.v.length) return;
+        if (!doc || got.generated > doc.generated) doc = got;
+      } catch { /* one source down is fine */ }
+    }));
+    if (!doc) return;
     live = doc;
     liveRouteSet = new Set(doc.routes || []);
     liveRoutes = new Map();
@@ -685,7 +699,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108h');
+    const res = await fetch('data.json?v=20261108i');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -735,6 +749,7 @@
     anchorB = lngLatOf(1000, 1000);
     loadLive();
     setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
+    setInterval(loadLive, 5 * 60 * 1000);
     resize();
     setPlaying(state.playing);
     seek(state.t);

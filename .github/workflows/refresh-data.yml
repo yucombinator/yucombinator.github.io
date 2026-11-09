@@ -1,0 +1,88 @@
+# Static GTFS snapshot for Toronto in Motion.
+#
+# The page ships three service days — the most recent Wednesday, Saturday and
+# Sunday — chosen at build time. Without a rebuild those dates freeze, so the
+# map slowly becomes a museum piece. This job rebuilds daily, downloads each
+# agency's current feed, and commits the payloads. A commit to main is what
+# triggers the Pages deploy.
+#
+# Runs at 05:17 UTC (00:17/01:17 Toronto) so the local-date selection in
+# build_data.py has just rolled over and the feeds have had overnight to update.
+name: Refresh GTFS snapshots
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gtfs-refresh
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    name: Rebuild data.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild the three service days
+        run: python3 visualizations/toronto-in-motion/build/build_data.py
+
+      # Same idea as the advisory freshness check in the planner: a run that
+      # quietly produced an empty or half-downloaded table must fail loudly and
+      # leave the deployed data alone.
+      - name: Check the snapshot is complete and current
+        run: |
+          python3 - <<'PY'
+          import datetime, json, sys
+          from zoneinfo import ZoneInfo
+
+          base = "visualizations/toronto-in-motion/"
+          data = json.load(open(base + "data.json"))
+          key = (data.get("order") or ["weekday"])[0]
+          day = (data.get("days") or {}).get(key) or {}
+          trips = len(day.get("trips") or [])
+          stamp = datetime.date.fromisoformat(day["date"])
+          today = datetime.datetime.now(ZoneInfo("America/Toronto")).date()
+          print(f"{day.get('label')}: {trips} trips, "
+                f"{len(data['routes'])} routes, {len(data['shapes'])} shapes")
+
+          if trips < 40000:
+              sys.exit(f"weekday trips collapsed to {trips}")
+          if len(data["routes"]) < 800:
+              sys.exit("route table shrank")
+          if len(data["shapes"]) < 3000:
+              sys.exit("shape table shrank")
+          if (today - stamp).days > 8:
+              sys.exit(f"weekday snapshot is {day.get('label')}, too old")
+
+          for name in ("saturday", "sunday"):
+              other = json.load(open(base + f"data-{name}.json"))
+              n = len(other.get("trips") or [])
+              print(f"{name}: {n} trips")
+              if n < 15000:
+                  sys.exit(f"{name} trips collapsed to {n}")
+          PY
+
+      - name: Commit if the snapshot changed
+        run: |
+          git config user.name "gtfs-refresh-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add visualizations/toronto-in-motion/data.json \
+                  visualizations/toronto-in-motion/data-saturday.json \
+                  visualizations/toronto-in-motion/data-sunday.json
+          if git diff --cached --quiet; then
+            echo "No data changes — skipping commit"
+          else
+            git commit -m "Refresh GTFS snapshot ($(date -u +%F))"
+            git push
+          fi
