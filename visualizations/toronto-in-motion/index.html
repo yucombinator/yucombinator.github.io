@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Toronto in Motion — Yu Chen Hou</title>
+<meta name="description" content="A weekday of TTC service in Toronto, animated: 40,001 scheduled trips as moving dots, hour by hour.">
+<meta name="author" content="Yu Chen Hou">
+<meta property="og:title" content="Toronto in Motion">
+<meta property="og:description" content="40,001 scheduled TTC trips animated across a weekday in Toronto.">
+<style>
+  :root{
+    --bg:#070d14;
+    --panel:rgba(10,20,28,.86);
+    --line:#1d303b;
+    --text:#dce8e3;
+    --muted:#7f95a0;
+    --mint:#6ee7b7;
+    --subway:#f5c451;
+    --streetcar:#ef6f6c;
+    --bus:#5aa9e6;
+    --font:"Avenir Next","Helvetica Neue",Arial,sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;overflow:hidden}
+  button,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+  #app{position:relative;height:100%;overflow:hidden;background:var(--bg)}
+  #map{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+  .vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,13,20,.82),transparent 22%,transparent 62%,rgba(7,13,20,.8))}
+
+  header{position:absolute;left:max(22px,env(safe-area-inset-left));right:max(22px,env(safe-area-inset-right));top:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;pointer-events:none}
+  .brand{display:flex;align-items:center;gap:9px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:#c8d8d4}
+  .mark{width:22px;height:22px;position:relative;transform:rotate(-28deg)}
+  .mark i{position:absolute;width:4px;border-radius:3px;background:var(--mint);left:9px;top:1px;height:20px}
+  .mark i:first-child{left:1px;top:8px;height:13px}
+  .mark i:last-child{left:17px;top:1px;height:13px}
+  .hright{display:flex;align-items:center;gap:16px;pointer-events:auto}
+  .clock{font-size:34px;font-weight:300;letter-spacing:-.6px;font-variant-numeric:tabular-nums;color:#d7e7e1;line-height:1}
+  .clock small{font-size:11px;letter-spacing:.6px;color:var(--muted);margin-left:5px}
+  .about-btn{background:none;border:0;color:#9db3b8;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:6px 0}
+  .about-btn:hover{color:var(--mint)}
+
+  .meta{position:absolute;left:max(22px,env(safe-area-inset-left));top:64px;pointer-events:none}
+  .meta .day{font-size:11px;letter-spacing:1px;color:#93aab0;text-transform:uppercase}
+  .meta .sub{margin-top:5px;font-size:12px;color:#7d949b;max-width:34ch;line-height:1.5}
+
+  .panel{position:absolute;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));bottom:14px;background:var(--panel);backdrop-filter:blur(14px);border:1px solid #203440;border-radius:10px;padding:10px 14px 8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap}
+  .legend button{background:none;border:0;padding:2px 0;display:flex;align-items:center;gap:6px;color:#b9cccf;font-size:11.5px}
+  .legend button[aria-pressed="false"]{opacity:.35}
+  .legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
+  .controls{display:flex;align-items:center;gap:10px}
+  .play{width:34px;height:34px;border-radius:50%;border:1px solid #3f6b5f;background:rgba(110,231,183,.05);color:#a5e6cf;display:grid;place-items:center;padding:0}
+  .play:hover{background:rgba(110,231,183,.14)}
+  .play svg{width:15px;height:15px;fill:currentColor}
+  select{background:#0c1a22;border:1px solid #27404a;border-radius:5px;color:#a9bfc4;font-size:10.5px;padding:6px 7px}
+  .chartwrap{position:relative;height:52px;margin-top:8px}
+  .chartwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+  .scrub{width:100%;margin:0;appearance:none;-webkit-appearance:none;background:transparent;height:16px;margin-top:2px}
+  .scrub::-webkit-slider-runnable-track{background:#22363f;height:1px}
+  .scrub::-moz-range-track{background:#22363f;height:1px}
+  .scrub::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:9px;height:9px;border-radius:50%;background:var(--mint);margin-top:-4px;box-shadow:0 0 0 3px rgba(110,231,183,.16)}
+  .scrub::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;background:var(--mint)}
+  .ticks{display:flex;justify-content:space-between;font-size:10px;color:#8aa0a6;font-variant-numeric:tabular-nums;margin-top:-2px}
+  .foot{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid #1a2b34;margin-top:6px;padding-top:6px;flex-wrap:wrap}
+  .stats{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#8ea5aa}
+  .stats b{color:#c3d5d1;font-weight:500;font-variant-numeric:tabular-nums}
+  .src{font-size:10px;color:#7f979d;text-decoration:none;border-bottom:1px solid #2a4048}
+  .src:hover{color:var(--mint);border-color:var(--mint)}
+
+  #tip{position:absolute;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
+  #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1}
+  #tip strong{display:block;margin-top:4px;font-weight:500;color:#e2efea}
+  #tip small{display:block;margin-top:3px;color:#7f9ba1;font-size:10px}
+
+  #loading{position:absolute;inset:0;z-index:10;background:rgba(7,13,20,.95);display:flex;align-items:center;justify-content:center;gap:14px;color:#9db3b8;font-size:13px;letter-spacing:.4px;transition:opacity .5s}
+  #loading.done{opacity:0;pointer-events:none}
+
+  dialog{border:1px solid #26414c;background:#0a161d;color:var(--text);border-radius:12px;max-width:560px;padding:24px 26px;font-size:13px;line-height:1.6}
+  dialog::backdrop{background:rgba(4,9,13,.66)}
+  dialog h2{margin:0 0 10px;font-size:16px;font-weight:600}
+  dialog p{margin:0 0 10px;color:#aec2c6}
+  dialog p:last-child{margin-bottom:0}
+  dialog a{color:var(--mint)}
+  dialog code{font-size:12px;color:#cfe3dc}
+  .close{position:absolute;right:14px;top:10px;background:none;border:0;color:#8aa2a8;font-size:18px}
+
+  @media (max-width:680px){
+    .clock{font-size:26px}
+    .meta .sub{display:none}
+    .legend{gap:10px}
+    .legend .n{min-width:20px}
+    .panel{padding:9px 10px 6px}
+    .chartwrap{height:42px}
+    .stats{gap:12px;font-size:10.5px}
+  }
+  @media (prefers-reduced-motion:reduce){ .panel,.vignette{transition:none} }
+</style>
+</head>
+<body>
+<main id="app">
+  <canvas id="map" aria-label="Animated map of TTC vehicles across Toronto"></canvas>
+  <div class="vignette"></div>
+
+  <header>
+    <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> Toronto in Motion</div>
+    <div class="hright">
+      <div class="clock"><span id="clock">07:00</span><small id="zone">EDT</small></div>
+      <button class="about-btn" id="aboutBtn">About</button>
+    </div>
+  </header>
+
+  <div class="meta">
+    <div class="day">Wednesday · 11 November 2026</div>
+    <div class="sub">Every scheduled TTC trip of a weekday, drawn as a moving dot. Subways, streetcars, and buses, 24 hours at a time.</div>
+  </div>
+
+  <div id="tip" role="status" aria-live="polite"></div>
+
+  <section class="panel">
+    <div class="row">
+      <div class="legend" id="legend">
+        <button data-mode="subway" aria-pressed="true"><span class="dot" style="background:var(--subway)"></span>Subway<span class="n" id="n-subway">0</span></button>
+        <button data-mode="streetcar" aria-pressed="true"><span class="dot" style="background:var(--streetcar)"></span>Streetcar &amp; LRT<span class="n" id="n-streetcar">0</span></button>
+        <button data-mode="bus" aria-pressed="true"><span class="dot" style="background:var(--bus)"></span>Bus<span class="n" id="n-bus">0</span></button>
+      </div>
+      <div class="controls">
+        <button class="play" id="playBtn" aria-label="Pause">
+          <svg id="playIcon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+        </button>
+        <select id="speed" aria-label="Playback speed">
+          <option value="60">1× (24h in 24m)</option>
+          <option value="120" selected>2× (24h in 12m)</option>
+          <option value="300">5× (24h in 5m)</option>
+          <option value="720">12× (24h in 2m)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartline"></canvas></div>
+
+    <input class="scrub" id="scrub" type="range" min="0" max="86400" step="60" value="25200" aria-label="Time of day">
+    <div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+
+    <div class="foot">
+      <div class="stats">
+        <span>On the road <b id="s-active">0</b></span>
+        <span>Trips started <b id="s-started">0</b> / 40,001</span>
+        <span>Peak hour <b>17:00</b> · 1,557 vehicles</span>
+      </div>
+      <a class="src" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Data: TTC GTFS · City of Toronto Open Data Licence</a>
+    </div>
+  </section>
+
+  <div id="loading"><span>Loading 40,001 trips…</span></div>
+
+  <dialog id="about">
+    <button class="close" id="closeAbout" aria-label="Close">×</button>
+    <h2>Toronto in Motion</h2>
+    <p>Every scheduled TTC trip for a regular Wednesday — 40,001 of them — animated as a dot moving along its route. Subways, streetcars and light rail, and buses, with a 24-hour scrubber.</p>
+    <p><strong>This is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
+    <p>Data: <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">TTC Routes and Schedules</a> (GTFS, October 2026 extract), used under the City of Toronto Open Data Licence. Line 5 Eglinton and Line 6 Finch West are grouped with streetcars because that is how they are coded in the feed.</p>
+    <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
+  </dialog>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
