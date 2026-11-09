@@ -5,6 +5,10 @@
   'use strict';
 
   const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'up', 'ferry'];
+  const MODE_LABEL = {
+    subway: 'Subway', streetcar: 'Streetcar', lrt: 'LRT', gorail: 'GO train',
+    gobus: 'GO bus', localbus: 'Bus', up: 'UP Express', ferry: 'Ferry',
+  };
   const MODE_COLOR = {
     subway: '#f8c302', streetcar: '#da251d', lrt: '#f87005',
     gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', up: '#3867d6',
@@ -67,6 +71,7 @@
   let anchorA = null, anchorB = null;
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
+  let routeSig = -1, lastLineRefresh = 0;
   let uiAccum = 0;
   let dayCache = {};
   let selected = -1;               // route pointer, -1 = none
@@ -76,6 +81,9 @@
   let routeIndexByKey = null;      // "feed:route_id" -> route pointer
   let liveRoutePtr = null;         // route pointer per live vehicle
   const stopsCache = new Map();    // feed id -> stops-<feed>.json
+  let corridors = null;            // dedicated busways / RapidTO lanes
+  let activeRoutes = new Set();    // routes running now, or within the grace window
+  const LINE_GRACE = 15 * 60;      // seconds of schedule time
   let curDay = null, curHist = null, curStarts = null;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
@@ -122,6 +130,7 @@
     }
     view.screenShapes = out;
     if (selStops) projectStops();
+    if (corridors) projectCorridors();
     baseA = mapObj.project(anchorA);
     baseB = mapObj.project(anchorB);
     aff.sx = aff.sy = 1; aff.ox = aff.oy = 0;
@@ -160,7 +169,8 @@
     lctx.lineJoin = 'round';
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
-    for (const { shapeIdx, color, mode } of railShapes) {
+    for (const { shapeIdx, color, mode, route } of railShapes) {
+      if (!activeRoutes.has(route)) continue;
       const shape = ss[shapeIdx];
       const xy = shape && shape.xy;
       if (!xy || xy.length < 4) continue;
@@ -264,6 +274,8 @@
     modeTotals.fill(0);
     const t = state.t;
     selectedActive = 0;
+    activeRoutes.clear();
+    let routeSigCount = 0, routeSigSum = 0;
     const hEnd = t / 3600 | 0;
     for (let back = 0, mask = 0; back <= 4; back++) {
       const hh = (hEnd - back + 24) % 24;
@@ -273,8 +285,19 @@
       for (let j = 0; j < bucket.length; j++) {
         const i = bucket[j];
         const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
-        const tt = t < t0 ? t + DAY : t;
-        if (tt > t1) continue;
+        const w0 = t, w1 = t + DAY;
+        const activeNow = (w0 >= t0 && w0 <= t1) || (w1 >= t0 && w1 <= t1);
+        // keep the line for a grace window on either side of a trip, so a bus
+        // that is between runs does not blink its route off the map
+        const nearNow = activeNow
+          || (w0 >= t0 - LINE_GRACE && w0 <= t1 + LINE_GRACE)
+          || (w1 >= t0 - LINE_GRACE && w1 <= t1 + LINE_GRACE);
+        if (!nearNow) continue;
+        activeRoutes.add(trips[i * 4 + 3]);
+        routeSigCount++;
+        routeSigSum += trips[i * 4 + 3];
+        if (!activeNow) continue;
+        const tt = (w0 >= t0 && w0 <= t1) ? w0 : w1;
         const mode = modeOfTrip[i];
         if (!state.modes[MODES[mode]]) continue;
         activeTotal++;
@@ -292,6 +315,53 @@
         pTrip[activeCount] = i;
         activeCount++;
       }
+    }
+
+    if (corridors) {
+      const zc = mapObj ? mapObj.getZoom() : fitZoom;
+      const band = Math.min(13, Math.max(6, 3.5 + (zc - 8) * 1.6));
+      octx.save();
+      octx.lineCap = 'round';
+      octx.lineJoin = 'round';
+      for (const g of corridors) {
+        if (!g.screen) continue;
+        octx.strokeStyle = 'rgba(232,242,238,.16)';
+        octx.lineWidth = band;
+        octx.beginPath();
+        for (const xy of g.screen) {
+          for (let p = 0; p < xy.length; p += 2) {
+            const X = xy[p] * aff.sx + aff.ox;
+            const Y = xy[p + 1] * aff.sy + aff.oy;
+            if (p === 0) octx.moveTo(X, Y); else octx.lineTo(X, Y);
+          }
+        }
+        octx.stroke();
+
+        octx.strokeStyle = 'rgba(232,242,238,.55)';
+        octx.lineWidth = 1.2;
+        octx.setLineDash([5, 4]);
+        octx.beginPath();
+        for (const xy of g.screen) {
+          for (let p = 0; p < xy.length; p += 2) {
+            const X = xy[p] * aff.sx + aff.ox;
+            const Y = xy[p + 1] * aff.sy + aff.oy;
+            if (p === 0) octx.moveTo(X, Y); else octx.lineTo(X, Y);
+          }
+        }
+        octx.stroke();
+        octx.setLineDash([]);
+      }
+      if (zc >= 11.5) {
+        octx.font = '600 9px system-ui, sans-serif';
+        octx.fillStyle = 'rgba(232,242,238,.55)';
+        octx.textBaseline = 'middle';
+        for (const g of corridors) {
+          if (!g.label) continue;
+          octx.fillText(g.name.toUpperCase(), g.label.x * aff.sx + aff.ox + 7,
+                        g.label.y * aff.sy + aff.oy + 7);
+        }
+      }
+      octx.restore();
     }
 
     if (selected >= 0) {
@@ -481,6 +551,14 @@
       }
     }
 
+    const sig = routeSigCount * 1000003 + routeSigSum;
+    if (sig !== routeSig && performance.now() - lastLineRefresh > 400) {
+      routeSig = sig;
+      lastLineRefresh = performance.now();
+      linesDirty = true;
+      state.dirty = true;      // the redraw needs another frame
+    }
+
     if (state.hover != null && state.hover < activeCount) {
       const k = state.hover;
       octx.strokeStyle = 'rgba(255,255,255,.9)';
@@ -574,7 +652,7 @@
       const k = shapeIdx + ':' + slot;
       if (seenRailShape.has(k)) continue;
       seenRailShape.add(k);
-      railShapes.push({ shapeIdx, color: slotColors[slot], mode: MODES[routeMode[ridx]] });
+      railShapes.push({ shapeIdx, color: slotColors[slot], mode: MODES[routeMode[ridx]], route: ridx });
     }
     linesDirty = true;
   }
@@ -610,7 +688,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109d`);
+        const res = await fetch(`data-${key}.json?v=20261109h`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -630,6 +708,8 @@
     hourBuckets = d.hourBuckets; startTimes = d.startTimes;
     curHist = d.hist;
     curStarts = d.startsBins;
+    linesDirty = true;
+    routeSig = -1;
     $('dayLabel').textContent = d.label;
     $('zone').textContent = d.tz || 'EST';
     $('s-total').textContent = d.n.toLocaleString();
@@ -660,6 +740,44 @@
 
   /* ---------- route selection ---------- */
 
+  function projectCorridors() {
+    if (!corridors || !mapObj) return;
+    for (const g of corridors) {
+      g.screen = g.lines.map((line) => {
+        const xy = new Float32Array(line.length * 2);
+        for (let i = 0; i < line.length; i++) {
+          const p = mapObj.project([line[i][1], line[i][0]]);
+          xy[i * 2] = p.x;
+          xy[i * 2 + 1] = p.y;
+        }
+        return xy;
+      });
+      let best = null, bestLen = 0;
+      for (const xy of g.screen) {
+        let len = 0;
+        for (let i = 2; i < xy.length; i += 2) {
+          len += Math.hypot(xy[i] - xy[i - 2], xy[i + 1] - xy[i - 1]);
+        }
+        if (len > bestLen) { bestLen = len; best = xy; }
+      }
+      if (best && best.length >= 4) {
+        const mid = ((best.length >> 1) >> 1) * 2;
+        g.label = { x: best[mid], y: best[mid + 1] };
+      }
+    }
+  }
+
+  async function loadCorridors() {
+    try {
+      const res = await fetch('busways.json?v=20261109h');
+      if (!res.ok) return;
+      const doc = await res.json();
+      corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
+      if (mapObj) projectCorridors();
+      state.dirty = true;
+    } catch { /* overlay is optional */ }
+  }
+
   function projectStops() {
     if (!selStops || !mapObj) return;
     const n = selStops.n;
@@ -675,21 +793,33 @@
   function routeStats(idx) {
     let tripsN = 0, first = Infinity, last = -1;
     const hours = new Array(24).fill(0);
+    // departures per shape inside each hour: a route's shapes are its
+    // directions (and short-turn variants), so the busiest shape gives the
+    // per-direction frequency instead of counting both ways at once.
+    const byShape = Array.from({ length: 24 }, () => new Map());
     for (let i = 0; i < tripCount; i++) {
       if (trips[i * 4 + 3] !== idx) continue;
       tripsN++;
       const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
       if (t0 < first) first = t0;
       if (t1 > last) last = t1;
-      hours[(t0 / 3600 | 0) % 24]++;
+      const h = (t0 / 3600 | 0) % 24;
+      hours[h]++;
+      const m = byShape[h];
+      const shape = trips[i * 4];
+      m.set(shape, (m.get(shape) || 0) + 1);
     }
-    let peak = 0;
-    for (let h = 0; h < 24; h++) if (hours[h] > peak) peak = hours[h];
+    let peakHour = 0;
+    for (let h = 1; h < 24; h++) if (hours[h] > hours[peakHour]) peakHour = h;
+    let busiest = 0;
+    for (const count of byShape[peakHour].values()) if (count > busiest) busiest = count;
     return {
       trips: tripsN,
       first: tripsN ? first % DAY : 0,
       last: tripsN ? last % DAY : 0,
-      peak,
+      peak: hours[peakHour],
+      peakHour,
+      headway: busiest ? 60 / busiest : 0,
     };
   }
 
@@ -703,7 +833,10 @@
     if (km) bits.push(`<span><b>${km.toFixed(1)}</b> km</span>`);
     if (run) bits.push(`<span><b>${Math.round(run / 60)}</b> min end-to-end</span>`);
     if (run && km) bits.push(`<span><b>${Math.round(km / (run / 3600))}</b> km/h avg</span>`);
-    if (stats.peak) bits.push(`<span><b>${stats.peak}</b> departures in the peak hour</span>`);
+    if (stats.headway) {
+      const hw = stats.headway >= 10 ? Math.round(stats.headway) : stats.headway.toFixed(1);
+      bits.push(`<span><b>~${hw}</b> min headway at peak (${String(stats.peakHour).padStart(2, '0')}:00)</span>`);
+    }
     if (stats.trips) bits.push(`<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>`);
     else bits.push('<span>not running today</span>');
     bits.push('<span id="rNow"></span>');
@@ -715,7 +848,10 @@
     const meta = D.routes[key] || {};
     const stats = routeStats(idx);
     $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
-    $('rMeta').textContent = [meta.a, meta.m].filter(Boolean).join(' · ');
+    const modeLabel = MODE_LABEL[meta.m] || meta.m;
+    const parts = [meta.a, modeLabel].filter(Boolean);
+    $('rMeta').textContent = (parts.length === 2 && modeLabel.startsWith(meta.a))
+      ? modeLabel : parts.join(' · ');
     $('rDot').style.background = slotColors[routeSlot[idx]];
     updateRouteStats(idx);
   }
@@ -736,7 +872,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109d`);
+        const res = await fetch(`stops-${feed}.json?v=20261109h`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -952,6 +1088,7 @@
 
   function seek(t) {
     state.t = Math.max(0, Math.min(DAY - 1, t));
+    linesDirty = true;
     state.dirty = true;
     updateUI();
   }
@@ -1053,7 +1190,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109d');
+    const res = await fetch('data.json?v=20261109h');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1103,6 +1240,7 @@
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
+    loadCorridors();
     if (LIVE_ENABLED) {
       loadLive();
       setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
