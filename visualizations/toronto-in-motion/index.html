@@ -72,18 +72,21 @@
   .controls .clock small{font-size:9px;letter-spacing:.7px;color:#93aab0;margin-left:5px}
   .days{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
   .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
-  .days button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
+  .days button[aria-pressed="true"]{background:rgba(245,194,107,.14);color:var(--accent)}
   .days button:hover{color:#d6ece4}
   .speeds{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
   .speeds button{background:none;border:0;color:#8fa6ab;padding:5px 7px;border-radius:3px;display:flex;align-items:center}
   .speeds button svg{height:10px;width:auto;fill:currentColor;display:block}
-  .speeds .pp{color:#a5e6cf;padding:5px 9px}
-  .speeds .pp svg{height:11px}
+  .speeds .pp{color:#c9d9d4;width:27px;height:24px;padding:0;justify-content:center;
+    border:1px solid #33505a;border-radius:50%;margin:0 1px}
+  .speeds .pp[aria-pressed="true"]{border-color:var(--accent);background:rgba(245,194,107,.14);color:var(--accent)}
+  .speeds .pp:hover{border-color:#4b6b74}
+  .speeds .pp svg{height:9px}
   .speeds .pp .ic-play{display:none}
   .speeds .pp[aria-pressed="true"] .ic-pause{display:none}
   .speeds .pp[aria-pressed="true"] .ic-play{display:block}
   .speed-sep{width:1px;background:#27404a;align-self:stretch;margin:2px 1px}
-  .speeds button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
+  .speeds button[aria-pressed="true"]{background:rgba(245,194,107,.14);color:var(--accent)}
   .speeds button:hover{color:#d6ece4}
   .live{display:flex;align-items:center;gap:5px;background:rgba(255,92,92,.08);border:1px solid #6a3b3b;color:#ffb4b4;font-size:10.5px;letter-spacing:.4px;padding:6px 9px;border-radius:5px}
   .live[aria-pressed="true"]{background:rgba(255,72,72,.22);border-color:#c35252;color:#ffd9d9}
@@ -257,6 +260,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109j"></script>
+<script src="app.js?v=20261109k"></script>
 </body>
 </html>
