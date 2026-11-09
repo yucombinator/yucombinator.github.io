@@ -480,7 +480,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108j`);
+        const res = await fetch(`data-${key}.json?v=20261108n`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -726,7 +726,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108j');
+    const res = await fetch('data.json?v=20261108n');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
