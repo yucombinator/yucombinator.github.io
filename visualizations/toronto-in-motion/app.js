@@ -293,13 +293,14 @@
           || (w0 >= t0 - LINE_GRACE && w0 <= t1 + LINE_GRACE)
           || (w1 >= t0 - LINE_GRACE && w1 <= t1 + LINE_GRACE);
         if (!nearNow) continue;
+        const mode = modeOfTrip[i];
+        // a disabled mode loses its line as well as its arrows
+        if (!state.modes[MODES[mode]]) continue;
         activeRoutes.add(trips[i * 4 + 3]);
         routeSigCount++;
         routeSigSum += trips[i * 4 + 3];
         if (!activeNow) continue;
         const tt = (w0 >= t0 && w0 <= t1) ? w0 : w1;
-        const mode = modeOfTrip[i];
-        if (!state.modes[MODES[mode]]) continue;
         activeTotal++;
         modeTotals[mode]++;
         if (selected >= 0 && trips[i * 4 + 3] === selected) selectedActive++;
@@ -757,7 +758,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109m`);
+        const res = await fetch(`data-${key}.json?v=20261109n`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -826,7 +827,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109m');
+      const res = await fetch('busways.json?v=20261109n');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -937,7 +938,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109m`);
+        const res = await fetch(`stops-${feed}.json?v=20261109n`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1300,7 +1301,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109m');
+    const res = await fetch('data.json?v=20261109n');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
