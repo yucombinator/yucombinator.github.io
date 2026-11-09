@@ -347,17 +347,38 @@
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
       octx.fillStyle = slotColors[si];
-      octx.globalAlpha = isBus(mode) ? 0.8 : 1;
+      octx.globalAlpha = (isBus(mode) ? 0.8 : 1) * (selected >= 0 ? 0.5 : 1);
       const r = MODE_RADIUS[mode] * zf;
       const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
       const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.fill();
+    }
+
+    // the selected route stays at full strength on top of the dimmed traffic
+    if (selected >= 0) {
+      octx.globalAlpha = 1;
+      for (let si = 0; si < slotColors.length; si++) {
+        const mode = MODES[slotMode[si]];
+        if (!state.modes[mode]) continue;
+        const r = MODE_RADIUS[mode] * zf;
+        const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
+        const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
+        octx.fillStyle = slotColors[si];
+        octx.beginPath();
+        let any = false;
+        for (let k = 0; k < activeCount; k++) {
+          if (slotOfTrip[pTrip[k]] !== si) continue;
+          if (trips[pTrip[k] * 4 + 3] !== selected) continue;
+          any = true;
+          arrowPath(octx, px[k], py[k], pAng[k], len, wid);
+        }
+        if (any) octx.fill();
+      }
     }
     octx.globalAlpha = 1;
 
@@ -394,15 +415,37 @@
         const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
         const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
         octx.beginPath();
+        octx.globalAlpha = selected >= 0 ? 0.5 : 1;
         for (let k = 0; k < liveCount; k++) {
           if (liveScreen[k * 4 + 3] !== si) continue;
-          if (selected >= 0 && liveRoutePtr[k] !== selected) continue;
           const x = liveScreen[k * 4] * aff.sx + aff.ox;
           const y = liveScreen[k * 4 + 1] * aff.sy + aff.oy;
           arrowPath(octx, x, y, liveScreen[k * 4 + 2], len, wid);
         }
         octx.fill();
       }
+      if (selected >= 0) {
+        octx.globalAlpha = 1;
+        for (let si = 0; si < slotColors.length; si++) {
+          const mode = MODES[slotMode[si]];
+          if (!state.modes[mode]) continue;
+          const r = MODE_RADIUS[mode] * lzf * 1.25;
+          const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
+          const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
+          octx.fillStyle = slotColors[si];
+          octx.beginPath();
+          let any = false;
+          for (let k = 0; k < liveCount; k++) {
+            if (liveScreen[k * 4 + 3] !== si || liveRoutePtr[k] !== selected) continue;
+            any = true;
+            arrowPath(octx, liveScreen[k * 4] * aff.sx + aff.ox,
+                      liveScreen[k * 4 + 1] * aff.sy + aff.oy,
+                      liveScreen[k * 4 + 2], len, wid);
+          }
+          if (any) octx.fill();
+        }
+      }
+      octx.globalAlpha = 1;
     }
 
     if (selected >= 0 && selStops) {
@@ -562,7 +605,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108q`);
+        const res = await fetch(`data-${key}.json?v=20261108r`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -618,18 +661,39 @@
 
   function routeStats(idx) {
     let tripsN = 0, first = Infinity, last = -1;
+    const hours = new Array(24).fill(0);
     for (let i = 0; i < tripCount; i++) {
       if (trips[i * 4 + 3] !== idx) continue;
       tripsN++;
       const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
       if (t0 < first) first = t0;
       if (t1 > last) last = t1;
+      hours[(t0 / 3600 | 0) % 24]++;
     }
+    let peak = 0;
+    for (let h = 0; h < 24; h++) if (hours[h] > peak) peak = hours[h];
     return {
       trips: tripsN,
       first: tripsN ? first % DAY : 0,
       last: tripsN ? last % DAY : 0,
+      peak,
     };
+  }
+
+  function updateRouteStats(idx) {
+    const stats = routeStats(idx);
+    const km = selStops && selStops.km ? selStops.km : 0;
+    const run = selStops && selStops.run ? selStops.run : 0;
+    const stopsN = selStops ? selStops.n : 0;
+    const bits = [`<span><b>${stats.trips.toLocaleString()}</b> trips today</span>`];
+    if (stopsN) bits.push(`<span><b>${stopsN}</b> stops</span>`);
+    if (km) bits.push(`<span><b>${km.toFixed(1)}</b> km</span>`);
+    if (run) bits.push(`<span><b>${Math.round(run / 60)}</b> min end-to-end</span>`);
+    if (run && km) bits.push(`<span><b>${Math.round(km / (run / 3600))}</b> km/h avg</span>`);
+    if (stats.peak) bits.push(`<span><b>${stats.peak}</b> departures in the peak hour</span>`);
+    if (stats.trips) bits.push(`<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>`);
+    else bits.push('<span>not running today</span>');
+    $('rStats').innerHTML = bits.join('');
   }
 
   function fillRoutePanel(idx) {
@@ -639,11 +703,7 @@
     $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
     $('rMeta').textContent = [meta.a, meta.m].filter(Boolean).join(' · ');
     $('rDot').style.background = slotColors[routeSlot[idx]];
-    const stopsN = selStops ? selStops.n : 0;
-    $('rStats').innerHTML =
-      `<span><b>${stats.trips.toLocaleString()}</b> trips today</span>` +
-      (stats.trips ? `<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>` : '<span>not running today</span>') +
-      (stopsN ? `<span><b>${stopsN}</b> stops</span>` : '');
+    updateRouteStats(idx);
   }
 
   async function selectRoute(idx) {
@@ -662,26 +722,26 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261108q`);
+        const res = await fetch(`stops-${feed}.json?v=20261108r`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
-      const ids = doc && doc.r && doc.r[rid];
+      const entry = doc && doc.r && doc.r[rid];
+      const ids = entry && entry[0];
       if (ids && ids.length >= 2) {
         const n = ids.length;
-        selStops = { n, lat: new Float32Array(n), lon: new Float32Array(n), name: [], x: null, y: null };
-        const chips = [];
+        selStops = {
+          n, lat: new Float32Array(n), lon: new Float32Array(n),
+          name: [], x: null, y: null,
+          km: entry[1] || 0, run: entry[2] || 0,
+        };
         for (let i = 0; i < n; i++) {
           const row = doc.s[ids[i]];
           selStops.lat[i] = row[0];
           selStops.lon[i] = row[1];
           selStops.name.push(row[2]);
-          chips.push(`<span>${esc(row[2])}</span>`);
         }
-        $('rStops').innerHTML = chips.join('');
         projectStops();
         if (selected === idx) fillRoutePanel(idx);
-      } else {
-        $('rStops').innerHTML = '';
       }
     } catch { /* panel still shows what we know */ }
     state.dirty = true;
@@ -965,7 +1025,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108q');
+    const res = await fetch('data.json?v=20261108r');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

@@ -109,8 +109,6 @@
   .rclose:hover{color:var(--mint);border-color:var(--mint)}
   .rstats{margin-top:6px;font-size:11px;color:#8ea5aa;display:flex;gap:14px;flex-wrap:wrap}
   .rstats b{color:#c3d5d1;font-weight:500}
-  .rstops{margin-top:6px;display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
-  .rstops span{white-space:nowrap;font-size:10px;color:#b9cccf;background:#12232c;border:1px solid #22363f;border-radius:4px;padding:2px 6px}
 
   #tip{position:absolute;z-index:6;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
   #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
@@ -228,7 +226,6 @@
         <button class="rclose" id="rClose" aria-label="Close route details">×</button>
       </div>
       <div class="rstats" id="rStats"></div>
-      <div class="rstops" id="rStops" aria-label="Stops on this route"></div>
     </div>
   </section>
 
@@ -249,6 +246,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108q"></script>
+<script src="app.js?v=20261108r"></script>
 </body>
 </html>

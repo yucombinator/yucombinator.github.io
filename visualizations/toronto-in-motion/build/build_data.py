@@ -225,6 +225,15 @@ def classify(feed, route_id, route_type):
     return ("localbus", feed["color"])
 
 
+def haversine_km(lat1, lon1, lat2, lon2):
+    r = 6371.0088
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp_ = p2 - p1
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp_ / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
 def dp(points, tol):
     """Douglas-Peucker on [(x, y)]."""
     if len(points) < 3:
@@ -370,7 +379,13 @@ for feed in FEEDS:
                 feed_stop_rows.append([round(meta[0], 5), round(meta[1], 5), meta[2]])
             idxs.append(si)
         if len(idxs) >= 2:
-            feed_stops[route_key.split(":", 1)[1]] = idxs
+            km = 0.0
+            for a, b in zip(idxs, idxs[1:]):
+                ka, kb = feed_stop_rows[a], feed_stop_rows[b]
+                km += haversine_km(ka[0], ka[1], kb[0], kb[1])
+            t = local_trips.get(tid) or {}
+            run = max(0, (t.get("t1") or 0) - (t.get("t0") or 0))
+            feed_stops[route_key.split(":", 1)[1]] = [idxs, round(km, 1), run]
     if feed_stops:
         out_path = os.path.join(os.path.dirname(OUT), f"stops-{feed['id']}.json")
         with open(out_path, "w", encoding="utf-8") as fh:
