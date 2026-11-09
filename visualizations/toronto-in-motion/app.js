@@ -32,13 +32,14 @@
     modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true },
     hover: null,
     dirty: true,
+    liveOn: false,
   };
 
   let D = null;
   let mapObj = null;
   let shapes = [];            // { pts: [[x,y]] in local metres }
   let routeIds = [];          // pointer -> route_id
-  let railShapes = [];        // [{shapeIdx, color}] for background lines
+  let railShapes = [];        // [{shapeIdx, color, mode}] background lines
   let slotColors = [];        // palette of dot colours (one per TTC line / mode)
   let slotMode = [];          // mode index per palette slot
   let slotOfTrip = null;      // Uint8Array slot per trip
@@ -47,7 +48,7 @@
   let modeOfTrip = null;      // Uint8Array
   let hourBuckets = null;     // trip indices grouped by start hour
   let startTimes = null;      // sorted Int32Array of t0
-  let px = null, py = null, pTrip = null;
+  let px = null, py = null, pAng = null, pTrip = null;
   let activeCount = 0;       // dots currently drawn (viewport)
   let activeTotal = 0;       // trips running, on screen or not
   const modeTotals = new Array(MODES.length).fill(0);
@@ -69,6 +70,12 @@
   let curDay = null, curHist = null;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
+  let live = null;                 // parsed live.json
+  let liveScreen = null;           // Float32Array [x, y, angle, slot, size]
+  let liveCount = 0;
+  let liveRoutes = null;           // "feed:route" -> palette slot
+  let liveRouteSet = new Set();
+  const LIVE_STALE_MS = 30 * 60 * 1000;
 
   const lngLatOf = (x, y) => {
     const { kx, ky, x0, y0 } = D.proj;
@@ -100,6 +107,7 @@
     baseB = mapObj.project(anchorB);
     aff.sx = aff.sy = 1; aff.ox = aff.oy = 0;
     linesDirty = true;
+    if (live) computeLiveScreen();
   }
 
   // cheap affine delta while the map is mid-gesture (2 projections, no relayout)
@@ -114,19 +122,31 @@
     railEl.style.transform = `translate(${aff.ox}px, ${aff.oy}px) scale(${aff.sx}, ${aff.sy})`;
   }
 
+  // one arrow per vehicle: tip ahead of the position, base behind it
+  function arrowPath(ctx, x, y, ang, len, wid) {
+    const c = Math.cos(ang), sn = Math.sin(ang);
+    const tx = x + c * len * 0.62, ty = y + sn * len * 0.62;
+    const bx = x - c * len * 0.38, by = y - sn * len * 0.38;
+    const nx = -sn * wid, ny = c * wid;
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(bx + nx, by + ny);
+    ctx.lineTo(bx - nx, by - ny);
+    ctx.closePath();
+  }
+
   function drawLines() {
     const { w, h } = view;
     lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     lctx.clearRect(0, 0, w, h);
-    lctx.lineWidth = 1.1;
     lctx.lineJoin = 'round';
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
-    for (const { shapeIdx, color } of railShapes) {
+    for (const { shapeIdx, color, mode } of railShapes) {
       const shape = ss[shapeIdx];
       const xy = shape && shape.xy;
       if (!xy || xy.length < 4) continue;
-      lctx.strokeStyle = color + '5c';
+      lctx.strokeStyle = color + (isBus(mode) ? '2b' : '5c');
+      lctx.lineWidth = isBus(mode) ? 1 : 1.15;
       lctx.beginPath();
       lctx.moveTo(xy[0], xy[1]);
       if (xy.length === 4) {
@@ -155,7 +175,7 @@
     const k = (target - cum[i - 1]) / seg;
     const ax = xy[(i - 1) * 2], ay = xy[(i - 1) * 2 + 1];
     const bx = xy[i * 2], by = xy[i * 2 + 1];
-    return [ax + (bx - ax) * k, ay + (by - ay) * k];
+    return [ax + (bx - ax) * k, ay + (by - ay) * k, bx - ax, by - ay];
   }
 
   /* ---------- frame ---------- */
@@ -191,6 +211,27 @@
     requestAnimationFrame(frame);
   }
 
+  function computeLiveScreen() {
+    if (!live || !mapObj || !liveRoutes) return;
+    const rows = live.v;
+    liveScreen = new Float32Array(rows.length * 4);
+    let m = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const slot = liveRoutes.get(live.routes[row[0]]);
+      if (slot === undefined) continue;
+      const p = mapObj.project([row[2], row[1]]);
+      if (p.x < -40 || p.y < -40 || p.x > view.w + 40 || p.y > view.h + 40) continue;
+      const bearing = row[3];
+      liveScreen[m * 4] = p.x;
+      liveScreen[m * 4 + 1] = p.y;
+      liveScreen[m * 4 + 2] = bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0;
+      liveScreen[m * 4 + 3] = slot;
+      m++;
+    }
+    liveCount = m;
+  }
+
   function draw() {
     const { w, h } = view;
     octx.clearRect(0, 0, w, h);
@@ -223,13 +264,16 @@
         if (!state.modes[MODES[mode]]) continue;
         activeTotal++;
         modeTotals[mode]++;
+        if (state.liveOn && liveRouteSet.has(routeIds[trips[i * 4 + 3]])) continue;
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
-        const [bx, by] = pointAtScreen(shape, (t - t0) / (t1 - t0));
+        const [bx, by, dx, dy] = pointAtScreen(shape, (t - t0) / (t1 - t0));
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
         if (activeCount >= px.length) continue;
-        px[activeCount] = X; py[activeCount] = Y; pTrip[activeCount] = i;
+        px[activeCount] = X; py[activeCount] = Y;
+        pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx);
+        pTrip[activeCount] = i;
         activeCount++;
       }
     }
@@ -262,13 +306,14 @@
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
       octx.fillStyle = slotColors[si];
-      octx.globalAlpha = isBus(mode) ? 0.85 : 1;
+      octx.globalAlpha = isBus(mode) ? 0.8 : 1;
       const r = MODE_RADIUS[mode] * zf;
+      const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
+      const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        if (isTrain(mode) || isBus(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
-        else { octx.moveTo(px[k] + r, py[k]); octx.arc(px[k], py[k], r, 0, Math.PI * 2); }
+        arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.fill();
     }
@@ -280,14 +325,40 @@
     for (let si = 0; zf >= 0.95 && si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (isBus(mode) || !state.modes[mode]) continue;
-      const r = MODE_RADIUS[mode] * zf + 0.3;
+      const r = MODE_RADIUS[mode] * zf;
+      const len = isTrain(mode) ? r * 4.0 : r * 2.9;
+      const wid = isTrain(mode) ? r * 1.6 : r * 1.15;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        if (isTrain(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
-        else { octx.moveTo(px[k] + r, py[k]); octx.arc(px[k], py[k], r, 0, Math.PI * 2); }
+        arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.stroke();
+    }
+
+    if (state.liveOn && liveScreen && liveCount) {
+      const lz = mapObj ? mapObj.getZoom() : fitZoom;
+      const lzf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, lz - fitZoom)));
+      octx.globalAlpha = 1;
+      for (let si = 0; si < slotColors.length; si++) {
+        const mode = MODES[slotMode[si]];
+        if (!state.modes[mode]) continue;
+        let any = false;
+        for (let k = 0; k < liveCount; k++) if (liveScreen[k * 4 + 3] === si) { any = true; break; }
+        if (!any) continue;
+        octx.fillStyle = slotColors[si];
+        const r = MODE_RADIUS[mode] * lzf * 1.25;
+        const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
+        const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
+        octx.beginPath();
+        for (let k = 0; k < liveCount; k++) {
+          if (liveScreen[k * 4 + 3] !== si) continue;
+          const x = liveScreen[k * 4] * aff.sx + aff.ox;
+          const y = liveScreen[k * 4 + 1] * aff.sy + aff.oy;
+          arrowPath(octx, x, y, liveScreen[k * 4 + 2], len, wid);
+        }
+        octx.fill();
+      }
     }
 
     if (state.hover != null && state.hover < activeCount) {
@@ -375,7 +446,7 @@
       const k = shapeIdx + ':' + slot;
       if (seenRailShape.has(k)) continue;
       seenRailShape.add(k);
-      railShapes.push({ shapeIdx, color: slotColors[slot] });
+      railShapes.push({ shapeIdx, color: slotColors[slot], mode: MODES[routeMode[ridx]] });
     }
     linesDirty = true;
   }
@@ -408,7 +479,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108g`);
+        const res = await fetch(`data-${key}.json?v=20261108h`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -442,6 +513,58 @@
       b.setAttribute('aria-pressed', String(b.dataset.day === key));
     });
     drawChart();
+    state.dirty = true;
+    updateUI();
+  }
+
+  /* ---------- live mode ---------- */
+
+  function liveNoteText() {
+    if (!live) return '';
+    const d = new Date(live.generated);
+    const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return `Live snapshot · ${hm} · ${live.v.length.toLocaleString()} vehicles`;
+  }
+
+  async function loadLive() {
+    let doc;
+    try {
+      const res = await fetch('live.json?ts=' + Date.now());
+      if (!res.ok) return;
+      doc = await res.json();
+    } catch { return; }
+    if (!doc || !doc.v || !doc.v.length) return;
+    live = doc;
+    liveRouteSet = new Set(doc.routes || []);
+    liveRoutes = new Map();
+    for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
+    const age = Date.now() - doc.generated;
+    const btn = $('liveBtn');
+    if (btn) {
+      const stale = age > LIVE_STALE_MS;
+      btn.hidden = stale;
+      btn.disabled = stale;
+      btn.title = stale ? 'Live snapshot expired' : 'Live vehicle positions';
+    }
+    if (state.liveOn) {
+      if (btn && btn.disabled) setLive(false);
+      else { computeLiveScreen(); $('liveNote').textContent = liveNoteText(); }
+    }
+    state.dirty = true;
+  }
+
+  function setLive(on) {
+    if (on && !live) return;
+    state.liveOn = on;
+    if (on) {
+      setPlaying(false);
+      const d = new Date(live.generated);
+      seek(d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds());
+      computeLiveScreen();
+    }
+    const btn = $('liveBtn');
+    if (btn) btn.setAttribute('aria-pressed', String(on));
+    $('liveNote').textContent = on ? liveNoteText() : '';
     state.dirty = true;
     updateUI();
   }
@@ -491,6 +614,7 @@
 
   function wire() {
     $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
+    $('liveBtn').addEventListener('click', () => setLive(!state.liveOn));
 
     $('days').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-day]');
@@ -561,7 +685,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108g');
+    const res = await fetch('data.json?v=20261108h');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -592,7 +716,8 @@
       routeSlot[r] = slotFor(hex, modeIdx);
     }
 
-    px = new Float32Array(6000); py = new Float32Array(6000); pTrip = new Int32Array(6000);
+    px = new Float32Array(6000); py = new Float32Array(6000);
+    pAng = new Float32Array(6000); pTrip = new Int32Array(6000);
 
     // background lines cover every day that has been loaded; a day fetched
     // later adds its own weekend-only shapes when it arrives
@@ -608,6 +733,8 @@
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
+    loadLive();
+    setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
     resize();
     setPlaying(state.playing);
     seek(state.t);
