@@ -73,6 +73,11 @@
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
   const VIEW_KEY = 'tim-view';
+  // A saved camera is only trusted inside the region the data covers. A map
+  // that has not been positioned yet reports [0, 0] (null island), and saving
+  // that once used to boot every later visit to an empty ocean.
+  const viewInBounds = (lng, lat) =>
+    lng >= -86 && lng <= -73 && lat >= 40.5 && lat <= 48.5;
   let routeSig = -1, lastLineRefresh = 0;
   let uiAccum = 0;
   let chartW = 0, chartH = 0, lastCursorT = -1;
@@ -866,7 +871,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261110g`);
+        const res = await fetch(`data-${key}.json?v=20261110h`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -939,7 +944,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261110g');
+      const res = await fetch('busways.json?v=20261110h');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1065,7 +1070,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261110g`);
+        const res = await fetch(`stops-${feed}.json?v=20261110h`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1450,7 +1455,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261110g');
+    const res = await fetch('data.json?v=20261110h');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1543,7 +1548,8 @@
       try {
         const v = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null');
         if (Array.isArray(v) && v.length === 3
-            && Number.isFinite(v[0]) && Number.isFinite(v[1]) && Number.isFinite(v[2])) {
+            && Number.isFinite(v[0]) && Number.isFinite(v[1]) && Number.isFinite(v[2])
+            && viewInBounds(v[0], v[1])) {
           mapObj.jumpTo({
             center: [v[0], v[1]],
             zoom: Math.max(8, Math.min(15, v[2])),
@@ -1573,6 +1579,7 @@
     let viewTimer = 0;
     const saveView = () => {
       const c = mapObj.getCenter();
+      if (!viewInBounds(c.lng, c.lat)) return;
       try {
         localStorage.setItem(VIEW_KEY, JSON.stringify([
           +c.lng.toFixed(5), +c.lat.toFixed(5), +mapObj.getZoom().toFixed(2),
