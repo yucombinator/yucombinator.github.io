@@ -12,7 +12,7 @@
 <style>
   :root{
     --bg:#070d14;
-    --panel:rgba(9,18,25,.94);
+    --panel:#0a141b;
     --line:#1d303b;
     --text:#dce8e3;
     --muted:#7f95a0;
@@ -188,7 +188,7 @@
       </div>
     </div>
 
-    <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartline"></canvas></div>
+    <div class="chartwrap" title="Scheduled departures per 10 minutes — filtered by the mode toggles"><canvas id="chart" aria-label="Scheduled departures per 10 minutes"></canvas><canvas id="chartline"></canvas></div>
 
     <input class="scrub" id="scrub" type="range" min="0" max="86400" step="60" value="25200" aria-label="Time of day">
     <div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
@@ -216,6 +216,7 @@
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2>Toronto in Motion</h2>
     <p>Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay and Niagara Region — animated as a dot moving along its route, with a 24-hour scrubber. Switch between the most recent weekday, Saturday and Sunday to see how service thins out on weekends.</p>
+    <p>The bar chart counts scheduled departures per 10 minutes for the modes you have enabled, so toggling a mode rescales it to that mode's own service pattern.</p>
     <p><strong>Live mode</strong> (the red button) shows actual vehicle positions from the agencies that publish open GTFS-Realtime: TTC surface, Brampton, YRT, Durham, HSR, GRT/ION and Guelph. Those feeds block direct browser requests, so a scheduled GitHub Actions job decodes them and publishes a snapshot to the site; the page picks it up, jumps the clock to the snapshot time, and routes without realtime keep their scheduled positions at that time. The button only appears while the snapshot is less than 30 minutes old.</p>
     <p><strong>Outside live mode this is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
     <p>Data: the agencies' published GTFS feeds, each used under its open data licence (TTC, Metrolinx, MiWay, Brampton, YRT, Durham, Oakville, Burlington, Hamilton, Region of Waterloo, Guelph, Barrie, Milton, Simcoe County, Orangeville, Kawartha Lakes, Niagara Region). TTC lines use the TTC's own colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Other agencies are coloured for legibility, not to match their brands.</p>
@@ -226,6 +227,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108l"></script>
+<script src="app.js?v=20261108m"></script>
 </body>
 </html>

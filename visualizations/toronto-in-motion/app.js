@@ -67,7 +67,7 @@
   let last = 0, lastDraw = 0, lastMoveAt = 0;
   let uiAccum = 0;
   let dayCache = {};
-  let curDay = null, curHist = null;
+  let curDay = null, curHist = null, curStarts = null;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
   let live = null;                 // parsed live.json
@@ -407,36 +407,33 @@
 
   /* ---------- chart ---------- */
 
+  // Departures per 10 minutes, in the Montreal in Motion idiom: one bar per
+  // bucket instead of a stacked area, where the bus layer buried everything
+  // above it. The mode toggles still filter, and the y-scale follows them.
   function drawChart() {
-    if (!D || !chart.clientWidth) return;
+    if (!D || !chart.clientWidth || !curStarts) return;
     const w = chart.clientWidth, h = chart.clientHeight;
     chartCtx.clearRect(0, 0, w, h);
     const buckets = 144;
-    const series = MODES.map((m) => curHist?.[m] || new Array(buckets).fill(0));
-    let max = 0;
-    for (let b = 0; b < buckets; b++) {
-      let s = 0;
-      MODES.forEach((m, i) => { if (state.modes[m]) s += series[i][b]; });
-      max = Math.max(max, s);
-    }
-    if (!max) return;
-    const acc = new Array(buckets).fill(0);
-    MODES.forEach((m, i) => {
+    const totals = new Float32Array(buckets);
+    MODES.forEach((m, mi) => {
       if (!state.modes[m]) return;
-      chartCtx.beginPath();
-      chartCtx.moveTo(0, h);
-      for (let b = 0; b < buckets; b++) {
-        acc[b] += series[i][b];
-        chartCtx.lineTo((b / (buckets - 1)) * w, h - (acc[b] / max) * (h - 4));
-      }
-      chartCtx.lineTo(w, h);
-      chartCtx.closePath();
-      chartCtx.fillStyle = MODE_COLOR[m] + '2e';
-      chartCtx.fill();
-      chartCtx.strokeStyle = MODE_COLOR[m] + 'cc';
-      chartCtx.lineWidth = 1.1;
-      chartCtx.stroke();
+      for (let b = 0; b < buckets; b++) totals[b] += curStarts[mi * buckets + b];
     });
+    let max = 0;
+    for (let b = 0; b < buckets; b++) if (totals[b] > max) max = totals[b];
+    if (!max) return;
+    const bw = w / buckets;
+    const grad = chartCtx.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, 'rgba(110,231,183,.20)');
+    grad.addColorStop(1, 'rgba(110,231,183,.90)');
+    chartCtx.fillStyle = grad;
+    for (let b = 0; b < buckets; b++) {
+      const v = totals[b];
+      if (!v) continue;
+      const bh = Math.max(1, (v / max) * (h - 3));
+      chartCtx.fillRect(b * bw + 0.5, h - bh, Math.max(1, bw - 1), bh);
+    }
   }
 
   /* ---------- service days ---------- */
@@ -458,6 +455,7 @@
     const modes = new Uint8Array(n);
     const slots = new Uint8Array(n);
     const starts = new Int32Array(n);
+    const startsBins = new Uint16Array(MODES.length * 144);
     const buckets = Array.from({ length: 24 }, () => []);
     for (let i = 0; i < n; i++) {
       const [shape, t0, t1, ridx] = dd.trips[i];
@@ -467,11 +465,13 @@
       modes[i] = routeMode[ridx];
       slots[i] = routeSlot[ridx];
       starts[i] = t0;
+      startsBins[routeMode[ridx] * 144 + ((t0 % DAY) / 600 | 0)]++;
     }
     return {
       key, label: dd.label, date: dd.date, tz: dd.tz,
       trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
-      hourBuckets: buckets, startTimes: starts.slice().sort(), hist: dd.hist,
+      hourBuckets: buckets, startTimes: starts.slice().sort(),
+      hist: dd.hist, startsBins,
     };
   }
 
@@ -499,6 +499,7 @@
     modeOfTrip = d.modeOfTrip; slotOfTrip = d.slotOfTrip;
     hourBuckets = d.hourBuckets; startTimes = d.startTimes;
     curHist = d.hist;
+    curStarts = d.startsBins;
     $('dayLabel').textContent = d.label;
     $('zone').textContent = d.tz || 'EST';
     $('s-total').textContent = d.n.toLocaleString();
