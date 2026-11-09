@@ -100,6 +100,17 @@
   .src:hover{color:var(--mint);border-color:var(--mint)}
   .src-wrap{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
   .src-sep{color:#41545a;font-size:10px}
+  .rhead{display:flex;align-items:center;gap:10px}
+  .rdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+  .rtitle{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+  .rtitle b{font-size:13.5px;color:#e2efea;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rtitle span{font-size:10px;color:#8fa6ab;letter-spacing:.5px;text-transform:uppercase}
+  .rclose{margin-left:auto;background:none;border:1px solid #33505a;color:#9db3b8;width:26px;height:26px;border-radius:5px;font-size:15px;line-height:1;flex:0 0 auto}
+  .rclose:hover{color:var(--mint);border-color:var(--mint)}
+  .rstats{margin-top:6px;font-size:11px;color:#8ea5aa;display:flex;gap:14px;flex-wrap:wrap}
+  .rstats b{color:#c3d5d1;font-weight:500}
+  .rstops{margin-top:6px;display:flex;gap:4px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
+  .rstops span{white-space:nowrap;font-size:10px;color:#b9cccf;background:#12232c;border:1px solid #22363f;border-radius:4px;padding:2px 6px}
 
   #tip{position:absolute;z-index:6;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
   #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
@@ -157,6 +168,7 @@
   <div id="tip" role="status" aria-live="polite"></div>
 
   <section class="panel">
+    <div id="panelMain">
     <div class="row">
       <div class="legend" id="legend">
         <button data-mode="subway" aria-pressed="true" title="TTC Line 1, Line 2, Line 4"><span class="swatches"><i style="background:#f8c302"></i><i style="background:#16a753"></i><i style="background:#b32078"></i></span>Subway<span class="n" id="n-subway">0</span></button>
@@ -183,7 +195,7 @@
           <button data-speed="60" aria-pressed="false" aria-label="1× speed" title="1× · 24h in 24 min"><svg viewBox="0 0 6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/></svg></button>
           <button data-speed="120" aria-pressed="true" aria-label="2× speed" title="2× · 24h in 12 min"><svg viewBox="0 0 14.2 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/></svg></button>
           <button data-speed="300" aria-pressed="false" aria-label="5× speed" title="5× · 24h in 5 min"><svg viewBox="0 0 22.4 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/></svg></button>
-          <button data-speed="720" aria-pressed="false" aria-label="12× speed" title="12× · 24h in 2 min"><svg viewBox="0 0 30.6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/><path d="M24.599999999999998 0L30.599999999999998 4.5L24.599999999999998 9Z"/></svg></button>
+          <button data-speed="720" aria-pressed="false" aria-label="12× speed" title="12× · 24h in 2 min"><svg viewBox="0 0 30.6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/><path d="M24.6 0L30.6 4.5L24.6 9Z"/></svg></button>
         </div>
       </div>
     </div>
@@ -208,6 +220,16 @@
         <a class="src" href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Inspired by Montreal in Motion (Allemanns Data)</a>
       </span>
     </div>
+    </div>
+    <div id="routePanel" hidden>
+      <div class="rhead">
+        <span class="rdot" id="rDot" aria-hidden="true"></span>
+        <div class="rtitle"><b id="rName">Route</b><span id="rMeta"></span></div>
+        <button class="rclose" id="rClose" aria-label="Close route details">×</button>
+      </div>
+      <div class="rstats" id="rStats"></div>
+      <div class="rstops" id="rStops" aria-label="Stops on this route"></div>
+    </div>
   </section>
 
   <div id="loading"><span>Loading trips…</span></div>
@@ -227,6 +249,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108p"></script>
+<script src="app.js?v=20261108q"></script>
 </body>
 </html>

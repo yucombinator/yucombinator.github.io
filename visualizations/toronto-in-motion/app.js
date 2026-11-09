@@ -67,6 +67,12 @@
   let last = 0, lastDraw = 0, lastMoveAt = 0;
   let uiAccum = 0;
   let dayCache = {};
+  let selected = -1;               // route pointer, -1 = none
+  let selStops = null;             // projected stop positions for the selection
+  let shapeRoute = null;           // shape index -> route pointer
+  let routeIndexByKey = null;      // "feed:route_id" -> route pointer
+  let liveRoutePtr = null;         // route pointer per live vehicle
+  const stopsCache = new Map();    // feed id -> stops-<feed>.json
   let curDay = null, curHist = null, curStarts = null;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
@@ -100,9 +106,18 @@
         if (i > 0) { len += Math.hypot(p.x - prevX, p.y - prevY); cum[i] = len; }
         prevX = p.x; prevY = p.y;
       }
-      out[si] = { xy, cum, len };
+      let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+      for (let p = 0; p < xy.length; p += 2) {
+        const x = xy[p], y = xy[p + 1];
+        if (x < minx) minx = x;
+        if (x > maxx) maxx = x;
+        if (y < miny) miny = y;
+        if (y > maxy) maxy = y;
+      }
+      out[si] = { xy, cum, len, minx, miny, maxx, maxy };
     }
     view.screenShapes = out;
+    if (selStops) projectStops();
     baseA = mapObj.project(anchorA);
     baseB = mapObj.project(anchorB);
     aff.sx = aff.sy = 1; aff.ox = aff.oy = 0;
@@ -215,6 +230,7 @@
     if (!live || !mapObj || !liveRoutes) return;
     const rows = live.v;
     liveScreen = new Float32Array(rows.length * 4);
+    liveRoutePtr = new Int32Array(rows.length);
     let m = 0;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -227,6 +243,7 @@
       liveScreen[m * 4 + 1] = p.y;
       liveScreen[m * 4 + 2] = bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0;
       liveScreen[m * 4 + 3] = slot;
+      liveRoutePtr[m] = liveRoutes.has(live.routes[row[0]]) ? routeIndexByKey.get(live.routes[row[0]]) : -1;
       m++;
     }
     liveCount = m;
@@ -279,6 +296,28 @@
       }
     }
 
+    if (selected >= 0) {
+      const col = slotColors[routeSlot[selected]];
+      octx.save();
+      octx.strokeStyle = col;
+      octx.lineWidth = 2.2;
+      octx.globalAlpha = 0.95;
+      octx.lineJoin = 'round';
+      for (let i = 0; i < ss.length; i++) {
+        if (shapeRoute[i] !== selected) continue;
+        const shape = ss[i];
+        if (!shape || shape.xy.length < 4) continue;
+        octx.beginPath();
+        const xy = shape.xy;
+        for (let p = 0; p < xy.length; p += 2) {
+          const X = xy[p] * aff.sx + aff.ox, Y = xy[p + 1] * aff.sy + aff.oy;
+          if (p === 0) octx.moveTo(X, Y); else octx.lineTo(X, Y);
+        }
+        octx.stroke();
+      }
+      octx.restore();
+    }
+
     const z = mapObj ? mapObj.getZoom() : fitZoom;
     const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
 
@@ -296,6 +335,7 @@
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
+        if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         octx.moveTo(px[k] + glowR, py[k]);
         octx.arc(px[k], py[k], glowR, 0, Math.PI * 2);
       }
@@ -314,6 +354,7 @@
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
+        if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.fill();
@@ -332,6 +373,7 @@
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
+        if (selected >= 0 && trips[pTrip[k] * 4 + 3] !== selected) continue;
         arrowPath(octx, px[k], py[k], pAng[k], len, wid);
       }
       octx.stroke();
@@ -354,11 +396,40 @@
         octx.beginPath();
         for (let k = 0; k < liveCount; k++) {
           if (liveScreen[k * 4 + 3] !== si) continue;
+          if (selected >= 0 && liveRoutePtr[k] !== selected) continue;
           const x = liveScreen[k * 4] * aff.sx + aff.ox;
           const y = liveScreen[k * 4 + 1] * aff.sy + aff.oy;
           arrowPath(octx, x, y, liveScreen[k * 4 + 2], len, wid);
         }
         octx.fill();
+      }
+    }
+
+    if (selected >= 0 && selStops) {
+      const col = slotColors[routeSlot[selected]];
+      octx.globalAlpha = 1;
+      octx.fillStyle = '#0b141b';
+      octx.strokeStyle = col;
+      octx.lineWidth = 1.6;
+      octx.beginPath();
+      for (let i = 0; i < selStops.n; i++) {
+        const X = selStops.x[i] * aff.sx + aff.ox;
+        const Y = selStops.y[i] * aff.sy + aff.oy;
+        octx.moveTo(X + 3.1, Y);
+        octx.arc(X, Y, 3.1, 0, Math.PI * 2);
+      }
+      octx.fill();
+      octx.stroke();
+      const zl = mapObj ? mapObj.getZoom() : fitZoom;
+      if (zl >= 13) {
+        octx.fillStyle = 'rgba(224,238,233,.9)';
+        octx.font = '10px system-ui, sans-serif';
+        octx.textBaseline = 'middle';
+        for (let i = 0; i < selStops.n; i++) {
+          const X = selStops.x[i] * aff.sx + aff.ox;
+          const Y = selStops.y[i] * aff.sy + aff.oy;
+          octx.fillText(selStops.name[i], X + 6, Y);
+        }
       }
     }
 
@@ -450,6 +521,7 @@
 
   function addRailShapes(dd) {
     for (const [shapeIdx, , , ridx] of dd.trips) {
+      if (shapeRoute && shapeRoute[shapeIdx] < 0) shapeRoute[shapeIdx] = ridx;
       const slot = routeSlot[ridx];
       const k = shapeIdx + ':' + slot;
       if (seenRailShape.has(k)) continue;
@@ -490,7 +562,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108p`);
+        const res = await fetch(`data-${key}.json?v=20261108q`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -518,6 +590,7 @@
       const v = MODES.reduce((sum, m) => sum + (curHist[m]?.[b] || 0), 0);
       if (v > bestV) { bestV = v; bestB = b; }
     }
+    if (selected >= 0) fillRoutePanel(selected);
     const hh = String(Math.floor(bestB / 6)).padStart(2, '0');
     document.querySelector('.stats').children[2].innerHTML =
       `Peak hour <b>${hh}:00</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
@@ -527,6 +600,150 @@
     drawChart();
     state.dirty = true;
     updateUI();
+  }
+
+  /* ---------- route selection ---------- */
+
+  function projectStops() {
+    if (!selStops || !mapObj) return;
+    const n = selStops.n;
+    selStops.x = new Float32Array(n);
+    selStops.y = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const p = mapObj.project([selStops.lon[i], selStops.lat[i]]);
+      selStops.x[i] = p.x;
+      selStops.y[i] = p.y;
+    }
+  }
+
+  function routeStats(idx) {
+    let tripsN = 0, first = Infinity, last = -1;
+    for (let i = 0; i < tripCount; i++) {
+      if (trips[i * 4 + 3] !== idx) continue;
+      tripsN++;
+      const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
+      if (t0 < first) first = t0;
+      if (t1 > last) last = t1;
+    }
+    return {
+      trips: tripsN,
+      first: tripsN ? first % DAY : 0,
+      last: tripsN ? last % DAY : 0,
+    };
+  }
+
+  function fillRoutePanel(idx) {
+    const key = routeIds[idx];
+    const meta = D.routes[key] || {};
+    const stats = routeStats(idx);
+    $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
+    $('rMeta').textContent = [meta.a, meta.m].filter(Boolean).join(' · ');
+    $('rDot').style.background = slotColors[routeSlot[idx]];
+    const stopsN = selStops ? selStops.n : 0;
+    $('rStats').innerHTML =
+      `<span><b>${stats.trips.toLocaleString()}</b> trips today</span>` +
+      (stats.trips ? `<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>` : '<span>not running today</span>') +
+      (stopsN ? `<span><b>${stopsN}</b> stops</span>` : '');
+  }
+
+  async function selectRoute(idx) {
+    if (idx < 0 || idx >= routeIds.length) return;
+    selected = idx;
+    selStops = null;
+    $('panelMain').hidden = true;
+    $('routePanel').hidden = false;
+    fillRoutePanel(idx);
+    state.dirty = true;
+
+    const key = routeIds[idx];
+    const cut = key.indexOf(':');
+    const feed = key.slice(0, cut);
+    const rid = key.slice(cut + 1);
+    try {
+      let doc = stopsCache.get(feed);
+      if (!doc) {
+        const res = await fetch(`stops-${feed}.json?v=20261108q`);
+        if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
+      }
+      const ids = doc && doc.r && doc.r[rid];
+      if (ids && ids.length >= 2) {
+        const n = ids.length;
+        selStops = { n, lat: new Float32Array(n), lon: new Float32Array(n), name: [], x: null, y: null };
+        const chips = [];
+        for (let i = 0; i < n; i++) {
+          const row = doc.s[ids[i]];
+          selStops.lat[i] = row[0];
+          selStops.lon[i] = row[1];
+          selStops.name.push(row[2]);
+          chips.push(`<span>${esc(row[2])}</span>`);
+        }
+        $('rStops').innerHTML = chips.join('');
+        projectStops();
+        if (selected === idx) fillRoutePanel(idx);
+      } else {
+        $('rStops').innerHTML = '';
+      }
+    } catch { /* panel still shows what we know */ }
+    state.dirty = true;
+  }
+
+  function clearSelection() {
+    if (selected < 0) return;
+    selected = -1;
+    selStops = null;
+    $('panelMain').hidden = false;
+    $('routePanel').hidden = true;
+    state.dirty = true;
+  }
+
+  function distToPolyline(xy, x, y) {
+    let best = Infinity;
+    for (let p = 2; p < xy.length; p += 2) {
+      const ax = xy[p - 2], ay = xy[p - 1], bx = xy[p], by = xy[p + 1];
+      const dx = bx - ax, dy = by - ay;
+      const len2 = dx * dx + dy * dy || 1;
+      let t = ((x - ax) * dx + (y - ay) * dy) / len2;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const qx = ax + t * dx, qy = ay + t * dy;
+      const d2 = (x - qx) * (x - qx) + (y - qy) * (y - qy);
+      if (d2 < best) best = d2;
+    }
+    return Math.sqrt(best);
+  }
+
+  function pickAt(clientX, clientY) {
+    const r = overlay.getBoundingClientRect();
+    const mx = clientX - r.left, my = clientY - r.top;
+    let best = -1, bestD = 13;
+    for (let k = 0; k < activeCount; k++) {
+      const d = Math.hypot(px[k] - mx, py[k] - my);
+      if (d < bestD) { bestD = d; best = k; }
+    }
+    if (best >= 0) { selectRoute(trips[pTrip[best] * 4 + 3]); return; }
+
+    if (state.liveOn && liveScreen && liveCount) {
+      const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
+      let lb = -1, ld = 15;
+      for (let k = 0; k < liveCount; k++) {
+        const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
+        if (d < ld) { ld = d; lb = k; }
+      }
+      if (lb >= 0 && liveRoutePtr[lb] >= 0) { selectRoute(liveRoutePtr[lb]); return; }
+    }
+
+    const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
+    let hit = -1, hitD = 7;
+    for (let i = 0; i < view.screenShapes.length; i++) {
+      const route = shapeRoute[i];
+      if (route < 0) continue;
+      const shape = view.screenShapes[i];
+      if (!shape || shape.xy.length < 4) continue;
+      if (bx < shape.minx - 8 || bx > shape.maxx + 8 || by < shape.miny - 8 || by > shape.maxy + 8) continue;
+      const d = distToPolyline(shape.xy, bx, by);
+      if (d < hitD) { hitD = d; hit = route; }
+    }
+    if (hit >= 0) { selectRoute(hit); return; }
+    clearSelection();
   }
 
   /* ---------- live mode ---------- */
@@ -660,6 +877,18 @@
     $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
     $('liveBtn').addEventListener('click', () => setLive(!state.liveOn));
 
+    let down = null;
+    mapEl.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+    mapEl.addEventListener('pointerup', (e) => {
+      if (!down) return;
+      const dx = e.clientX - down.x, dy = e.clientY - down.y;
+      down = null;
+      if (dx * dx + dy * dy > 36) return;   // a pan, not a click
+      pickAt(e.clientX, e.clientY);
+    });
+    $('rClose').addEventListener('click', clearSelection);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+
     $('days').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-day]');
       if (!btn || btn.dataset.day === curDay) return;
@@ -736,7 +965,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108p');
+    const res = await fetch('data.json?v=20261108q');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -756,6 +985,8 @@
     };
 
     // one colour slot + mode per route, shared by every service day
+    routeIndexByKey = new Map(routeIds.map((k, i) => [k, i]));
+    shapeRoute = new Int32Array(D.shapes.length).fill(-1);
     routeSlot = new Uint8Array(routeIds.length);
     routeMode = new Uint8Array(routeIds.length);
     for (let r = 0; r < routeIds.length; r++) {

@@ -305,11 +305,14 @@ for feed in FEEDS:
         }
         svc_counts[sid] = svc_counts.get(sid, 0) + 1
 
-    # first/last stop time per trip
+    # first/last stop time per trip, plus a stop count so the stops payload can
+    # use the fullest trip per route as its representative
     st = os.path.join(path, "stop_times.txt")
+    stop_counts = {}
     if os.path.exists(st):
         for row in read_csv(path, "stop_times.txt"):
-            t = local_trips.get(row["trip_id"])
+            tid = row["trip_id"]
+            t = local_trips.get(tid)
             if t is None:
                 continue
             arr = secs(row["arrival_time"])
@@ -318,6 +321,62 @@ for feed in FEEDS:
                 t["t0"] = dep
             if t["t1"] is None or arr > t["t1"]:
                 t["t1"] = arr
+            stop_counts[tid] = stop_counts.get(tid, 0) + 1
+
+    # one representative trip per route: the one visiting the most stops
+    rep_trip = {}
+    for tid, n in stop_counts.items():
+        t = local_trips.get(tid)
+        if not t or not t["shape"]:
+            continue
+        route = t["route"]
+        cur = rep_trip.get(route)
+        if cur is None or n > stop_counts[cur]:
+            rep_trip[route] = tid
+
+    rep_seq = {tid: [] for tid in rep_trip.values()}
+    if rep_seq:
+        for row in read_csv(path, "stop_times.txt"):
+            tid = row["trip_id"]
+            if tid in rep_seq:
+                rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"]))
+
+    stop_meta = {}
+    sp = os.path.join(path, "stops.txt")
+    if os.path.exists(sp):
+        for row in read_csv(path, "stops.txt"):
+            stop_meta[row["stop_id"]] = (
+                float(row["stop_lat"]), float(row["stop_lon"]),
+                row.get("stop_name") or "",
+            )
+
+    # stops payload: a per-feed stop table plus a stop-index list per route
+    feed_stops = {}
+    feed_stop_index = {}
+    feed_stop_rows = []
+    for route_key, tid in rep_trip.items():
+        seq = sorted(rep_seq.get(tid) or [])
+        idxs = []
+        last = None
+        for _, sid in seq:
+            meta = stop_meta.get(sid)
+            if not meta or sid == last:
+                continue
+            last = sid
+            si = feed_stop_index.get(sid)
+            if si is None:
+                si = len(feed_stop_rows)
+                feed_stop_index[sid] = si
+                feed_stop_rows.append([round(meta[0], 5), round(meta[1], 5), meta[2]])
+            idxs.append(si)
+        if len(idxs) >= 2:
+            feed_stops[route_key.split(":", 1)[1]] = idxs
+    if feed_stops:
+        out_path = os.path.join(os.path.dirname(OUT), f"stops-{feed['id']}.json")
+        with open(out_path, "w", encoding="utf-8") as fh:
+            json.dump({"s": feed_stop_rows, "r": feed_stops}, fh, separators=(",", ":"))
+        print(f"  {feed['id']:10s} stops: {len(feed_stop_rows)} stops, "
+              f"{len(feed_stops)} routes", file=sys.stderr)
 
     for spec in DAY_SPECS:
         services = active_services(path, spec, svc_counts)
