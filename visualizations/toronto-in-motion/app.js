@@ -420,8 +420,18 @@
       if (!state.modes[m]) return;
       for (let b = 0; b < buckets; b++) totals[b] += curStarts[mi * buckets + b];
     });
+    // Three-tap smoothing: ten-minute counts of 2-5 departures are noisy, and
+    // the bars read as static rather than as the shape of the service day.
+    // Edges are left alone because the day boundary is real, not periodic.
+    const smooth = new Float32Array(buckets);
+    for (let b = 0; b < buckets; b++) {
+      smooth[b] = (b === 0 || b === buckets - 1)
+        ? totals[b]
+        : (totals[b - 1] + 2 * totals[b] + totals[b + 1]) / 4;
+    }
+
     let max = 0;
-    for (let b = 0; b < buckets; b++) if (totals[b] > max) max = totals[b];
+    for (let b = 0; b < buckets; b++) if (smooth[b] > max) max = smooth[b];
     if (!max) return;
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
@@ -429,7 +439,7 @@
     grad.addColorStop(1, 'rgba(110,231,183,.90)');
     chartCtx.fillStyle = grad;
     for (let b = 0; b < buckets; b++) {
-      const v = totals[b];
+      const v = smooth[b];
       if (!v) continue;
       const bh = Math.max(1, (v / max) * (h - 3));
       chartCtx.fillRect(b * bw + 0.5, h - bh, Math.max(1, bw - 1), bh);
@@ -480,7 +490,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108o`);
+        const res = await fetch(`data-${key}.json?v=20261108p`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -726,7 +736,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108o');
+    const res = await fetch('data.json?v=20261108p');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
