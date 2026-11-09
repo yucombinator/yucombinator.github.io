@@ -8,6 +8,7 @@
 <meta name="author" content="Yu Chen Hou">
 <meta property="og:title" content="Toronto in Motion">
 <meta property="og:description" content="40,001 scheduled TTC trips animated across a weekday in Toronto.">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <style>
   :root{
     --bg:#070d14;
@@ -29,7 +30,11 @@
   button{cursor:pointer}
   button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
   #app{position:relative;height:100%;overflow:hidden;background:var(--bg)}
-  #map{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+  #map{position:absolute;inset:0;background:#071014}
+  #map .maplibregl-canvas{filter:saturate(.55) brightness(.62) contrast(1.05)}
+  .basemap-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,rgba(7,13,20,.26),rgba(7,13,20,.5))}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  .maplibregl-ctrl{bottom:240px!important;right:10px!important}
   .vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,13,20,.82),transparent 22%,transparent 62%,rgba(7,13,20,.8))}
 
   header{position:absolute;left:max(22px,env(safe-area-inset-left));right:max(22px,env(safe-area-inset-right));top:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;pointer-events:none}
@@ -73,6 +78,8 @@
   .stats b{color:#c3d5d1;font-weight:500;font-variant-numeric:tabular-nums}
   .src{font-size:10px;color:#7f979d;text-decoration:none;border-bottom:1px solid #2a4048}
   .src:hover{color:var(--mint);border-color:var(--mint)}
+  .src-wrap{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+  .src-sep{color:#41545a;font-size:10px}
 
   #tip{position:absolute;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
   #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1}
@@ -105,7 +112,9 @@
 </head>
 <body>
 <main id="app">
-  <canvas id="map" aria-label="Animated map of TTC vehicles across Toronto"></canvas>
+  <div id="map" aria-label="Map of Toronto with animated TTC vehicles"></div>
+  <div class="basemap-scrim" aria-hidden="true"></div>
+  <canvas id="overlay" aria-hidden="true"></canvas>
   <div class="vignette"></div>
 
   <header>
@@ -118,7 +127,7 @@
 
   <div class="meta">
     <div class="day">Wednesday · 11 November 2026</div>
-    <div class="sub">Every scheduled TTC trip of a weekday, drawn as a moving dot. Subways, streetcars, and buses, 24 hours at a time.</div>
+    <div class="sub">Every scheduled TTC trip of a weekday, drawn as a moving dot. Subways, streetcars, and buses, 24 hours at a time. Drag or scroll the map to explore.</div>
   </div>
 
   <div id="tip" role="status" aria-live="polite"></div>
@@ -154,7 +163,11 @@
         <span>Trips started <b id="s-started">0</b> / 40,001</span>
         <span>Peak hour <b>17:00</b> · 1,557 vehicles</span>
       </div>
-      <a class="src" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Data: TTC GTFS · City of Toronto Open Data Licence</a>
+      <span class="src-wrap">
+        <a class="src" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Data: TTC GTFS · City of Toronto Open Data Licence</a>
+        <span class="src-sep">·</span>
+        <a class="src" href="https://openfreemap.org/" target="_blank" rel="noopener">Basemap © OpenFreeMap / OpenStreetMap</a>
+      </span>
     </div>
   </section>
 
@@ -166,10 +179,12 @@
     <p>Every scheduled TTC trip for a regular Wednesday — 40,001 of them — animated as a dot moving along its route. Subways, streetcars and light rail, and buses, with a 24-hour scrubber.</p>
     <p><strong>This is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
     <p>Data: <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">TTC Routes and Schedules</a> (GTFS, October 2026 extract), used under the City of Toronto Open Data Licence. Line 5 Eglinton and Line 6 Finch West are grouped with streetcars because that is how they are coded in the feed.</p>
+    <p>Basemap: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, built from OpenStreetMap data. You can drag and zoom the map; the dots are reprojected to follow it.</p>
     <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 </main>
 
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

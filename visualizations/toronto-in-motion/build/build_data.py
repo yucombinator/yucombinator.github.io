@@ -238,6 +238,7 @@ def main():
         return arr[max(0, min(len(arr) - 1, int(len(arr) * f)))]
     doc = {
         "city": "Toronto",
+        "proj": {"lat0": lat0, "kx": kx, "ky": ky, "x0": minx, "y0": miny},
         "fit": [pct(allxs, 0.005), pct(allys, 0.005), pct(allxs, 0.995), pct(allys, 0.995)],
         "source": "TTC GTFS (Open Data, City of Toronto), weekday of 2026-11-11",
         "bbox": [0, 0, round(max(max(p[0] for p in s) for s in shapes)), 0],

@@ -1,4 +1,6 @@
-/* Toronto in Motion — scheduled TTC trips animated over a weekday. */
+/* Toronto in Motion — scheduled TTC trips animated over a weekday, on a
+   MapLibre basemap. Dots are drawn to a canvas overlay that shares the map's
+   projection (shape vertices are re-projected whenever the map moves). */
 (() => {
   'use strict';
 
@@ -8,8 +10,9 @@
   const DAY = 86400;
 
   const $ = (id) => document.getElementById(id);
-  const map = $('map');
-  const ctx = map.getContext('2d');
+  const mapEl = $('map');
+  const overlay = $('overlay');
+  const octx = overlay.getContext('2d');
   const chart = $('chart');
   const chartCtx = chart.getContext('2d');
   const chartLine = $('chartline');
@@ -25,38 +28,52 @@
   };
 
   let D = null;
-  let shapes = [];          // { pts: [[x,y]], cum: Float64Array, len }
-  let trips = null;         // flat Int32Array [shape, t0, t1, routePtr]
+  let mapObj = null;
+  let shapes = [];            // { pts: [[x,y]] in local metres }
+  let routeIds = [];          // pointer -> route_id
+  let railShapes = [];        // [{shapeIdx, mode}] for background lines
+  let trips = null;           // flat Int32Array [shape, t0, t1, routePtr]
   let tripCount = 0;
-  let modeOfTrip = null;    // Uint8Array
-  let startTimes = null;    // sorted Int32Array of t0
-  let railShapes = [];      // [{shape, mode}] precomputed for background lines
-  let routeIds = [];        // pointer -> route_id
-  let px = null, py = null, pTrip = null; // per-frame dot positions
+  let modeOfTrip = null;      // Uint8Array
+  let startTimes = null;      // sorted Int32Array of t0
+  let px = null, py = null, pTrip = null;
   let activeCount = 0;
-  let view = { scale: 1, ox: 0, oy: 0, w: 0, h: 0, dpr: 1 };
+  let view = { w: 0, h: 0, screenShapes: [] };
+  let needsProjection = false;
   let last = 0;
   let uiAccum = 0;
 
-  /* ---------- geometry ---------- */
+  const lngLatOf = (x, y) => {
+    const { kx, ky, x0, y0 } = D.proj;
+    return [(x + x0) / kx, (y + y0) / ky];
+  };
 
-  function prepareShapes(raw) {
-    return raw.map((pts) => {
-      const cum = new Float64Array(pts.length);
-      let len = 0;
-      for (let i = 1; i < pts.length; i++) {
-        const dx = pts[i][0] - pts[i - 1][0];
-        const dy = pts[i][1] - pts[i - 1][1];
-        len += Math.hypot(dx, dy);
-        cum[i] = len;
+  /* ---------- projection ---------- */
+
+  function projectPieces() {
+    if (!D || !mapObj) return;
+    const out = new Array(shapes.length);
+    for (let si = 0; si < shapes.length; si++) {
+      const pts = shapes[si].pts;
+      const n = pts.length;
+      const xy = new Float32Array(n * 2);
+      const cum = new Float32Array(n);
+      let prevX = 0, prevY = 0, len = 0;
+      for (let i = 0; i < n; i++) {
+        const [lon, lat] = lngLatOf(pts[i][0], pts[i][1]);
+        const p = mapObj.project([lon, lat]);
+        xy[i * 2] = p.x; xy[i * 2 + 1] = p.y;
+        if (i > 0) { len += Math.hypot(p.x - prevX, p.y - prevY); cum[i] = len; }
+        prevX = p.x; prevY = p.y;
       }
-      return { pts, cum, len };
-    });
+      out[si] = { xy, cum, len };
+    }
+    view.screenShapes = out;
   }
 
-  function pointAt(shape, frac) {
+  function pointAtScreen(shape, frac) {
     const target = frac * shape.len;
-    const { pts, cum } = shape;
+    const { xy, cum } = shape;
     let lo = 0, hi = cum.length - 1;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
@@ -65,38 +82,10 @@
     const i = Math.max(1, lo);
     const seg = cum[i] - cum[i - 1] || 1;
     const k = (target - cum[i - 1]) / seg;
-    const a = pts[i - 1], b = pts[i];
-    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    const ax = xy[(i - 1) * 2], ay = xy[(i - 1) * 2 + 1];
+    const bx = xy[i * 2], by = xy[i * 2 + 1];
+    return [ax + (bx - ax) * k, ay + (by - ay) * k];
   }
-
-  function resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = map.clientWidth, h = map.clientHeight;
-    view.dpr = dpr; view.w = w; view.h = h;
-    map.width = Math.round(w * dpr); map.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    if (D) {
-      const F = D.fit || D.bbox;
-      const W = F[2] - F[0], H = F[3] - F[1];
-      const padTop = h * 0.14, padBottom = h * 0.23, padX = w * 0.035;
-      const s = Math.min((w - padX * 2) / W, (h - padTop - padBottom) / H);
-      view.scale = s;
-      view.ox = (w - W * s) / 2 - F[0] * s;
-      view.oy = padTop + (h - padTop - padBottom - H * s) / 2 + F[3] * s;
-    }
-
-    const cw = chart.clientWidth, ch = chart.clientHeight;
-    chart.width = Math.round(cw * dpr); chart.height = Math.round(ch * dpr);
-    chartLine.width = chart.width; chartLine.height = chart.height;
-    chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    lineCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawChart();
-    state.dirty = true;
-  }
-
-  const sx = (x) => view.ox + x * view.scale;
-  const sy = (y) => view.oy - y * view.scale;
 
   /* ---------- frame ---------- */
 
@@ -104,16 +93,16 @@
     const dt = Math.min(0.1, (now - last) / 1000 || 0);
     last = now;
 
+    if (needsProjection) { projectPieces(); needsProjection = false; state.dirty = true; }
+
     if (state.playing) {
       state.t += dt * state.speed;
       if (state.t >= DAY) state.t -= DAY;
       state.dirty = true;
     }
 
-    if (state.dirty) {
-      draw();
-      state.dirty = false;
-    }
+    if (state.dirty) { draw(); state.dirty = false; }
+
     lineCtx.clearRect(0, 0, chartLine.clientWidth, chartLine.clientHeight);
     const cx = (state.t / DAY) * chartLine.clientWidth;
     lineCtx.strokeStyle = 'rgba(110,231,183,.85)';
@@ -130,20 +119,22 @@
 
   function draw() {
     const { w, h } = view;
-    ctx.clearRect(0, 0, w, h);
+    octx.clearRect(0, 0, w, h);
+    const ss = view.screenShapes;
+    if (!ss.length) return;
 
-    // faint route lines for rail modes (precomputed list)
-    ctx.lineWidth = 1;
+    // faint rail lines
+    octx.lineWidth = 1;
     for (const { shapeIdx, mode } of railShapes) {
-      const shape = shapes[shapeIdx];
-      if (!shape || shape.pts.length < 2) continue;
-      ctx.strokeStyle = mode === 0 ? 'rgba(245,196,81,.20)' : 'rgba(239,111,108,.16)';
-      ctx.beginPath();
-      for (let p = 0; p < shape.pts.length; p++) {
-        const X = sx(shape.pts[p][0]), Y = sy(shape.pts[p][1]);
-        if (p === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      const shape = ss[shapeIdx];
+      if (!shape || shape.xy.length < 4) continue;
+      octx.strokeStyle = mode === 0 ? 'rgba(245,196,81,.34)' : 'rgba(239,111,108,.28)';
+      octx.beginPath();
+      for (let p = 0; p < shape.xy.length; p += 2) {
+        const X = shape.xy[p], Y = shape.xy[p + 1];
+        if (p === 0) octx.moveTo(X, Y); else octx.lineTo(X, Y);
       }
-      ctx.stroke();
+      octx.stroke();
     }
 
     // dots
@@ -154,38 +145,63 @@
       if (t < t0 || t > t1) continue;
       const mode = modeOfTrip[i];
       if (!state.modes[MODES[mode]]) continue;
-      const shapeIdx = trips[i * 4];
-      const shape = shapes[shapeIdx];
+      const shape = ss[trips[i * 4]];
       if (!shape || shape.len === 0) continue;
-      const frac = (t - t0) / (t1 - t0);
-      const [x, y] = pointAt(shape, frac);
-      const X = sx(x), Y = sy(y);
+      const [X, Y] = pointAtScreen(shape, (t - t0) / (t1 - t0));
       if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
+      if (activeCount >= px.length) break;
       px[activeCount] = X; py[activeCount] = Y; pTrip[activeCount] = i;
       activeCount++;
     }
 
     for (const mode of MODES) {
       if (!state.modes[mode]) continue;
-      ctx.fillStyle = MODE_COLOR[mode];
-      ctx.globalAlpha = mode === 'bus' ? 0.82 : 1;
+      octx.fillStyle = MODE_COLOR[mode];
+      octx.globalAlpha = mode === 'bus' ? 0.85 : 1;
       const r = MODE_RADIUS[mode];
-      ctx.beginPath();
+      const mi = MODES.indexOf(mode);
+      octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
-        if (modeOfTrip[pTrip[k]] !== MODES.indexOf(mode)) continue;
-        ctx.moveTo(px[k] + r, py[k]);
-        ctx.arc(px[k], py[k], r, 0, Math.PI * 2);
+        if (modeOfTrip[pTrip[k]] !== mi) continue;
+        octx.moveTo(px[k] + r, py[k]);
+        octx.arc(px[k], py[k], r, 0, Math.PI * 2);
       }
-      ctx.fill();
+      octx.fill();
     }
-    ctx.globalAlpha = 1;
+    octx.globalAlpha = 1;
 
     if (state.hover != null && state.hover < activeCount) {
       const k = state.hover;
-      ctx.strokeStyle = 'rgba(255,255,255,.85)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(px[k], py[k], 7, 0, Math.PI * 2); ctx.stroke();
+      octx.strokeStyle = 'rgba(255,255,255,.9)';
+      octx.lineWidth = 1;
+      octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
     }
+  }
+
+  /* ---------- layout ---------- */
+
+  const bottomPad = () => {
+    const panel = document.querySelector('.panel');
+    const ph = panel ? panel.offsetHeight : 220;
+    return Math.min(window.innerHeight * 0.55, ph + 26);
+  };
+
+  function resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = overlay.clientWidth, h = overlay.clientHeight;
+    overlay.width = Math.round(w * dpr); overlay.height = Math.round(h * dpr);
+    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    view.w = w; view.h = h;
+
+    const cw = chart.clientWidth, ch = chart.clientHeight;
+    chart.width = Math.round(cw * dpr); chart.height = Math.round(ch * dpr);
+    chartLine.width = chart.width; chartLine.height = chart.height;
+    chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lineCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    drawChart();
+    needsProjection = true;
+    state.dirty = true;
   }
 
   /* ---------- chart ---------- */
@@ -264,11 +280,11 @@
 
   /* ---------- interaction ---------- */
 
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   function wire() {
     $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
-
     $('speed').addEventListener('change', (e) => { state.speed = +e.target.value; });
-
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
 
     $('legend').addEventListener('click', (e) => {
@@ -281,9 +297,9 @@
       state.dirty = true;
     });
 
-    map.addEventListener('pointermove', (e) => {
+    mapEl.addEventListener('pointermove', (e) => {
       if (!activeCount) return;
-      const r = map.getBoundingClientRect();
+      const r = overlay.getBoundingClientRect();
       const mx = e.clientX - r.left, my = e.clientY - r.top;
       let best = -1, bestD = 49;
       for (let k = 0; k < activeCount; k++) {
@@ -300,10 +316,10 @@
       tip.innerHTML = `<div class="m">${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
-      tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, mx + r.left + 14)) + 'px';
-      tip.style.top = Math.max(8, my + r.top - th - 12) + 'px';
+      tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
+      tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
     });
-    map.addEventListener('pointerleave', () => { state.hover = null; state.dirty = true; $('tip').style.display = 'none'; });
+    mapEl.addEventListener('pointerleave', () => { state.hover = null; state.dirty = true; $('tip').style.display = 'none'; });
 
     chartLine.addEventListener('pointerdown', seekFromChart);
     chartLine.addEventListener('pointermove', (e) => { if (e.buttons) seekFromChart(e); });
@@ -329,8 +345,6 @@
     if (document.fonts?.ready) document.fonts.ready.then(resize);
   }
 
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
   /* ---------- boot ---------- */
 
   async function boot() {
@@ -338,7 +352,7 @@
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
-    shapes = prepareShapes(D.shapes);
+    shapes = D.shapes.map((pts) => ({ pts }));
 
     routeIds = Object.keys(D.routes);
     const routePtr = new Map(routeIds.map((id, i) => [id, i]));
@@ -348,9 +362,10 @@
     const starts = new Int32Array(tripCount);
     for (let i = 0; i < tripCount; i++) {
       const [shape, t0, t1, rid] = D.trips[i];
-      trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1; trips[i * 4 + 3] = routePtr.get(rid) ?? 0;
+      trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1;
+      trips[i * 4 + 3] = routePtr.get(rid) ?? 0;
       const mode = D.routes[rid]?.m || 'bus';
-      modeOfTrip[i] = MODES.indexOf(mode === 'subway' ? 'subway' : mode === 'streetcar' ? 'streetcar' : 'bus');
+      modeOfTrip[i] = MODES.indexOf(mode);
       starts[i] = t0;
     }
     startTimes = starts.slice().sort();
@@ -368,10 +383,8 @@
       railShapes.push({ shapeIdx, mode });
     }
 
-    // peak hour from the histogram
     let bestB = 0, bestV = 0;
-    const buckets = 144;
-    for (let b = 0; b < buckets; b++) {
+    for (let b = 0; b < 144; b++) {
       const v = MODES.reduce((s, m) => s + (D.hist[m]?.[b] || 0), 0);
       if (v > bestV) { bestV = v; bestB = b; }
     }
@@ -382,7 +395,35 @@
     resize();
     setPlaying(state.playing);
     seek(state.t);
-    $('loading').classList.add('done');
+
+    mapObj = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/dark',
+      attributionControl: false,
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
+      keyboard: false,
+      minZoom: 8,
+      maxZoom: 15,
+      fadeDuration: 200,
+    });
+    mapObj.on('load', () => {
+      mapObj.touchZoomRotate.disableRotation();
+      const F = D.fit;
+      mapObj.fitBounds([lngLatOf(F[0], F[1]), lngLatOf(F[2], F[3])], {
+        padding: { top: 92, bottom: bottomPad(), left: 20, right: 20 },
+        duration: 0,
+      });
+      projectPieces();
+      needsProjection = false;
+      state.dirty = true;
+      $('loading').classList.add('done');
+    });
+    window.__timMap = mapObj;
+    mapObj.on('move', () => { needsProjection = true; state.dirty = true; });
+    mapObj.on('error', (e) => console.warn('basemap:', e?.error?.message || e));
+
     last = performance.now();
     requestAnimationFrame(frame);
   }
