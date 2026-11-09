@@ -348,7 +348,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json');
+    const res = await fetch('data.json?v=20261108b');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
