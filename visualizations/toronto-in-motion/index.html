@@ -69,6 +69,10 @@
   .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
   .days button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
   .days button:hover{color:#d6ece4}
+  .speeds{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
+  .speeds button{background:none;border:0;color:#8fa6ab;font:600 11px/1 var(--mono,ui-monospace,SFMono-Regular,Menlo,monospace);letter-spacing:-.5px;padding:5px 6px;border-radius:3px}
+  .speeds button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
+  .speeds button:hover{color:#d6ece4}
   .live{display:flex;align-items:center;gap:5px;background:rgba(255,92,92,.08);border:1px solid #6a3b3b;color:#ffb4b4;font-size:10.5px;letter-spacing:.4px;padding:6px 9px;border-radius:5px}
   .live[aria-pressed="true"]{background:rgba(255,72,72,.22);border-color:#c35252;color:#ffd9d9}
   .live:disabled{opacity:.4}
@@ -174,12 +178,12 @@
         <button class="live" id="liveBtn" aria-pressed="false" hidden title="Live vehicle positions">
           <span class="live-dot" aria-hidden="true"></span>Live
         </button>
-        <select id="speed" aria-label="Playback speed">
-          <option value="60">1× (24h in 24m)</option>
-          <option value="120" selected>2× (24h in 12m)</option>
-          <option value="300">5× (24h in 5m)</option>
-          <option value="720">12× (24h in 2m)</option>
-        </select>
+        <div class="speeds" id="speed" role="group" aria-label="Playback speed">
+          <button data-speed="60" aria-pressed="false" title="1× · 24h in 24 min">|&gt;</button>
+          <button data-speed="120" aria-pressed="true" title="2× · 24h in 12 min">|&gt;&gt;</button>
+          <button data-speed="300" aria-pressed="false" title="5× · 24h in 5 min">|&gt;&gt;&gt;</button>
+          <button data-speed="720" aria-pressed="false" title="12× · 24h in 2 min">|&gt;&gt;&gt;&gt;</button>
+        </div>
       </div>
     </div>
 
@@ -221,6 +225,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108i"></script>
+<script src="app.js?v=20261108j"></script>
 </body>
 </html>

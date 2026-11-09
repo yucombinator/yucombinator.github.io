@@ -328,17 +328,20 @@ for feed in FEEDS:
                 continue
             if t["t0"] is None or not t["shape"]:
                 continue
-            t0 = max(0, min(86_399, t["t0"]))
-            t1 = max(t0 + 30, min(86_400, t["t1"]))
+            # GTFS keeps overnight service on an extended clock (the TTC feed
+            # runs to 30:00). Clamping at 24:00 used to delete every trip that
+            # starts after midnight, which emptied 00:00-05:00 on the map.
+            t0 = max(0, t["t0"])
+            t1 = max(t0 + 30, min(2 * 86_400, t["t1"]))
             day_trips[spec["key"]].append((feed["id"], t["shape"], t0, t1, t["route"]))
             shape_ids.add((feed["id"], t["shape"]))
             kept += 1
             mode = routes[t["route"]]["m"]
-            for b in range(t0 // 600, min(143, (t1 - 1) // 600) + 1):
+            for b in range(t0 // 600, (t1 - 1) // 600 + 1):
                 lo = max(t0, b * 600)
                 hi = min(t1, (b + 1) * 600)
                 if hi > lo:
-                    hist[mode][b] += hi - lo
+                    hist[mode][b % 144] += hi - lo
         print(f"  {feed['id']:10s} {spec['key']:8s} {kept:6d} trips  ({feed['agency']})",
               file=sys.stderr)
 

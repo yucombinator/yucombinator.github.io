@@ -259,7 +259,8 @@
       for (let j = 0; j < bucket.length; j++) {
         const i = bucket[j];
         const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
-        if (t < t0 || t > t1) continue;
+        const tt = t < t0 ? t + DAY : t;
+        if (tt > t1) continue;
         const mode = modeOfTrip[i];
         if (!state.modes[MODES[mode]]) continue;
         activeTotal++;
@@ -267,7 +268,7 @@
         if (state.liveOn && liveRouteSet.has(routeIds[trips[i * 4 + 3]])) continue;
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
-        const [bx, by, dx, dy] = pointAtScreen(shape, (t - t0) / (t1 - t0));
+        const [bx, by, dx, dy] = pointAtScreen(shape, (tt - t0) / (t1 - t0));
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
         if (activeCount >= px.length) continue;
@@ -460,7 +461,7 @@
     const buckets = Array.from({ length: 24 }, () => []);
     for (let i = 0; i < n; i++) {
       const [shape, t0, t1, ridx] = dd.trips[i];
-      buckets[Math.min(23, t0 / 3600 | 0)].push(i);
+      buckets[(t0 / 3600 | 0) % 24].push(i);
       tripsArr[i * 4] = shape; tripsArr[i * 4 + 1] = t0;
       tripsArr[i * 4 + 2] = t1; tripsArr[i * 4 + 3] = ridx;
       modes[i] = routeMode[ridx];
@@ -479,7 +480,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108i`);
+        const res = await fetch(`data-${key}.json?v=20261108j`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -591,9 +592,13 @@
   };
 
   function startedBefore(t) {
-    let lo = 0, hi = startTimes.length;
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (startTimes[mid] <= t) lo = mid + 1; else hi = mid; }
-    return lo;
+    const count = (x) => {
+      let lo = 0, hi = startTimes.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (startTimes[mid] <= x) lo = mid + 1; else hi = mid; }
+      return lo;
+    };
+    // trips starting at 24:xx-30:xx belong to the small hours of the same day
+    return count(t) + count(DAY + t) - count(DAY - 1);
   }
 
   function updateUI() {
@@ -635,7 +640,14 @@
       if (!btn || btn.dataset.day === curDay) return;
       activateDay(btn.dataset.day);
     });
-    $('speed').addEventListener('change', (e) => { state.speed = +e.target.value; });
+    $('speed').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-speed]');
+      if (!btn) return;
+      state.speed = +btn.dataset.speed;
+      document.querySelectorAll('#speed button').forEach((b) => {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
 
     $('legend').addEventListener('click', (e) => {
@@ -699,7 +711,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108i');
+    const res = await fetch('data.json?v=20261108j');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
