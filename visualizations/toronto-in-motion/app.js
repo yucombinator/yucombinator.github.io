@@ -168,12 +168,8 @@
 
   function drawLines() {
     const { w, h } = view;
-    // While a drag is in flight the cached projection is reused: shift it by
-    // the gesture delta so edges revealed by the pan are painted too.
-    const ox = aff.sx === 1 ? aff.ox : 0;
-    const oy = aff.sy === 1 ? aff.oy : 0;
-    lctx.setTransform(dpr, 0, 0, dpr, ox * dpr, oy * dpr);
-    lctx.clearRect(-ox, -oy, w, h);
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lctx.clearRect(0, 0, w, h);
     lctx.lineJoin = 'round';
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
@@ -184,9 +180,7 @@
     // until they are fully drawn at z12.4.
     const busRaw = Math.max(0, Math.min(1, (zLine - 10.4) / 2));
     const busFade = busRaw * busRaw;
-    const cull = aff.sx === 1 && aff.sy === 1;
-    const cMinX = -ox - 4, cMaxX = w - ox + 4;
-    const cMinY = -oy - 4, cMaxY = h - oy + 4;
+    const cull = aff.sx === 1 && aff.sy === 1 && aff.ox === 0 && aff.oy === 0;
     for (const { shapeIdx, color, mode, route } of railShapes) {
       if (!state.modes[mode]) continue;
       const liveRoute = activeRoutes.has(route);
@@ -194,8 +188,8 @@
       const shape = ss[shapeIdx];
       const xy = shape && shape.xy;
       if (!xy || xy.length < 4) continue;
-      if (cull && (shape.maxx < cMinX || shape.minx > cMaxX
-                   || shape.maxy < cMinY || shape.miny > cMaxY)) continue;
+      if (cull && (shape.maxx < -4 || shape.minx > w + 4
+                   || shape.maxy < -4 || shape.miny > h + 4)) continue;
       const bus = isBus(mode);
       if (bus && busFade < 0.01) continue;
       lctx.strokeStyle = liveRoute
@@ -329,12 +323,8 @@
 
     // rail lines live on their own canvas layer; redraw only when the
     // projection changes (not every frame)
-    const purePan = aff.sx === 1 && aff.sy === 1 && (aff.ox !== 0 || aff.oy !== 0);
-    if (linesDirty || purePan) {
-      drawLines();
-      linesDirty = false;
-      railEl.style.transform = '';
-    } else if (aff.sx !== 1 || aff.sy !== 1) {
+    if (linesDirty) { drawLines(); linesDirty = false; railEl.style.transform = ''; }
+    if (aff.sx !== 1 || aff.sy !== 1 || aff.ox || aff.oy) {
       railEl.style.transform = `translate(${aff.ox}px, ${aff.oy}px) scale(${aff.sx}, ${aff.sy})`;
     }
 
@@ -876,7 +866,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261110f`);
+        const res = await fetch(`data-${key}.json?v=20261110g`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -949,7 +939,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261110f');
+      const res = await fetch('busways.json?v=20261110g');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1075,7 +1065,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261110f`);
+        const res = await fetch(`stops-${feed}.json?v=20261110g`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1460,7 +1450,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261110f');
+    const res = await fetch('data.json?v=20261110g');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
