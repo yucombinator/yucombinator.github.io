@@ -11,7 +11,7 @@
   };
   const MODE_COLOR = {
     subway: '#f8c302', streetcar: '#da251d', lrt: '#f87005',
-    gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', up: '#3867d6',
+    gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', up: '#0075d2',
     ferry: '#1f8a9e',
   };
   const MODE_RADIUS = {
@@ -528,8 +528,9 @@
         // TTC official-map station treatment: white discs with a dark edge on
         // a heavier line, bigger at the terminals, plus route-number badges
         const sr = 2.5 + zf * 1.2;
+        const branded = selMode === 'gorail' || selMode === 'up';
         octx.fillStyle = '#ffffff';
-        octx.strokeStyle = '#0d1319';
+        octx.strokeStyle = branded ? col : '#0d1319';
         octx.lineWidth = 1.6;
         octx.beginPath();
         for (let i = 0; i < n; i++) {
@@ -541,30 +542,62 @@
         octx.stroke();
 
         const badge = meta.s;
-        if (badge && n >= 2) {
-          const drawBadge = (i, fromI) => {
-            let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
-            const len = Math.hypot(dx, dy) || 1;
-            dx /= len; dy /= len;
-            const br = sr * 2;
-            const bx = sx(i) + dx * sr * 3.2;
-            const by = sy(i) + dy * sr * 3.2;
-            octx.beginPath();
-            octx.arc(bx, by, br, 0, Math.PI * 2);
-            octx.fillStyle = col;
-            octx.fill();
-            octx.strokeStyle = '#ffffff';
-            octx.lineWidth = 1.5;
-            octx.stroke();
-            octx.fillStyle = '#ffffff';
-            octx.font = `700 ${Math.max(9, Math.round(br * 1.05))}px system-ui, sans-serif`;
-            octx.textAlign = 'center';
-            octx.textBaseline = 'middle';
-            octx.fillText(badge, bx, by + 0.5);
-            octx.textAlign = 'start';
-          };
-          drawBadge(0, 1);
-          drawBadge(n - 1, n - 2);
+        const drawGoBadge = (i, fromI) => {
+          let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
+          const len = Math.hypot(dx, dy) || 1;
+          dx /= len; dy /= len;
+          const w = sr * 5.2, h = sr * 3.4;
+          const bx = sx(i) + dx * sr * 4.2;
+          const by = sy(i) + dy * sr * 4.2;
+          const rr = Math.min(h / 2, 3.5);
+          octx.beginPath();
+          octx.moveTo(bx - w / 2 + rr, by - h / 2);
+          octx.arcTo(bx + w / 2, by - h / 2, bx + w / 2, by + h / 2, rr);
+          octx.arcTo(bx + w / 2, by + h / 2, bx - w / 2, by + h / 2, rr);
+          octx.arcTo(bx - w / 2, by + h / 2, bx - w / 2, by - h / 2, rr);
+          octx.arcTo(bx - w / 2, by - h / 2, bx + w / 2, by - h / 2, rr);
+          octx.closePath();
+          octx.fillStyle = selMode === 'up' ? col : '#00853e';
+          octx.fill();
+          octx.strokeStyle = '#ffffff';
+          octx.lineWidth = 1.3;
+          octx.stroke();
+          octx.fillStyle = '#ffffff';
+          octx.font = `800 ${Math.max(8, Math.round(h * 0.62))}px system-ui, sans-serif`;
+          octx.textAlign = 'center';
+          octx.textBaseline = 'middle';
+          octx.fillText(selMode === 'up' ? 'UP' : 'GO', bx, by + 0.5);
+          octx.textAlign = 'start';
+        };
+        const drawBadge = (i, fromI) => {
+          let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
+          const len = Math.hypot(dx, dy) || 1;
+          dx /= len; dy /= len;
+          const br = sr * 2;
+          const bx = sx(i) + dx * sr * 3.2;
+          const by = sy(i) + dy * sr * 3.2;
+          octx.beginPath();
+          octx.arc(bx, by, br, 0, Math.PI * 2);
+          octx.fillStyle = col;
+          octx.fill();
+          octx.strokeStyle = '#ffffff';
+          octx.lineWidth = 1.5;
+          octx.stroke();
+          octx.fillStyle = '#ffffff';
+          octx.font = `700 ${Math.max(9, Math.round(br * 1.05))}px system-ui, sans-serif`;
+          octx.textAlign = 'center';
+          octx.textBaseline = 'middle';
+          octx.fillText(badge, bx, by + 0.5);
+          octx.textAlign = 'start';
+        };
+        if (n >= 2 && (branded || badge)) {
+          if (branded) {
+            drawGoBadge(0, 1);
+            drawGoBadge(n - 1, n - 2);
+          } else {
+            drawBadge(0, 1);
+            drawBadge(n - 1, n - 2);
+          }
         }
       } else {
         octx.fillStyle = '#0b141b';
@@ -724,7 +757,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109k`);
+        const res = await fetch(`data-${key}.json?v=20261109l`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -793,7 +826,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109k');
+      const res = await fetch('busways.json?v=20261109l');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -903,7 +936,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109k`);
+        const res = await fetch(`stops-${feed}.json?v=20261109l`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1244,7 +1277,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109k');
+    const res = await fetch('data.json?v=20261109l');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

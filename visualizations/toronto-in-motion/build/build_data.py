@@ -210,7 +210,7 @@ def active_services(path, spec, counts):
     return {best}
 
 
-def classify(feed, route_id, route_type):
+def classify(feed, route_id, route_type, route_color=""):
     kind = feed["kind"]
     if kind == "ttc":
         if route_id in TTC_LINES:
@@ -219,9 +219,14 @@ def classify(feed, route_id, route_type):
             return ("streetcar", "da251d")
         return ("localbus", "5aa9e6")
     if kind == "go":
-        return ("gorail", "00853e") if route_type == 2 else ("gobus", "5aa93f")
+        # GO's own feed carries each corridor's colour (Lakeshore West crimson,
+        # Kitchener green, Barrie navy, ...). Use it for trains; buses keep one
+        # green so the bus network does not turn into confetti.
+        if route_type == 2:
+            return ("gorail", (route_color or "00853e").lstrip("#").lower())
+        return ("gobus", "5aa93f")
     if kind == "up":
-        return ("up", "3867d6")
+        return ("up", (route_color or "0075d2").lstrip("#").lower())
     if kind == "lrt":
         return ("lrt", feed["color"])
     return ("localbus", feed["color"])
@@ -288,7 +293,7 @@ for feed in FEEDS:
     for row in read_csv(path, "routes.txt"):
         rid = row["route_id"]
         rtype = int(row.get("route_type", 3))
-        mode, color = classify(feed, rid, rtype)
+        mode, color = classify(feed, rid, rtype, row.get("route_color", ""))
         key = f"{feed['id']}:{rid}"
         local_routes[rid] = key
         routes[key] = {
