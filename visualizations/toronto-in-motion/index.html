@@ -12,7 +12,7 @@
 <style>
   :root{
     --bg:#070d14;
-    --panel:rgba(10,20,28,.86);
+    --panel:rgba(9,18,25,.94);
     --line:#1d303b;
     --text:#dce8e3;
     --muted:#7f95a0;
@@ -31,9 +31,10 @@
   button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
   #app{position:relative;height:100%;overflow:hidden;background:var(--bg)}
   #map{position:absolute;inset:0;background:#071014}
-  #map .maplibregl-canvas{filter:saturate(.55) brightness(.62) contrast(1.05)}
-  .basemap-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,rgba(7,13,20,.26),rgba(7,13,20,.5))}
-  #overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  .basemap-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,rgba(7,13,20,.46),rgba(7,13,20,.62))}
+  #map .maplibregl-canvas{opacity:.82}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+  #rail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;transform-origin:0 0}
   .maplibregl-ctrl{bottom:240px!important;right:10px!important}
   .vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,13,20,.82),transparent 22%,transparent 62%,rgba(7,13,20,.8))}
 
@@ -54,7 +55,7 @@
   .meta .day{font-size:11px;letter-spacing:1px;color:#93aab0;text-transform:uppercase}
   .meta .sub{margin-top:5px;font-size:12px;color:#7d949b;max-width:34ch;line-height:1.5}
 
-  .panel{position:absolute;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));bottom:14px;background:var(--panel);backdrop-filter:blur(14px);border:1px solid #203440;border-radius:10px;padding:10px 14px 8px}
+  .panel{position:absolute;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));bottom:14px;background:var(--panel);border:1px solid #203440;border-radius:10px;padding:10px 14px 8px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .legend{display:flex;gap:16px;flex-wrap:wrap}
   .legend button{background:none;border:0;padding:2px 0;display:flex;align-items:center;gap:6px;color:#b9cccf;font-size:11.5px}
@@ -118,6 +119,7 @@
 <main id="app">
   <div id="map" aria-label="Map of Toronto with animated TTC vehicles"></div>
   <div class="basemap-scrim" aria-hidden="true"></div>
+  <canvas id="rail" aria-hidden="true"></canvas>
   <canvas id="overlay" aria-hidden="true"></canvas>
   <div class="vignette"></div>
 
@@ -193,6 +195,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108d"></script>
+<script src="app.js?v=20261108e"></script>
 </body>
 </html>

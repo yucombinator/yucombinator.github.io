@@ -45,6 +45,7 @@
   let trips = null;           // flat Int32Array [shape, t0, t1, routePtr]
   let tripCount = 0;
   let modeOfTrip = null;      // Uint8Array
+  let hourBuckets = null;     // trip indices grouped by start hour
   let startTimes = null;      // sorted Int32Array of t0
   let px = null, py = null, pTrip = null;
   let activeCount = 0;       // dots currently drawn (viewport)
@@ -52,13 +53,17 @@
   const modeTotals = new Array(MODES.length).fill(0);
   let view = { w: 0, h: 0, screenShapes: [] };
   let needsProjection = false;
-  let dotsCanvas = document.createElement('canvas');
-  let dctx = dotsCanvas.getContext('2d');
   let dpr = 1;
-  let trailReset = true;
   let fitZoom = 10;
   let dens = null, densW = 0, densH = 0;
-  let last = 0;
+  const railEl = $('rail');
+  const lctx = railEl.getContext('2d');
+  let linesDirty = true;
+  let aff = { sx: 1, sy: 1, ox: 0, oy: 0 };
+  let baseA = null, baseB = null;
+  let anchorA = null, anchorB = null;
+  let exactTimer = 0;
+  let last = 0, lastDraw = 0, lastMoveAt = 0;
   let uiAccum = 0;
 
   const lngLatOf = (x, y) => {
@@ -87,6 +92,41 @@
       out[si] = { xy, cum, len };
     }
     view.screenShapes = out;
+    baseA = mapObj.project(anchorA);
+    baseB = mapObj.project(anchorB);
+    aff.sx = aff.sy = 1; aff.ox = aff.oy = 0;
+    linesDirty = true;
+  }
+
+  // cheap affine delta while the map is mid-gesture (2 projections, no relayout)
+  function updateAffine() {
+    if (!mapObj || !baseA) return;
+    const a = mapObj.project(anchorA), b = mapObj.project(anchorB);
+    const sx = (b.x - a.x) / (baseB.x - baseA.x) || 1;
+    const sy = (b.y - a.y) / (baseB.y - baseA.y) || 1;
+    aff.sx = sx; aff.sy = sy;
+    aff.ox = a.x - baseA.x * sx;
+    aff.oy = a.y - baseA.y * sy;
+    railEl.style.transform = `translate(${aff.ox}px, ${aff.oy}px) scale(${aff.sx}, ${aff.sy})`;
+  }
+
+  function drawLines() {
+    const { w, h } = view;
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lctx.clearRect(0, 0, w, h);
+    lctx.lineWidth = 1;
+    const ss = view.screenShapes;
+    for (const { shapeIdx, color } of railShapes) {
+      const shape = ss[shapeIdx];
+      if (!shape || shape.xy.length < 4) continue;
+      lctx.strokeStyle = color + '55';
+      lctx.beginPath();
+      const xy = shape.xy;
+      for (let p = 0; p < xy.length; p += 2) {
+        if (p === 0) lctx.moveTo(xy[p], xy[p + 1]); else lctx.lineTo(xy[p], xy[p + 1]);
+      }
+      lctx.stroke();
+    }
   }
 
   function pointAtScreen(shape, frac) {
@@ -119,7 +159,10 @@
       state.dirty = true;
     }
 
-    if (state.dirty) { draw(); state.dirty = false; }
+    if (state.dirty) {
+      const busy = state.playing && now - lastMoveAt > 250;
+      if (!busy || now - lastDraw >= 32) { draw(); state.dirty = false; lastDraw = now; }
+    }
 
     lineCtx.clearRect(0, 0, chartLine.clientWidth, chartLine.clientHeight);
     const cx = (state.t / DAY) * chartLine.clientWidth;
@@ -141,18 +184,11 @@
     const ss = view.screenShapes;
     if (!ss.length) return;
 
-    // faint rail lines
-    octx.lineWidth = 1;
-    for (const { shapeIdx, color } of railShapes) {
-      const shape = ss[shapeIdx];
-      if (!shape || shape.xy.length < 4) continue;
-      octx.strokeStyle = color + '55';
-      octx.beginPath();
-      for (let p = 0; p < shape.xy.length; p += 2) {
-        const X = shape.xy[p], Y = shape.xy[p + 1];
-        if (p === 0) octx.moveTo(X, Y); else octx.lineTo(X, Y);
-      }
-      octx.stroke();
+    // rail lines live on their own canvas layer; redraw only when the
+    // projection changes (not every frame)
+    if (linesDirty) { drawLines(); linesDirty = false; railEl.style.transform = ''; }
+    if (aff.sx !== 1 || aff.sy !== 1 || aff.ox || aff.oy) {
+      railEl.style.transform = `translate(${aff.ox}px, ${aff.oy}px) scale(${aff.sx}, ${aff.sy})`;
     }
 
     // dots: count every running trip, draw only the ones on screen
@@ -160,30 +196,42 @@
     activeTotal = 0;
     modeTotals.fill(0);
     const t = state.t;
-    for (let i = 0; i < tripCount; i++) {
-      const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
-      if (t < t0 || t > t1) continue;
-      const mode = modeOfTrip[i];
-      if (!state.modes[MODES[mode]]) continue;
-      activeTotal++;
-      modeTotals[mode]++;
-      const shape = ss[trips[i * 4]];
-      if (!shape || shape.len === 0) continue;
-      const [X, Y] = pointAtScreen(shape, (t - t0) / (t1 - t0));
-      if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
-      if (activeCount >= px.length) continue;
-      px[activeCount] = X; py[activeCount] = Y; pTrip[activeCount] = i;
-      activeCount++;
+    const hEnd = t / 3600 | 0;
+    for (let back = 0, mask = 0; back <= 4; back++) {
+      const hh = (hEnd - back + 24) % 24;
+      if (mask & (1 << hh)) continue;
+      mask |= 1 << hh;
+      const bucket = hourBuckets[hh];
+      for (let j = 0; j < bucket.length; j++) {
+        const i = bucket[j];
+        const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
+        if (t < t0 || t > t1) continue;
+        const mode = modeOfTrip[i];
+        if (!state.modes[MODES[mode]]) continue;
+        activeTotal++;
+        modeTotals[mode]++;
+        const shape = ss[trips[i * 4]];
+        if (!shape || shape.len === 0) continue;
+        const [bx, by] = pointAtScreen(shape, (t - t0) / (t1 - t0));
+        const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
+        if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
+        if (activeCount >= px.length) continue;
+        px[activeCount] = X; py[activeCount] = Y; pTrip[activeCount] = i;
+        activeCount++;
+      }
     }
 
     const z = mapObj ? mapObj.getZoom() : fitZoom;
     const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
 
-    // soft additive halo behind the dots (cheap glow: no canvas shadows)
+    // soft additive halo behind the dots (cheap glow: no canvas shadows).
+    // At region zoom the bus haze is both slow and unreadable, so skip it.
+    const skipBusGlow = z < 9.5 || activeTotal > 1800;
     octx.globalCompositeOperation = 'lighter';
     for (let si = 0; si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
+      if (skipBusGlow && isBus(mode)) continue;
       octx.fillStyle = slotColors[si];
       octx.globalAlpha = isBus(mode) ? 0.055 : 0.13;
       const glowR = MODE_RADIUS[mode] * 2.7 * zf;
@@ -197,7 +245,6 @@
     }
     octx.globalCompositeOperation = 'source-over';
     octx.globalAlpha = 1;
-
     for (let si = 0; si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
@@ -207,7 +254,7 @@
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        if (isTrain(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
+        if (isTrain(mode) || isBus(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
         else { octx.moveTo(px[k] + r, py[k]); octx.arc(px[k], py[k], r, 0, Math.PI * 2); }
       }
       octx.fill();
@@ -217,7 +264,7 @@
     // thin rim on rail dots so Line 6 grey and Line 4 magenta read on the map
     octx.lineWidth = 0.8;
     octx.strokeStyle = 'rgba(255,255,255,.30)';
-    for (let si = 0; si < slotColors.length; si++) {
+    for (let si = 0; zf >= 0.95 && si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (isBus(mode) || !state.modes[mode]) continue;
       const r = MODE_RADIUS[mode] * zf + 0.3;
@@ -247,16 +294,20 @@
   };
 
   function resize() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = overlay.clientWidth, h = overlay.clientHeight;
+    const rawDpr = window.devicePixelRatio || 1;
+    // big screens at 2x are 4x the pixels; cap the effect layers so the
+    // dot pass stays under a few ms instead of dominating the frame
+    dpr = Math.min(rawDpr, w * h > 1.1e6 ? 1.3 : 1.75);
     overlay.width = Math.round(w * dpr); overlay.height = Math.round(h * dpr);
     octx.setTransform(dpr, 0, 0, dpr, 0, 0);
     view.w = w; view.h = h;
-    dotsCanvas.width = Math.round(w * dpr);
-    dotsCanvas.height = Math.round(h * dpr);
-    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    dctx.clearRect(0, 0, w, h);
-    trailReset = true;
+    railEl.width = Math.round(w * dpr);
+    railEl.height = Math.round(h * dpr);
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lctx.clearRect(0, 0, w, h);
+    railEl.style.transform = '';
+    linesDirty = true;
 
     const cw = chart.clientWidth, ch = chart.clientHeight;
     chart.width = Math.round(cw * dpr); chart.height = Math.round(ch * dpr);
@@ -338,7 +389,6 @@
 
   function seek(t) {
     state.t = Math.max(0, Math.min(DAY - 1, t));
-    trailReset = true;
     state.dirty = true;
     updateUI();
   }
@@ -413,7 +463,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108d');
+    const res = await fetch('data.json?v=20261108e');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -438,8 +488,10 @@
     };
 
     slotOfTrip = new Uint8Array(tripCount);
+    hourBuckets = Array.from({ length: 24 }, () => []);
     for (let i = 0; i < tripCount; i++) {
       const [shape, t0, t1, ridx] = D.trips[i];
+      hourBuckets[Math.min(23, t0 / 3600 | 0)].push(i);
       trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1;
       trips[i * 4 + 3] = ridx;
       const route = D.routes[routeIds[ridx]];
@@ -474,6 +526,8 @@
     const peakHour = String(Math.floor(bestB / 6)).padStart(2, '0') + ':00';
     document.querySelector('.stats').children[2].innerHTML = `Peak hour <b>${peakHour}</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
 
+    anchorA = lngLatOf(0, 0);
+    anchorB = lngLatOf(1000, 1000);
     $('s-total').textContent = tripCount.toLocaleString();
     $('zone').textContent = 'EST';
     resize();
@@ -491,6 +545,8 @@
       minZoom: 8,
       maxZoom: 15,
       fadeDuration: 200,
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+      antialias: false,
     });
     mapObj.on('load', () => {
       mapObj.touchZoomRotate.disableRotation();
@@ -506,7 +562,17 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
-    mapObj.on('move', () => { needsProjection = true; state.dirty = true; });
+    mapObj.on('move', () => {
+      lastMoveAt = performance.now();
+      updateAffine();
+      state.dirty = true;
+      clearTimeout(exactTimer);
+      exactTimer = setTimeout(() => { needsProjection = true; state.dirty = true; }, 140);
+    });
+    mapObj.on('moveend', () => {
+      clearTimeout(exactTimer);
+      exactTimer = setTimeout(() => { needsProjection = true; state.dirty = true; }, 60);
+    });
     mapObj.on('error', (e) => console.warn('basemap:', e?.error?.message || e));
 
     last = performance.now();
