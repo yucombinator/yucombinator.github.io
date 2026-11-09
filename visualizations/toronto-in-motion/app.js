@@ -164,15 +164,7 @@
       lctx.lineWidth = isBus(mode) ? 1 : 1.15;
       lctx.beginPath();
       lctx.moveTo(xy[0], xy[1]);
-      if (xy.length === 4) {
-        lctx.lineTo(xy[2], xy[3]);
-      } else {
-        // quadratic through segment midpoints: same path, rounded corners
-        for (let p = 2; p < xy.length - 2; p += 2) {
-          lctx.quadraticCurveTo(xy[p], xy[p + 1], (xy[p] + xy[p + 2]) / 2, (xy[p + 1] + xy[p + 3]) / 2);
-        }
-        lctx.lineTo(xy[xy.length - 2], xy[xy.length - 1]);
-      }
+      for (let p = 2; p < xy.length; p += 2) lctx.lineTo(xy[p], xy[p + 1]);
       lctx.stroke();
     }
   }
@@ -605,7 +597,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108r`);
+        const res = await fetch(`data-${key}.json?v=20261108s`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -722,7 +714,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261108r`);
+        const res = await fetch(`stops-${feed}.json?v=20261108s`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1025,7 +1017,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108r');
+    const res = await fetch('data.json?v=20261108s');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

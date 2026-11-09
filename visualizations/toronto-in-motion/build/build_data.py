@@ -444,15 +444,11 @@ for key, pts in raw_shapes.items():
     for p in xy[1:]:
         if (p[0] - clean[-1][0]) ** 2 + (p[1] - clean[-1][1]) ** 2 >= 9:
             clean.append(p)
-    simp = dp(clean, 20.0)
-    # Cap by length, not a flat 80 points: a 130 km GO bus shape squeezed
-    # into 80 points was 1.7 km per segment and read as a jagged polygon.
-    length = sum(((simp[i][0] - simp[i - 1][0]) ** 2 + (simp[i][1] - simp[i - 1][1]) ** 2) ** 0.5
-                 for i in range(1, len(simp)))
-    cap = max(80, min(700, int(length / 150) + 1))
-    if len(simp) > cap:
-        step = len(simp) / cap
-        simp = [simp[min(len(simp) - 1, int(i * step))] for i in range(cap)]
+    # Keep Douglas-Peucker's adaptive points. The old length-based cap
+    # subsampled uniformly and threw away the very points DP had kept at
+    # corners, which is what made the 506 cut across intersections. 12 m
+    # tolerance instead of 20 m also keeps a tram visibly on its street.
+    simp = dp(clean, 12.0)
     projected[key] = simp
     for x, y in simp:
         minx, maxx = min(minx, x), max(maxx, x)
