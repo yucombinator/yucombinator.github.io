@@ -14,7 +14,9 @@ name: Refresh live vehicle positions
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # Offset from the top of the hour: GitHub drops/delays jobs queued at :00
+    # under load, and */5 lands on :00 every hour.
+    - cron: "2-57/5 * * * *"
   workflow_dispatch:
 
 permissions:
