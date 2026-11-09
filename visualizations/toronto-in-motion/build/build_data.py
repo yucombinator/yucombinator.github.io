@@ -140,6 +140,7 @@ FEEDS = [
 ]
 
 MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up", "ferry")
+RAIL_MODES = {"subway", "lrt", "gorail", "up"}
 
 
 def read_csv(path, name):
@@ -241,6 +242,24 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def nearest_frac(xy, cum, total, px, py):
+    """Fraction along a polyline of the closest point to (px, py)."""
+    best, bf = float("inf"), 0.0
+    for i in range(1, len(xy)):
+        ax, ay = xy[i - 1]
+        bx, by = xy[i]
+        dx, dy = bx - ax, by - ay
+        l2 = dx * dx + dy * dy or 1.0
+        t = ((px - ax) * dx + (py - ay) * dy) / l2
+        t = max(0.0, min(1.0, t))
+        qx, qy = ax + t * dx, ay + t * dy
+        d2 = (px - qx) ** 2 + (py - qy) ** 2
+        if d2 < best:
+            best = d2
+            bf = (cum[i - 1] + t * (cum[i] - cum[i - 1])) / total
+    return bf
+
+
 def dp(points, tol):
     """Douglas-Peucker on [(x, y)]."""
     if len(points) < 3:
@@ -279,6 +298,7 @@ KY = 110_574.0
 
 routes = {}          # "feed:route" -> meta
 raw_shapes = {}      # (feed, shape_id) -> [(lat, lon)]
+dwell_profiles = {}  # (feed, shape_id) -> [[fraction, dwell seconds], ...]
 day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
 day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
 shape_ids = set()
@@ -350,12 +370,34 @@ for feed in FEEDS:
         if cur is None or n > stop_counts[cur]:
             rep_trip[route] = tid
 
-    rep_seq = {tid: [] for tid in rep_trip.values()}
+    # a representative per rail shape, so dwells follow the direction's shape
+    rep_shape_trip = {}
+    for tid, n in stop_counts.items():
+        t = local_trips.get(tid)
+        if not t or not t["shape"]:
+            continue
+        if routes.get(t["route"], {}).get("m") not in RAIL_MODES:
+            continue
+        cur = rep_shape_trip.get(t["shape"])
+        if cur is None or n > stop_counts[cur]:
+            rep_shape_trip[t["shape"]] = tid
+
+    rep_ids = set(rep_trip.values()) | set(rep_shape_trip.values())
+    rep_seq = {tid: [] for tid in rep_ids}
     if rep_seq:
         for row in read_csv(path, "stop_times.txt"):
             tid = row["trip_id"]
-            if tid in rep_seq:
-                rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"]))
+            if tid not in rep_seq:
+                continue
+            try:
+                arr = secs(row["arrival_time"])
+            except Exception:                 # noqa: BLE001
+                arr = None
+            try:
+                dep = secs(row["departure_time"])
+            except Exception:                 # noqa: BLE001
+                dep = None
+            rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"], arr, dep))
 
     stop_meta = {}
     sp = os.path.join(path, "stops.txt")
@@ -374,7 +416,7 @@ for feed in FEEDS:
         seq = sorted(rep_seq.get(tid) or [])
         idxs = []
         last = None
-        for _, sid in seq:
+        for _, sid, _arr, _dep in seq:
             meta = stop_meta.get(sid)
             if not meta or sid == last:
                 continue
@@ -436,6 +478,47 @@ for feed in FEEDS:
                     (int(row["shape_pt_sequence"]), float(row["shape_pt_lat"]),
                      float(row["shape_pt_lon"]))
                 )
+
+    # dwell profiles for rail shapes, measured from the representative trip
+    for shape_id, tid in rep_shape_trip.items():
+        pts = raw_shapes.get((feed["id"], shape_id))
+        seq = sorted(rep_seq.get(tid) or [])
+        if not pts or len(pts) < 2 or len(seq) < 2:
+            continue
+        xy = [(lon * KX, lat * KY) for _, lat, lon in sorted(pts)]
+        cum = [0.0]
+        for i in range(1, len(xy)):
+            cum.append(cum[-1] + math.hypot(xy[i][0] - xy[i - 1][0],
+                                            xy[i][1] - xy[i - 1][1]))
+        total = cum[-1]
+        if total <= 0:
+            continue
+        prof, prev = [], 0.0
+        for _, sid, arr, dep in seq:
+            meta = stop_meta.get(sid)
+            if not meta:
+                continue
+            f = nearest_frac(xy, cum, total, meta[1] * KX, meta[0] * KY)
+            f = max(prev, min(1.0, f))
+            prev = f
+            dwell = 0
+            if arr is not None and dep is not None:
+                gap = dep - arr
+                if 0 <= gap <= 600:
+                    dwell = gap
+            prof.append([round(f, 4), dwell])
+        if len(prof) < 2:
+            continue
+        prof[-1][1] = 0
+        clean = [prof[0]]
+        for item in prof[1:]:
+            if item[0] > clean[-1][0]:
+                clean.append(item)
+            else:
+                clean[-1][1] = max(clean[-1][1], item[1])
+        if len(clean) >= 2 and clean[-1][0] > 0:
+            dwell_profiles[(feed["id"], shape_id)] = clean
+
 
 # --- Toronto Island Ferry -------------------------------------------------
 # The City publishes the ferry timetable as HTML tables, one per route, and
@@ -594,6 +677,12 @@ for key, pts in raw_shapes.items():
 
 shape_keys = sorted(projected)
 shape_index = {k: i for i, k in enumerate(shape_keys)}
+
+dwell_out = {}
+for key, prof in dwell_profiles.items():
+    idx = shape_index.get(key)
+    if idx is not None:
+        dwell_out[str(idx)] = [f for f, _dwell in prof]
 shapes = [[[round(x - minx), round(y - miny)] for x, y in projected[k]] for k in shape_keys]
 
 route_keys = sorted(routes)
@@ -647,6 +736,7 @@ doc = {
     "proj": {"lat0": LAT0, "kx": KX, "ky": KY, "x0": minx, "y0": miny},
     "routes": route_out,
     "shapes": shapes,
+    "dwell": dwell_out,
     "days": days_out,
     "order": [spec["key"] for spec in DAY_SPECS],
 }

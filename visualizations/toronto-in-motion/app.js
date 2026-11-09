@@ -185,6 +185,44 @@
     }
   }
 
+  // GTFS in this region publishes arrival == departure at every stop, so the
+  // dwell has to be modelled. Modest, mode-specific stops only, and only once
+  // the map is close enough for them to read (zoom >= 12).
+  const DWELL_SECONDS = { subway: 20, lrt: 20, gorail: 45, up: 30 };
+  let dwellProfiles = null;
+
+  function initDwell() {
+    if (!D.dwell) return;
+    dwellProfiles = [];
+    for (const [k, fracs] of Object.entries(D.dwell)) {
+      if (fracs.length >= 3) dwellProfiles[+k] = Float32Array.from(fracs);
+    }
+  }
+
+  function dwellFrac(shapeIdx, u, dur, mode) {
+    const fr = dwellProfiles && dwellProfiles[shapeIdx];
+    if (!fr) return u;
+    const per = DWELL_SECONDS[mode] || 0;
+    if (!per) return u;
+    const n = fr.length;
+    const dwellTotal = (n - 2) * per;
+    if (dur <= dwellTotal * 1.15) return u;   // too short to fit the stops
+    const runTotal = dur - dwellTotal;
+    let x = u * dur;
+    for (let i = 0; i < n - 1; i++) {
+      const dF = fr[i + 1] - fr[i];
+      if (dF <= 0) continue;
+      const segRun = dF * runTotal;
+      if (x <= segRun) return fr[i] + dF * (x / segRun);
+      x -= segRun;
+      if (i + 1 <= n - 2) {
+        if (x <= per) return fr[i + 1];
+        x -= per;
+      }
+    }
+    return fr[n - 1];
+  }
+
   function pointAtScreen(shape, frac) {
     const target = frac * shape.len;
     const { xy, cum } = shape;
@@ -277,6 +315,8 @@
     activeCount = 0;
     activeTotal = 0;
     modeTotals.fill(0);
+    const z = mapObj ? mapObj.getZoom() : fitZoom;
+    const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
     const t = state.t;
     selectedActive = 0;
     if (slotCounts) slotCounts.fill(0);
@@ -313,7 +353,9 @@
         if (state.liveOn && liveRouteSet.has(routeIds[trips[i * 4 + 3]])) continue;
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
-        const [bx, by, dx, dy] = pointAtScreen(shape, (tt - t0) / (t1 - t0));
+        let frac = (tt - t0) / (t1 - t0);
+        if (dwellProfiles && z >= 12) frac = dwellFrac(trips[i * 4], frac, t1 - t0, MODES[mode]);
+        const [bx, by, dx, dy] = pointAtScreen(shape, frac);
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
         if (activeCount >= px.length) continue;
@@ -365,8 +407,6 @@
       octx.restore();
     }
 
-    const z = mapObj ? mapObj.getZoom() : fitZoom;
-    const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
     const selMode = selected >= 0 ? MODES[routeMode[selected]] : '';
     const selIsRail = selMode === 'subway' || selMode === 'lrt'
       || selMode === 'gorail' || selMode === 'up';
@@ -766,7 +806,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109s`);
+        const res = await fetch(`data-${key}.json?v=20261109t`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -836,7 +876,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109s');
+      const res = await fetch('busways.json?v=20261109t');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -961,7 +1001,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109s`);
+        const res = await fetch(`stops-${feed}.json?v=20261109t`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1338,7 +1378,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109s');
+    const res = await fetch('data.json?v=20261109t');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1383,6 +1423,7 @@
       if (D.days[key]) addRailShapes(D.days[key]);
     }
 
+    initDwell();
     dayCache = {};
     for (const key of D.order) {
       if (D.days[key]) dayCache[key] = prepareDay(key, D.days[key]);
