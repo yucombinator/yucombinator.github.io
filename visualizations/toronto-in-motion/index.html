@@ -160,7 +160,7 @@
 
   <div class="meta">
     <div class="day" id="dayLabel">—</div>
-    <div class="sub">Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO, UP Express and 15 local agencies — as moving dots, 24 hours at a time. Drag or scroll the map to explore.</div>
+    <div class="sub">Every scheduled trip across the Greater Golden Horseshoe, as moving arrows. Drag or scroll to explore.</div>
   </div>
 
   <div id="tip" role="status" aria-live="polite"></div>
@@ -186,9 +186,6 @@
         <button class="play" id="playBtn" aria-label="Pause">
           <svg id="playIcon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
         </button>
-        <button class="live" id="liveBtn" aria-pressed="false" hidden title="Live vehicle positions">
-          <span class="live-dot" aria-hidden="true"></span>Live
-        </button>
         <div class="speeds" id="speed" role="group" aria-label="Playback speed">
           <button data-speed="60" aria-pressed="false" aria-label="1× speed" title="1× · 24h in 24 min"><svg viewBox="0 0 6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/></svg></button>
           <button data-speed="120" aria-pressed="true" aria-label="2× speed" title="2× · 24h in 12 min"><svg viewBox="0 0 14.2 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/></svg></button>
@@ -208,7 +205,6 @@
         <span>On the road <b id="s-active">0</b></span>
         <span>Trips started <b id="s-started">0</b> / <b id="s-total">—</b></span>
         <span>Peak hour <b>17:00</b> · 1,557 vehicles</span>
-        <span id="liveNote"></span>
       </div>
       <span class="src-wrap">
         <a class="src" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Data: TTC GTFS · City of Toronto Open Data Licence</a>
@@ -234,18 +230,14 @@
   <dialog id="about">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2>Toronto in Motion</h2>
-    <p>Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay and Niagara Region — animated as a dot moving along its route, with a 24-hour scrubber. Switch between the most recent weekday, Saturday and Sunday to see how service thins out on weekends.</p>
-    <p>The bar chart counts scheduled departures per 10 minutes for the modes you have enabled, so toggling a mode rescales it to that mode's own service pattern.</p>
-    <p><strong>Live mode</strong> (the red button) shows actual vehicle positions from the agencies that publish open GTFS-Realtime: TTC surface, Brampton, YRT, Durham, HSR, GRT/ION and Guelph. Those feeds block direct browser requests, so a scheduled GitHub Actions job decodes them and publishes a snapshot to the site; the page picks it up, jumps the clock to the snapshot time, and routes without realtime keep their scheduled positions at that time. The button only appears while the snapshot is less than 30 minutes old.</p>
-    <p><strong>Outside live mode this is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
-    <p>Data: the agencies' published GTFS feeds, each used under its open data licence (TTC, Metrolinx, MiWay, Brampton, YRT, Durham, Oakville, Burlington, Hamilton, Region of Waterloo, Guelph, Barrie, Milton, Simcoe County, Orangeville, Kawartha Lakes, Niagara Region). TTC lines use the TTC's own colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Other agencies are coloured for legibility, not to match their brands.</p>
-    <p>Basemap: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, built from OpenStreetMap data. You can drag and zoom the map; the dots are reprojected to follow it.</p>
-    <p>Format and interaction inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>.</p>
-    <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
+    <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express and 15 local agencies — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>Data: the agencies' published GTFS feeds under their open data licences. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108s"></script>
+<script src="app.js?v=20261108t"></script>
 </body>
 </html>

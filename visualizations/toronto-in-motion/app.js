@@ -81,6 +81,7 @@
   let liveCount = 0;
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
+  const LIVE_ENABLED = false;      // hidden for now; flip to true to restore
   const LIVE_STALE_MS = 30 * 60 * 1000;
 
   const lngLatOf = (x, y) => {
@@ -597,7 +598,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108s`);
+        const res = await fetch(`data-${key}.json?v=20261108t`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -714,7 +715,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261108s`);
+        const res = await fetch(`stops-${feed}.json?v=20261108t`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -831,6 +832,7 @@
   ];
 
   async function loadLive() {
+    if (!LIVE_ENABLED) return;
     let doc = null;
     await Promise.all(LIVE_URLS.map(async (base) => {
       try {
@@ -857,7 +859,7 @@
     }
     if (state.liveOn) {
       if (btn && btn.disabled) setLive(false);
-      else { computeLiveScreen(); $('liveNote').textContent = liveNoteText(); }
+      else if ($('liveNote')) { computeLiveScreen(); $('liveNote').textContent = liveNoteText(); }
     }
     state.dirty = true;
   }
@@ -873,7 +875,7 @@
     }
     const btn = $('liveBtn');
     if (btn) btn.setAttribute('aria-pressed', String(on));
-    $('liveNote').textContent = on ? liveNoteText() : '';
+    if ($('liveNote')) $('liveNote').textContent = on ? liveNoteText() : '';
     state.dirty = true;
     updateUI();
   }
@@ -927,7 +929,6 @@
 
   function wire() {
     $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
-    $('liveBtn').addEventListener('click', () => setLive(!state.liveOn));
 
     let down = null;
     mapEl.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
@@ -1017,7 +1018,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108s');
+    const res = await fetch('data.json?v=20261108t');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1067,9 +1068,11 @@
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
-    loadLive();
-    setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
-    setInterval(loadLive, 5 * 60 * 1000);
+    if (LIVE_ENABLED) {
+      loadLive();
+      setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
+      setInterval(loadLive, 5 * 60 * 1000);
+    }
     resize();
     setPlaying(state.playing);
     seek(state.t);
