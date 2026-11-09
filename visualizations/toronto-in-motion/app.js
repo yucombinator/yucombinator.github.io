@@ -4,9 +4,9 @@
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'streetcar', 'bus'];
-  const MODE_COLOR = { subway: '#f5c451', streetcar: '#ef6f6c', bus: '#5aa9e6' };
-  const MODE_RADIUS = { subway: 2.7, streetcar: 2.0, bus: 1.45 };
+  const MODES = ['subway', 'lrt', 'streetcar', 'bus'];
+  const MODE_COLOR = { subway: '#f8c302', lrt: '#f87005', streetcar: '#da251d', bus: '#5aa9e6' };
+  const MODE_RADIUS = { subway: 2.7, lrt: 2.3, streetcar: 2.0, bus: 1.45 };
   const DAY = 86400;
 
   const $ = (id) => document.getElementById(id);
@@ -22,7 +22,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, streetcar: true, bus: true },
+    modes: { subway: true, lrt: true, streetcar: true, bus: true },
     hover: null,
     dirty: true,
   };
@@ -31,13 +31,18 @@
   let mapObj = null;
   let shapes = [];            // { pts: [[x,y]] in local metres }
   let routeIds = [];          // pointer -> route_id
-  let railShapes = [];        // [{shapeIdx, mode}] for background lines
+  let railShapes = [];        // [{shapeIdx, color}] for background lines
+  let slotColors = [];        // palette of dot colours (one per TTC line / mode)
+  let slotMode = [];          // mode index per palette slot
+  let slotOfTrip = null;      // Uint8Array slot per trip
   let trips = null;           // flat Int32Array [shape, t0, t1, routePtr]
   let tripCount = 0;
   let modeOfTrip = null;      // Uint8Array
   let startTimes = null;      // sorted Int32Array of t0
   let px = null, py = null, pTrip = null;
-  let activeCount = 0;
+  let activeCount = 0;       // dots currently drawn (viewport)
+  let activeTotal = 0;       // trips running, on screen or not
+  const modeTotals = [0, 0, 0, 0];
   let view = { w: 0, h: 0, screenShapes: [] };
   let needsProjection = false;
   let last = 0;
@@ -125,10 +130,10 @@
 
     // faint rail lines
     octx.lineWidth = 1;
-    for (const { shapeIdx, mode } of railShapes) {
+    for (const { shapeIdx, color } of railShapes) {
       const shape = ss[shapeIdx];
       if (!shape || shape.xy.length < 4) continue;
-      octx.strokeStyle = mode === 0 ? 'rgba(245,196,81,.34)' : 'rgba(239,111,108,.28)';
+      octx.strokeStyle = color + '55';
       octx.beginPath();
       for (let p = 0; p < shape.xy.length; p += 2) {
         const X = shape.xy[p], Y = shape.xy[p + 1];
@@ -137,38 +142,77 @@
       octx.stroke();
     }
 
-    // dots
+    // dots: count every running trip, draw only the ones on screen
     activeCount = 0;
+    activeTotal = 0;
+    modeTotals[0] = modeTotals[1] = modeTotals[2] = modeTotals[3] = 0;
     const t = state.t;
     for (let i = 0; i < tripCount; i++) {
       const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
       if (t < t0 || t > t1) continue;
       const mode = modeOfTrip[i];
       if (!state.modes[MODES[mode]]) continue;
+      activeTotal++;
+      modeTotals[mode]++;
       const shape = ss[trips[i * 4]];
       if (!shape || shape.len === 0) continue;
       const [X, Y] = pointAtScreen(shape, (t - t0) / (t1 - t0));
       if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
-      if (activeCount >= px.length) break;
+      if (activeCount >= px.length) continue;
       px[activeCount] = X; py[activeCount] = Y; pTrip[activeCount] = i;
       activeCount++;
     }
 
-    for (const mode of MODES) {
+    // soft additive halo behind the dots (cheap glow: no canvas shadows)
+    octx.globalCompositeOperation = 'lighter';
+    for (let si = 0; si < slotColors.length; si++) {
+      const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
-      octx.fillStyle = MODE_COLOR[mode];
-      octx.globalAlpha = mode === 'bus' ? 0.85 : 1;
-      const r = MODE_RADIUS[mode];
-      const mi = MODES.indexOf(mode);
+      octx.fillStyle = slotColors[si];
+      octx.globalAlpha = mode === 'bus' ? 0.055 : 0.13;
+      const glowR = MODE_RADIUS[mode] * 2.7;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
-        if (modeOfTrip[pTrip[k]] !== mi) continue;
+        if (slotOfTrip[pTrip[k]] !== si) continue;
+        octx.moveTo(px[k] + glowR, py[k]);
+        octx.arc(px[k], py[k], glowR, 0, Math.PI * 2);
+      }
+      octx.fill();
+    }
+    octx.globalCompositeOperation = 'source-over';
+    octx.globalAlpha = 1;
+
+    for (let si = 0; si < slotColors.length; si++) {
+      const mode = MODES[slotMode[si]];
+      if (!state.modes[mode]) continue;
+      octx.fillStyle = slotColors[si];
+      octx.globalAlpha = mode === 'bus' ? 0.85 : 1;
+      const r = MODE_RADIUS[mode];
+      octx.beginPath();
+      for (let k = 0; k < activeCount; k++) {
+        if (slotOfTrip[pTrip[k]] !== si) continue;
         octx.moveTo(px[k] + r, py[k]);
         octx.arc(px[k], py[k], r, 0, Math.PI * 2);
       }
       octx.fill();
     }
     octx.globalAlpha = 1;
+
+    // thin rim on rail dots so Line 6 grey and Line 4 magenta read on the map
+    octx.lineWidth = 0.8;
+    octx.strokeStyle = 'rgba(255,255,255,.30)';
+    for (let si = 0; si < slotColors.length; si++) {
+      const mode = MODES[slotMode[si]];
+      if (mode === 'bus' || !state.modes[mode]) continue;
+      const r = MODE_RADIUS[mode] + 0.3;
+      octx.beginPath();
+      for (let k = 0; k < activeCount; k++) {
+        if (slotOfTrip[pTrip[k]] !== si) continue;
+        octx.moveTo(px[k] + r, py[k]);
+        octx.arc(px[k], py[k], r, 0, Math.PI * 2);
+      }
+      octx.stroke();
+    }
 
     if (state.hover != null && state.hover < activeCount) {
       const k = state.hover;
@@ -253,12 +297,11 @@
 
   function updateUI() {
     $('clock').textContent = fmt(state.t);
-    const counts = { subway: 0, streetcar: 0, bus: 0 };
-    for (let k = 0; k < activeCount; k++) counts[MODES[modeOfTrip[pTrip[k]]]]++;
-    $('n-subway').textContent = counts.subway;
-    $('n-streetcar').textContent = counts.streetcar;
-    $('n-bus').textContent = counts.bus;
-    $('s-active').textContent = activeCount.toLocaleString();
+    $('n-subway').textContent = modeTotals[0];
+    $('n-lrt').textContent = modeTotals[1];
+    $('n-streetcar').textContent = modeTotals[2];
+    $('n-bus').textContent = modeTotals[3];
+    $('s-active').textContent = activeTotal.toLocaleString();
     $('s-started').textContent = startedBefore(state.t).toLocaleString();
     $('scrub').value = Math.round(state.t);
   }
@@ -313,7 +356,7 @@
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
-      tip.innerHTML = `<div class="m">${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
@@ -348,7 +391,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108b');
+    const res = await fetch('data.json?v=20261108c');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -360,27 +403,45 @@
     trips = new Int32Array(tripCount * 4);
     modeOfTrip = new Uint8Array(tripCount);
     const starts = new Int32Array(tripCount);
+    const colorToSlot = new Map();
+    const slotFor = (hex, modeIdx) => {
+      let slot = colorToSlot.get(hex);
+      if (slot === undefined) {
+        slot = slotColors.length;
+        colorToSlot.set(hex, slot);
+        slotColors.push(hex);
+        slotMode.push(modeIdx);
+      }
+      return slot;
+    };
+
+    slotOfTrip = new Uint8Array(tripCount);
     for (let i = 0; i < tripCount; i++) {
       const [shape, t0, t1, rid] = D.trips[i];
       trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1;
       trips[i * 4 + 3] = routePtr.get(rid) ?? 0;
-      const mode = D.routes[rid]?.m || 'bus';
-      modeOfTrip[i] = MODES.indexOf(mode);
+      const route = D.routes[rid];
+      const mode = route?.m || 'bus';
+      const modeIdx = Math.max(0, MODES.indexOf(mode));
+      const hex = route?.c ? '#' + route.c : MODE_COLOR[MODES[modeIdx]];
+      modeOfTrip[i] = modeIdx;
+      slotOfTrip[i] = slotFor(hex, modeIdx);
       starts[i] = t0;
     }
     startTimes = starts.slice().sort();
 
     px = new Float32Array(6000); py = new Float32Array(6000); pTrip = new Int32Array(6000);
 
+    const BUS = MODES.indexOf('bus');
     const seenShape = new Set();
     for (let i = 0; i < tripCount; i++) {
-      const mode = modeOfTrip[i];
-      if (mode === 2) continue;
+      if (modeOfTrip[i] === BUS) continue;
       const shapeIdx = trips[i * 4];
-      const key = shapeIdx + ':' + mode;
+      const slot = slotOfTrip[i];
+      const key = shapeIdx + ':' + slot;
       if (seenShape.has(key)) continue;
       seenShape.add(key);
-      railShapes.push({ shapeIdx, mode });
+      railShapes.push({ shapeIdx, color: slotColors[slot] });
     }
 
     let bestB = 0, bestV = 0;

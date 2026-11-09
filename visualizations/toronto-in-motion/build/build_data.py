@@ -21,6 +21,17 @@ DOW = "wednesday"
 
 MODE_NAMES = {0: "streetcar", 1: "subway", 2: "rail", 3: "bus"}
 
+# Official TTC line colours (Wikipedia/TTC palette). Lines 5 and 6 are coded
+# as trams in the feed, so classify them as light rail explicitly.
+LINE_STYLE = {
+    "1": ("subway", "f8c302"),
+    "2": ("subway", "16a753"),
+    "4": ("subway", "b32078"),
+    "5": ("lrt", "f87005"),
+    "6": ("lrt", "8a999a"),
+}
+STREETCAR_COLOR = "da251d"
+
 
 GTFS_URL = (
     "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/"
@@ -114,6 +125,11 @@ def main():
             "l": row.get("route_long_name") or "",
             "m": MODE_NAMES.get(rt, "other"),
         }
+    for rid, r in routes.items():
+        if rid in LINE_STYLE:
+            r["m"], r["c"] = LINE_STYLE[rid]
+        elif r["m"] == "streetcar":
+            r["c"] = STREETCAR_COLOR
     print(f"routes: {len(routes)}", file=sys.stderr)
 
     # --- trips for the target service day
@@ -208,7 +224,7 @@ def main():
 
     # --- trip records and histogram
     recs = []
-    hist = {m: [0] * 144 for m in ("streetcar", "subway", "rail", "bus", "other")}
+    hist = {m: [0] * 144 for m in ("streetcar", "subway", "lrt", "bus", "other")}
     for tid, t in trips.items():
         if t["t0"] is None or not t["shape"]:
             continue

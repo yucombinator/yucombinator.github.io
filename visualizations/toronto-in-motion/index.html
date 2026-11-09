@@ -59,6 +59,8 @@
   .legend button{background:none;border:0;padding:2px 0;display:flex;align-items:center;gap:6px;color:#b9cccf;font-size:11.5px}
   .legend button[aria-pressed="false"]{opacity:.35}
   .legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .legend .swatches{display:inline-flex;gap:2px}
+  .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
   .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
   .controls{display:flex;align-items:center;gap:10px}
   .play{width:34px;height:34px;border-radius:50%;border:1px solid #3f6b5f;background:rgba(110,231,183,.05);color:#a5e6cf;display:grid;place-items:center;padding:0}
@@ -82,7 +84,8 @@
   .src-sep{color:#41545a;font-size:10px}
 
   #tip{position:absolute;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
-  #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1}
+  #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
+  #tip .cd{width:6px;height:6px;border-radius:50%;display:inline-block}
   #tip strong{display:block;margin-top:4px;font-weight:500;color:#e2efea}
   #tip small{display:block;margin-top:3px;color:#7f9ba1;font-size:10px}
 
@@ -135,9 +138,10 @@
   <section class="panel">
     <div class="row">
       <div class="legend" id="legend">
-        <button data-mode="subway" aria-pressed="true"><span class="dot" style="background:var(--subway)"></span>Subway<span class="n" id="n-subway">0</span></button>
-        <button data-mode="streetcar" aria-pressed="true"><span class="dot" style="background:var(--streetcar)"></span>Streetcar &amp; LRT<span class="n" id="n-streetcar">0</span></button>
-        <button data-mode="bus" aria-pressed="true"><span class="dot" style="background:var(--bus)"></span>Bus<span class="n" id="n-bus">0</span></button>
+        <button data-mode="subway" aria-pressed="true" title="Line 1, Line 2, Line 4"><span class="swatches"><i style="background:#f8c302"></i><i style="background:#16a753"></i><i style="background:#b32078"></i></span>Subway<span class="n" id="n-subway">0</span></button>
+        <button data-mode="lrt" aria-pressed="true" title="Line 5 Eglinton, Line 6 Finch West"><span class="swatches"><i style="background:#f87005"></i><i style="background:#8a999a"></i></span>LRT<span class="n" id="n-lrt">0</span></button>
+        <button data-mode="streetcar" aria-pressed="true"><span class="dot" style="background:#da251d"></span>Streetcar<span class="n" id="n-streetcar">0</span></button>
+        <button data-mode="bus" aria-pressed="true"><span class="dot" style="background:#5aa9e6"></span>Bus<span class="n" id="n-bus">0</span></button>
       </div>
       <div class="controls">
         <button class="play" id="playBtn" aria-label="Pause">
@@ -178,13 +182,13 @@
     <h2>Toronto in Motion</h2>
     <p>Every scheduled TTC trip for a regular Wednesday — 40,001 of them — animated as a dot moving along its route. Subways, streetcars and light rail, and buses, with a 24-hour scrubber.</p>
     <p><strong>This is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
-    <p>Data: <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">TTC Routes and Schedules</a> (GTFS, October 2026 extract), used under the City of Toronto Open Data Licence. Line 5 Eglinton and Line 6 Finch West are grouped with streetcars because that is how they are coded in the feed.</p>
+    <p>Data: <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">TTC Routes and Schedules</a> (GTFS, October 2026 extract), used under the City of Toronto Open Data Licence. Dots use the TTC's own line colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Lines 5 and 6 are coded as trams in the feed but are classified as LRT here.</p>
     <p>Basemap: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, built from OpenStreetMap data. You can drag and zoom the map; the dots are reprojected to follow it.</p>
     <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108b"></script>
+<script src="app.js?v=20261108c"></script>
 </body>
 </html>
