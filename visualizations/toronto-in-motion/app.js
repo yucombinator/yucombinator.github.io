@@ -363,7 +363,9 @@
       for (let si = 0; si < slotColors.length; si++) {
         const mode = MODES[slotMode[si]];
         if (!state.modes[mode]) continue;
-        const r = MODE_RADIUS[mode] * zf * 1.55;
+        // buses are the smallest arrows at rest; give them a bigger boost
+        // on the selection so they read as clearly as rail
+        const r = MODE_RADIUS[mode] * zf * (isBus(mode) ? 2.5 : 1.55);
         const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
         const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
         octx.beginPath();
@@ -608,7 +610,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109c`);
+        const res = await fetch(`data-${key}.json?v=20261109d`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -734,7 +736,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109c`);
+        const res = await fetch(`stops-${feed}.json?v=20261109d`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1051,7 +1053,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109c');
+    const res = await fetch('data.json?v=20261109d');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
