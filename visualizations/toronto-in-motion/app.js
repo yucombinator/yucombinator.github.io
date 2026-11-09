@@ -351,24 +351,20 @@
         octx.stroke();
         octx.setLineDash([]);
       }
-      if (zc >= 11.5) {
-        octx.font = '600 9px system-ui, sans-serif';
-        octx.fillStyle = 'rgba(232,242,238,.55)';
-        octx.textBaseline = 'middle';
-        for (const g of corridors) {
-          if (!g.label) continue;
-          octx.fillText(g.name.toUpperCase(), g.label.x * aff.sx + aff.ox + 7,
-                        g.label.y * aff.sy + aff.oy + 7);
-        }
-      }
       octx.restore();
     }
+
+    const z = mapObj ? mapObj.getZoom() : fitZoom;
+    const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
+    const selMode = selected >= 0 ? MODES[routeMode[selected]] : '';
+    const selIsRail = selMode === 'subway' || selMode === 'lrt'
+      || selMode === 'gorail' || selMode === 'up';
 
     if (selected >= 0) {
       const col = slotColors[routeSlot[selected]];
       octx.save();
       octx.strokeStyle = col;
-      octx.lineWidth = 1.7;
+      octx.lineWidth = selIsRail ? Math.min(7, 3.6 * zf) : 1.7;
       octx.globalAlpha = 0.9;
       octx.lineJoin = 'round';
       for (let i = 0; i < ss.length; i++) {
@@ -385,9 +381,6 @@
       }
       octx.restore();
     }
-
-    const z = mapObj ? mapObj.getZoom() : fitZoom;
-    const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
 
     // soft additive halo behind the dots (cheap glow: no canvas shadows).
     // At region zoom the bus haze is both slow and unreadable, so skip it.
@@ -525,28 +518,71 @@
 
     if (selected >= 0 && selStops) {
       const col = slotColors[routeSlot[selected]];
+      const meta = D.routes[routeIds[selected]] || {};
+      const n = selStops.n;
+      const sx = (i) => selStops.x[i] * aff.sx + aff.ox;
+      const sy = (i) => selStops.y[i] * aff.sy + aff.oy;
       octx.globalAlpha = 1;
-      octx.fillStyle = '#0b141b';
-      octx.strokeStyle = col;
-      octx.lineWidth = 1.6;
-      octx.beginPath();
-      for (let i = 0; i < selStops.n; i++) {
-        const X = selStops.x[i] * aff.sx + aff.ox;
-        const Y = selStops.y[i] * aff.sy + aff.oy;
-        octx.moveTo(X + 3.1, Y);
-        octx.arc(X, Y, 3.1, 0, Math.PI * 2);
-      }
-      octx.fill();
-      octx.stroke();
-      const zl = mapObj ? mapObj.getZoom() : fitZoom;
-      if (zl >= 13) {
-        octx.fillStyle = 'rgba(224,238,233,.9)';
-        octx.font = '10px system-ui, sans-serif';
-        octx.textBaseline = 'middle';
-        for (let i = 0; i < selStops.n; i++) {
-          const X = selStops.x[i] * aff.sx + aff.ox;
-          const Y = selStops.y[i] * aff.sy + aff.oy;
-          octx.fillText(selStops.name[i], X + 6, Y);
+
+      if (selIsRail) {
+        // TTC official-map station treatment: white discs with a dark edge on
+        // a heavier line, bigger at the terminals, plus route-number badges
+        const sr = 2.5 + zf * 1.2;
+        octx.fillStyle = '#ffffff';
+        octx.strokeStyle = '#0d1319';
+        octx.lineWidth = 1.6;
+        octx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const r = (i === 0 || i === n - 1) ? sr * 1.35 : sr;
+          octx.moveTo(sx(i) + r, sy(i));
+          octx.arc(sx(i), sy(i), r, 0, Math.PI * 2);
+        }
+        octx.fill();
+        octx.stroke();
+
+        const badge = meta.s;
+        if (badge && n >= 2) {
+          const drawBadge = (i, fromI) => {
+            let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
+            const len = Math.hypot(dx, dy) || 1;
+            dx /= len; dy /= len;
+            const br = sr * 2;
+            const bx = sx(i) + dx * sr * 3.2;
+            const by = sy(i) + dy * sr * 3.2;
+            octx.beginPath();
+            octx.arc(bx, by, br, 0, Math.PI * 2);
+            octx.fillStyle = col;
+            octx.fill();
+            octx.strokeStyle = '#ffffff';
+            octx.lineWidth = 1.5;
+            octx.stroke();
+            octx.fillStyle = '#ffffff';
+            octx.font = `700 ${Math.max(9, Math.round(br * 1.05))}px system-ui, sans-serif`;
+            octx.textAlign = 'center';
+            octx.textBaseline = 'middle';
+            octx.fillText(badge, bx, by + 0.5);
+            octx.textAlign = 'start';
+          };
+          drawBadge(0, 1);
+          drawBadge(n - 1, n - 2);
+        }
+      } else {
+        octx.fillStyle = '#0b141b';
+        octx.strokeStyle = col;
+        octx.lineWidth = 1.6;
+        octx.beginPath();
+        for (let i = 0; i < n; i++) {
+          octx.moveTo(sx(i) + 3.1, sy(i));
+          octx.arc(sx(i), sy(i), 3.1, 0, Math.PI * 2);
+        }
+        octx.fill();
+        octx.stroke();
+        const zl = mapObj ? mapObj.getZoom() : fitZoom;
+        if (zl >= 13) {
+          octx.fillStyle = 'rgba(224,238,233,.9)';
+          octx.font = '10px system-ui, sans-serif';
+          octx.textBaseline = 'middle';
+          for (let i = 0; i < n; i++) octx.fillText(selStops.name[i], sx(i) + 6, sy(i));
         }
       }
     }
@@ -688,7 +724,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109h`);
+        const res = await fetch(`data-${key}.json?v=20261109j`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -752,24 +788,12 @@
         }
         return xy;
       });
-      let best = null, bestLen = 0;
-      for (const xy of g.screen) {
-        let len = 0;
-        for (let i = 2; i < xy.length; i += 2) {
-          len += Math.hypot(xy[i] - xy[i - 2], xy[i + 1] - xy[i - 1]);
-        }
-        if (len > bestLen) { bestLen = len; best = xy; }
-      }
-      if (best && best.length >= 4) {
-        const mid = ((best.length >> 1) >> 1) * 2;
-        g.label = { x: best[mid], y: best[mid + 1] };
-      }
     }
   }
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109h');
+      const res = await fetch('busways.json?v=20261109j');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -809,15 +833,22 @@
       const shape = trips[i * 4];
       m.set(shape, (m.get(shape) || 0) + 1);
     }
-    let peakHour = 0;
-    for (let h = 1; h < 24; h++) if (hours[h] > hours[peakHour]) peakHour = h;
+    let peakHour = -1, peakCount = 0;
+    for (let h = 5; h <= 23; h++) {
+      if (hours[h] > peakCount) { peakCount = hours[h]; peakHour = h; }
+    }
+    if (peakHour < 0) {
+      for (let h = 0; h < 24; h++) {
+        if (hours[h] > peakCount) { peakCount = hours[h]; peakHour = h; }
+      }
+    }
     let busiest = 0;
     for (const count of byShape[peakHour].values()) if (count > busiest) busiest = count;
     return {
       trips: tripsN,
       first: tripsN ? first % DAY : 0,
       last: tripsN ? last % DAY : 0,
-      peak: hours[peakHour],
+      peak: peakCount,
       peakHour,
       headway: busiest ? 60 / busiest : 0,
     };
@@ -872,7 +903,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109h`);
+        const res = await fetch(`stops-${feed}.json?v=20261109j`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -1078,11 +1109,12 @@
       btn.setAttribute('aria-pressed', String(!on));
       btn.setAttribute('aria-label', on ? 'Pause' : 'Play');
     }
+    updateSpeedButtons();
   }
 
   function updateSpeedButtons() {
     document.querySelectorAll('#speed button[data-speed]').forEach((b) => {
-      b.setAttribute('aria-pressed', String(+b.dataset.speed === state.speed));
+      b.setAttribute('aria-pressed', String(state.playing && +b.dataset.speed === state.speed));
     });
   }
 
@@ -1140,7 +1172,6 @@
     });
 
     mapEl.addEventListener('pointermove', (e) => {
-      if (!activeCount) return;
       const r = overlay.getBoundingClientRect();
       const mx = e.clientX - r.left, my = e.clientY - r.top;
       let best = -1, bestD = 49;
@@ -1148,9 +1179,32 @@
         const d = (px[k] - mx) ** 2 + (py[k] - my) ** 2;
         if (d < bestD) { bestD = d; best = k; }
       }
+      const tip = $('tip');
+
+      if (best < 0 && corridors) {
+        const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
+        let hitName = null, hitD = 8;
+        for (const g of corridors) {
+          if (!g.screen) continue;
+          for (const xy of g.screen) {
+            const d = distToPolyline(xy, bx, by);
+            if (d < hitD) { hitD = d; hitName = g.name; }
+          }
+        }
+        if (hitName) {
+          state.hover = null;
+          state.dirty = true;
+          tip.innerHTML = `<div class="m">Busway</div><strong>${esc(hitName)}</strong>`;
+          tip.style.display = 'block';
+          const tw = tip.offsetWidth, th = tip.offsetHeight;
+          tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
+          tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
+          return;
+        }
+      }
+
       state.hover = best >= 0 ? best : null;
       state.dirty = true;
-      const tip = $('tip');
       if (best < 0) { tip.style.display = 'none'; return; }
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
@@ -1190,7 +1244,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109h');
+    const res = await fetch('data.json?v=20261109j');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
