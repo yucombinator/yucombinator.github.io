@@ -71,6 +71,15 @@ jobs:
               print(f"{name}: {n} trips")
               if n < 15000:
                   sys.exit(f"{name} trips collapsed to {n}")
+
+          # stops payloads back the click-a-route panel; a feed that silently
+          # produced no stops must not ship.
+          stops = json.load(open(base + "stops-ttc.json"))
+          routes_with_stops = len(stops.get("r") or {})
+          print(f"stops-ttc: {routes_with_stops} routes, "
+                f"{len(stops.get('s') or [])} stops")
+          if routes_with_stops < 100:
+              sys.exit(f"stops payload shrank to {routes_with_stops} routes")
           PY
 
       - name: Commit if the snapshot changed
