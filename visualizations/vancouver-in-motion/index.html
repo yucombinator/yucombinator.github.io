@@ -255,7 +255,7 @@
         <button data-mode="subway" aria-pressed="true" title="SkyTrain — Expo, Millennium and Canada lines"><span class="swatches"><i style="background:#0033a0"></i><i style="background:#ffcd00"></i><i style="background:#007c9f"></i></span>SkyTrain<span class="n" id="n-subway">0</span></button>
         <button data-mode="gorail" aria-pressed="true" title="West Coast Express"><span class="dot" style="background:#87189d"></span>West Coast Express<span class="n" id="n-gorail">0</span></button>
         <button data-mode="localbus" aria-pressed="true" title="TransLink and BC Transit buses" aria-describedby="busTip"><span class="mode-tip" role="tooltip" id="busTip"><span><i style="background:#0072bc"></i>TransLink bus</span><span><i style="background:#008522"></i>RapidBus R1–R6</span><span><i style="background:#d04110"></i>B-Line 99</span><span><i style="background:#c96a2a"></i>BC Transit <em>Fraser Valley</em></span><span><i style="background:#2e9e6b"></i>BC Transit <em>Squamish</em></span><span><i style="background:#7b4fd0"></i>BC Transit <em>Whistler</em></span><span><i style="background:#b0873a"></i>BC Transit <em>Pemberton</em></span><span><i style="background:#1f8a9e"></i>BC Transit <em>Sunshine Coast</em></span></span><span class="swatches"><i style="background:#0072bc"></i><i style="background:#008522"></i><i style="background:#d04110"></i><i style="background:#c96a2a"></i></span>Bus<span class="n" id="n-localbus">0</span></button>
-        <button data-mode="ferry" aria-pressed="true" title="SeaBus, BC Ferries and Aquabus" aria-describedby="ferryTip"><span class="dot" style="background:#746661"></span>Ferry<span class="n" id="n-ferry">0</span><span class="mode-tip" role="tooltip" id="ferryTip"><span><i style="background:#746661"></i>SeaBus</span><span><i style="background:#1b4f8f"></i>BC Ferries <em>mainland routes</em></span><span><i style="background:#e5a50a"></i>Aquabus <em>False Creek</em></span><span><i style="background:#ff6a3d"></i>Hullo <em>Nanaimo fast ferry</em></span></span></button>
+        <button data-mode="ferry" aria-pressed="true" title="SeaBus, BC Ferries and Aquabus" aria-describedby="ferryTip"><span class="dot" style="background:#746661"></span>Ferry<span class="n" id="n-ferry">0</span><span class="mode-tip" role="tooltip" id="ferryTip"><span><i style="background:#746661"></i>SeaBus</span><span><i style="background:#1b4f8f"></i>BC Ferries <em>mainland routes</em></span><span><i style="background:#e5a50a"></i>Aquabus <em>False Creek</em></span><span><i style="background:#ff6a3d"></i>Hullo <em>Nanaimo fast ferry</em></span><span><i style="background:#2b6cb0"></i>False Creek Ferries <em>approximate</em></span></span></button>
       </div>
       <div class="controls">
         <div class="days" id="days" role="group" aria-label="Service day">
@@ -291,7 +291,7 @@
       <span class="src-wrap">
         <span class="src-note" id="updated"></span>
         <span class="src-sep">·</span>
-        <button class="src linkish" type="button" data-sources>Data: TransLink, BC Transit, BC Ferries, Aquabus &amp; Hullo GTFS</button>
+        <button class="src linkish" type="button" data-sources>Data: TransLink, BC Transit, BC Ferries, Aquabus, Hullo &amp; False Creek Ferries</button>
         <span class="src-sep">·</span>
         <a class="src" href="https://openfreemap.org/" target="_blank" rel="noopener">Basemap © OpenFreeMap / OpenStreetMap</a>
         <span class="src-sep">·</span>
@@ -314,9 +314,9 @@
   <dialog id="about" aria-labelledby="aboutTitle">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2 id="aboutTitle">Vancouver in Motion</h2>
-    <p>Every scheduled trip on Metro Vancouver's TransLink network — SkyTrain, SeaBus, West Coast Express and the bus system — plus the nearby BC Transit systems in the Fraser Valley, Sea-to-Sky and Sunshine Coast, BC Ferries' mainland routes, the False Creek Aquabus and the Hullo fast ferry to Nanaimo, drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>Every scheduled trip on Metro Vancouver's TransLink network — SkyTrain, SeaBus, West Coast Express and the bus system — plus the nearby BC Transit systems in the Fraser Valley, Sea-to-Sky and Sunshine Coast, BC Ferries' mainland routes, the False Creek Aquabus, False Creek Ferries and the Hullo fast ferry to Nanaimo, drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
     <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
-    <p>Data: TransLink's and BC Transit's published GTFS feeds under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. SkyTrain, SeaBus and West Coast Express use their line colours; RapidBus and B-Line keep their brand colours; other buses, the BC Transit systems, BC Ferries and Aquabus are coloured for legibility. Ferry headways come from each operator's GTFS frequencies. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Data: TransLink's and BC Transit's published GTFS feeds under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. SkyTrain, SeaBus and West Coast Express use their line colours; RapidBus and B-Line keep their brand colours; other buses, the BC Transit systems, BC Ferries and Aquabus are coloured for legibility. Ferry headways come from each operator's GTFS frequencies; False Creek Ferries' timetable is approximated from its published docks and headways. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 
@@ -333,12 +333,13 @@
       <li>BC Ferries — Tsawwassen and Horseshoe Bay routes</li>
       <li>Aquabus — False Creek ferries</li>
       <li>Hullo — downtown Vancouver to Nanaimo</li>
+      <li>False Creek Ferries — approximate timetable from published docks</li>
     </ul>
     <p class="srclist-note">GTFS feeds are used under each operator's open data licence.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109o"></script>
+<script src="app.js?v=20261109p"></script>
 </body>
 </html>
