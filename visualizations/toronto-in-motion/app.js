@@ -1481,8 +1481,7 @@
       btn.addEventListener('click', () => {
         const city = btn.dataset.city;
         if (!city || city === current) { close(true); return; }
-        location.href = city === 'toronto'
-          ? '../toronto-in-motion/' : '../vancouver-in-motion/';
+        location.href = '../' + city + '-in-motion/';
       });
       btn.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }

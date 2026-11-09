@@ -232,7 +232,7 @@
     <div class="brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3.2 3.2 L10.6 20.4 L19 2.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M14.1 5.4 L19 2.2 L19.6 8.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg> <span class="city-wrap" data-current="vancouver"><button class="city-btn" id="cityBtn" aria-haspopup="menu" aria-expanded="false">Vancouver<svg class="city-caret" viewBox="0 0 8 5" aria-hidden="true"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><span class="city-menu" id="cityMenu" role="menu" aria-label="Choose a city" hidden><button type="button" role="menuitemradio" aria-checked="true" data-city="vancouver">Vancouver</button><button type="button" role="menuitemradio" aria-checked="false" data-city="toronto">Toronto</button></span></span> in Motion</div>
+      </svg> <span class="city-wrap" data-current="vancouver"><button class="city-btn" id="cityBtn" aria-haspopup="menu" aria-expanded="false">Vancouver<svg class="city-caret" viewBox="0 0 8 5" aria-hidden="true"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><span class="city-menu" id="cityMenu" role="menu" aria-label="Choose a city" hidden><button type="button" role="menuitemradio" aria-checked="true" data-city="vancouver">Vancouver</button><button type="button" role="menuitemradio" aria-checked="false" data-city="toronto">Toronto</button><button type="button" role="menuitemradio" aria-checked="false" data-city="seattle">Seattle</button></span></span> in Motion</div>
     <div class="hright">
       <button class="about-btn" id="aboutBtn">About</button>
     </div>
@@ -317,6 +317,7 @@
     <p>Every scheduled trip on Metro Vancouver's TransLink network — SkyTrain, SeaBus, West Coast Express and the bus system — plus the nearby BC Transit systems in the Fraser Valley, Sea-to-Sky and Sunshine Coast, BC Ferries' mainland routes, the False Creek Aquabus, False Creek Ferries and the Hullo fast ferry to Nanaimo, drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
     <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
     <p>Data: TransLink's and BC Transit's published GTFS feeds under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. SkyTrain, SeaBus and West Coast Express use their line colours; RapidBus and B-Line keep their brand colours; other buses, the BC Transit systems, BC Ferries and Aquabus are coloured for legibility. Ferry headways come from each operator's GTFS frequencies; False Creek Ferries' timetable is approximated from its published docks and headways. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Open source: the code behind this series lives in the <a href="https://github.com/yucombinator/yucombinator.github.io/tree/main/visualizations" target="_blank" rel="noopener">visualizations folder on GitHub</a>.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 
@@ -340,6 +341,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109p"></script>
+<script src="app.js?v=20261109q"></script>
 </body>
 </html>
