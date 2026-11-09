@@ -139,6 +139,13 @@
     .panel.collapsed .days{display:none}
     .panel.collapsed .row{justify-content:flex-end;gap:8px}
   }
+  @media (min-width:681px){
+    .panel{left:50%;right:auto;transform:translateX(-50%);width:min(1180px,calc(100% - 40px))}
+    .legend{gap:11px}
+    .legend button{font-size:11px;gap:5px}
+    .legend .n{min-width:22px;font-size:10px}
+    .legend .swatches i{width:4px;height:7px}
+  }
   #tip{position:absolute;z-index:6;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
   #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
   #tip .cd{width:6px;height:6px;border-radius:50%;display:inline-block}
@@ -280,6 +287,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109n"></script>
+<script src="app.js?v=20261109o"></script>
 </body>
 </html>
