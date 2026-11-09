@@ -600,7 +600,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108u`);
+        const res = await fetch(`data-${key}.json?v=20261108v`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -717,7 +717,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261108u`);
+        const res = await fetch(`stops-${feed}.json?v=20261108v`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -913,10 +913,18 @@
   function setPlaying(on) {
     state.playing = on;
     state.dirty = true;
-    $('playBtn').setAttribute('aria-label', on ? 'Pause' : 'Play');
-    $('playIcon').innerHTML = on
-      ? '<rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/>'
-      : '<path d="M4 2.5v11l9-5.5z"/>';
+    const btn = document.querySelector('#speed button[data-play]');
+    if (btn) {
+      // pressed = paused, so the bar itself carries the state
+      btn.setAttribute('aria-pressed', String(!on));
+      btn.setAttribute('aria-label', on ? 'Pause' : 'Play');
+    }
+  }
+
+  function updateSpeedButtons() {
+    document.querySelectorAll('#speed button[data-speed]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(+b.dataset.speed === state.speed));
+    });
   }
 
   function seek(t) {
@@ -930,7 +938,6 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function wire() {
-    $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
 
     let down = null;
     mapEl.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
@@ -950,12 +957,15 @@
       activateDay(btn.dataset.day);
     });
     $('speed').addEventListener('click', (e) => {
+      if (e.target.closest('button[data-play]')) {
+        setPlaying(!state.playing);
+        return;
+      }
       const btn = e.target.closest('button[data-speed]');
       if (!btn) return;
       state.speed = +btn.dataset.speed;
-      document.querySelectorAll('#speed button').forEach((b) => {
-        b.setAttribute('aria-pressed', String(b === btn));
-      });
+      updateSpeedButtons();
+      if (!state.playing) setPlaying(true);
     });
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
 
@@ -1020,7 +1030,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108u');
+    const res = await fetch('data.json?v=20261108v');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

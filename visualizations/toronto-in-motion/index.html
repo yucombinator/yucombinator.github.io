@@ -72,6 +72,12 @@
   .speeds{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
   .speeds button{background:none;border:0;color:#8fa6ab;padding:5px 7px;border-radius:3px;display:flex;align-items:center}
   .speeds button svg{height:10px;width:auto;fill:currentColor;display:block}
+  .speeds .pp{color:#a5e6cf;padding:5px 9px}
+  .speeds .pp svg{height:11px}
+  .speeds .pp .ic-play{display:none}
+  .speeds .pp[aria-pressed="true"] .ic-pause{display:none}
+  .speeds .pp[aria-pressed="true"] .ic-play{display:block}
+  .speed-sep{width:1px;background:#27404a;align-self:stretch;margin:2px 1px}
   .speeds button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
   .speeds button:hover{color:#d6ece4}
   .live{display:flex;align-items:center;gap:5px;background:rgba(255,92,92,.08);border:1px solid #6a3b3b;color:#ffb4b4;font-size:10.5px;letter-spacing:.4px;padding:6px 9px;border-radius:5px}
@@ -81,9 +87,6 @@
   .live[aria-pressed="true"] .live-dot{background:#ff3b3b;animation:livepulse 1.6s infinite}
   @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.45)}70%{box-shadow:0 0 0 7px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
   #liveNote{color:#ff9f9f}
-  .play{width:34px;height:34px;border-radius:50%;border:1px solid #3f6b5f;background:rgba(110,231,183,.05);color:#a5e6cf;display:grid;place-items:center;padding:0}
-  .play:hover{background:rgba(110,231,183,.14)}
-  .play svg{width:15px;height:15px;fill:currentColor}
   select{background:#0c1a22;border:1px solid #27404a;border-radius:5px;color:#a9bfc4;font-size:10.5px;padding:6px 7px}
   .chartwrap{position:relative;height:52px;margin-top:8px}
   .chartwrap canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -184,14 +187,15 @@
           <button data-day="saturday" aria-pressed="false">Sat</button>
           <button data-day="sunday" aria-pressed="false">Sun</button>
         </div>
-        <button class="play" id="playBtn" aria-label="Pause">
-          <svg id="playIcon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
-        </button>
-        <div class="speeds" id="speed" role="group" aria-label="Playback speed">
+        <div class="speeds" id="speed" role="group" aria-label="Playback">
+          <button class="pp" data-play="toggle" aria-pressed="false" aria-label="Pause">
+            <svg class="ic-pause" viewBox="0 0 9 10" aria-hidden="true"><rect x="1" y="0" width="2.4" height="10" rx="1"/><rect x="5.6" y="0" width="2.4" height="10" rx="1"/></svg>
+            <svg class="ic-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0L8 5L0 10Z"/></svg>
+          </button>
+          <span class="speed-sep" aria-hidden="true"></span>
           <button data-speed="60" aria-pressed="false" aria-label="1× speed" title="1× · 24h in 24 min"><svg viewBox="0 0 6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/></svg></button>
           <button data-speed="120" aria-pressed="true" aria-label="2× speed" title="2× · 24h in 12 min"><svg viewBox="0 0 14.2 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/></svg></button>
           <button data-speed="300" aria-pressed="false" aria-label="5× speed" title="5× · 24h in 5 min"><svg viewBox="0 0 22.4 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/></svg></button>
-          <button data-speed="720" aria-pressed="false" aria-label="12× speed" title="12× · 24h in 2 min"><svg viewBox="0 0 30.6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/><path d="M24.6 0L30.6 4.5L24.6 9Z"/></svg></button>
         </div>
       </div>
     </div>
@@ -239,6 +243,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108u"></script>
+<script src="app.js?v=20261108v"></script>
 </body>
 </html>
