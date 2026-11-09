@@ -758,17 +758,19 @@
     const rise = curSun ? curSun[0] : 7 * 3600;
     const set = curSun ? curSun[1] : 18 * 3600;
     const X = (sec) => (sec / DAY) * w;
-    const bands = [
-      [0, rise, 'rgba(58,88,148,.20)'],
-      [rise, 12 * 3600, 'rgba(245,194,107,.07)'],
-      [12 * 3600, set, 'rgba(245,194,107,.16)'],
-      [set, DAY, 'rgba(146,88,166,.16)'],
-    ];
-    for (const [a, b, color] of bands) {
-      if (b <= a) continue;
-      chartCtx.fillStyle = color;
-      chartCtx.fillRect(X(a), 0, X(b) - X(a), h);
-    }
+    const F = (sec) => Math.max(0, Math.min(1, sec / DAY));
+    const blend = 35 * 60;   // fade width around each boundary
+    const bg = chartCtx.createLinearGradient(0, 0, w, 0);
+    bg.addColorStop(0, 'rgba(58,88,148,.20)');
+    bg.addColorStop(F(rise - blend), 'rgba(58,88,148,.20)');
+    bg.addColorStop(F(rise + blend), 'rgba(245,194,107,.07)');
+    bg.addColorStop(F(12 * 3600 - blend), 'rgba(245,194,107,.07)');
+    bg.addColorStop(F(12 * 3600 + blend), 'rgba(245,194,107,.16)');
+    bg.addColorStop(F(set - blend), 'rgba(245,194,107,.16)');
+    bg.addColorStop(F(set + blend), 'rgba(146,88,166,.16)');
+    bg.addColorStop(1, 'rgba(146,88,166,.16)');
+    chartCtx.fillStyle = bg;
+    chartCtx.fillRect(0, 0, w, h);
 
     // reserve a strip at the top so the phase labels never sit on the bars
     const labelH = 13;
@@ -842,7 +844,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109z`);
+        const res = await fetch(`data-${key}.json?v=20261110a`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -913,7 +915,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109z');
+      const res = await fetch('busways.json?v=20261110a');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1038,7 +1040,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109z`);
+        const res = await fetch(`stops-${feed}.json?v=20261110a`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1418,7 +1420,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109z');
+    const res = await fetch('data.json?v=20261110a');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
