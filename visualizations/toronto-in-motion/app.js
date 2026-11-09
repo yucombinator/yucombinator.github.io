@@ -770,6 +770,8 @@
       chartCtx.fillRect(X(a), 0, X(b) - X(a), h);
     }
 
+    // reserve a strip at the top so the phase labels never sit on the bars
+    const labelH = 13;
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
     grad.addColorStop(0, 'rgba(245,194,107,.20)');
@@ -778,7 +780,7 @@
     for (let b = 0; b < buckets; b++) {
       const v = smooth[b];
       if (!v) continue;
-      const bh = Math.max(1, (v / max) * (h - 3));
+      const bh = Math.max(1, (v / max) * (h - labelH - 3));
       chartCtx.fillRect(b * bw + 0.5, h - bh, Math.max(1, bw - 1), bh);
     }
 
@@ -840,7 +842,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109w`);
+        const res = await fetch(`data-${key}.json?v=20261109x`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -911,7 +913,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109w');
+      const res = await fetch('busways.json?v=20261109x');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1036,7 +1038,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109w`);
+        const res = await fetch(`stops-${feed}.json?v=20261109x`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1416,7 +1418,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109w');
+    const res = await fetch('data.json?v=20261109x');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
