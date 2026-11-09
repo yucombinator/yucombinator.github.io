@@ -70,6 +70,7 @@
   let uiAccum = 0;
   let dayCache = {};
   let selected = -1;               // route pointer, -1 = none
+  let selectedActive = 0;          // vehicles running on the selected route
   let selStops = null;             // projected stop positions for the selection
   let shapeRoute = null;           // shape index -> route pointer
   let routeIndexByKey = null;      // "feed:route_id" -> route pointer
@@ -262,6 +263,7 @@
     activeTotal = 0;
     modeTotals.fill(0);
     const t = state.t;
+    selectedActive = 0;
     const hEnd = t / 3600 | 0;
     for (let back = 0, mask = 0; back <= 4; back++) {
       const hh = (hEnd - back + 24) % 24;
@@ -277,6 +279,7 @@
         if (!state.modes[MODES[mode]]) continue;
         activeTotal++;
         modeTotals[mode]++;
+        if (selected >= 0 && trips[i * 4 + 3] === selected) selectedActive++;
         if (state.liveOn && liveRouteSet.has(routeIds[trips[i * 4 + 3]])) continue;
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
@@ -295,8 +298,8 @@
       const col = slotColors[routeSlot[selected]];
       octx.save();
       octx.strokeStyle = col;
-      octx.lineWidth = 2.2;
-      octx.globalAlpha = 0.95;
+      octx.lineWidth = 1.7;
+      octx.globalAlpha = 0.9;
       octx.lineJoin = 'round';
       for (let i = 0; i < ss.length; i++) {
         if (shapeRoute[i] !== selected) continue;
@@ -360,10 +363,9 @@
       for (let si = 0; si < slotColors.length; si++) {
         const mode = MODES[slotMode[si]];
         if (!state.modes[mode]) continue;
-        const r = MODE_RADIUS[mode] * zf;
+        const r = MODE_RADIUS[mode] * zf * 1.55;
         const len = isTrain(mode) ? r * 4.0 : isBus(mode) ? r * 2.4 : r * 2.9;
         const wid = isTrain(mode) ? r * 1.6 : isBus(mode) ? r * 0.9 : r * 1.15;
-        octx.fillStyle = slotColors[si];
         octx.beginPath();
         let any = false;
         for (let k = 0; k < activeCount; k++) {
@@ -372,7 +374,13 @@
           any = true;
           arrowPath(octx, px[k], py[k], pAng[k], len, wid);
         }
-        if (any) octx.fill();
+        if (any) {
+          octx.strokeStyle = '#0a141b';
+          octx.lineWidth = 2.4;
+          octx.stroke();
+          octx.fillStyle = slotColors[si];
+          octx.fill();
+        }
       }
     }
     octx.globalAlpha = 1;
@@ -600,7 +608,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109a`);
+        const res = await fetch(`data-${key}.json?v=20261109c`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -696,6 +704,7 @@
     if (stats.peak) bits.push(`<span><b>${stats.peak}</b> departures in the peak hour</span>`);
     if (stats.trips) bits.push(`<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>`);
     else bits.push('<span>not running today</span>');
+    bits.push('<span id="rNow"></span>');
     $('rStats').innerHTML = bits.join('');
   }
 
@@ -725,7 +734,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109a`);
+        const res = await fetch(`stops-${feed}.json?v=20261109c`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       const entry = doc && doc.r && doc.r[rid];
@@ -915,6 +924,10 @@
     }
     $('s-active').textContent = activeTotal.toLocaleString();
     $('s-started').textContent = startedBefore(state.t).toLocaleString();
+    const rn = $('rNow');
+    if (rn) rn.textContent = selectedActive
+      ? `${selectedActive} running now`
+      : 'no vehicles running at this time';
     $('scrub').value = Math.round(state.t);
   }
 
@@ -1038,7 +1051,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109a');
+    const res = await fetch('data.json?v=20261109c');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
