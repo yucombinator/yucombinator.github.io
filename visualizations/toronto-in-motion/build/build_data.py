@@ -22,6 +22,29 @@ DOW = "wednesday"
 MODE_NAMES = {0: "streetcar", 1: "subway", 2: "rail", 3: "bus"}
 
 
+GTFS_URL = (
+    "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/"
+    "7795b45e-e65a-4465-81fc-c36b9dfff169/resource/"
+    "cfb6b2b8-6191-41e3-bda1-b175c51148cb/download/opendata_ttc_schedules.zip"
+)
+
+
+def ensure_gtfs():
+    """Download and unzip the TTC feed if build/gtfs is missing."""
+    if os.path.isdir(GTFS) and os.listdir(GTFS):
+        return
+    import urllib.request
+    import zipfile
+
+    os.makedirs(GTFS, exist_ok=True)
+    zip_path = os.path.join(HERE, "ttc.zip")
+    if not os.path.exists(zip_path):
+        print("downloading TTC GTFS…", file=sys.stderr)
+        urllib.request.urlretrieve(GTFS_URL, zip_path)
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extractall(GTFS)
+
+
 def read_csv(name):
     with open(os.path.join(GTFS, name), newline="", encoding="utf-8-sig") as fh:
         yield from csv.DictReader(fh)
@@ -79,6 +102,7 @@ def dp(points, tol):
 
 
 def main():
+    ensure_gtfs()
     services = weekday_services()
     print(f"weekday services: {len(services)}", file=sys.stderr)
 
