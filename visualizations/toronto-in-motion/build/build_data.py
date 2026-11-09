@@ -137,7 +137,7 @@ FEEDS = [
      "kind": "local", "color": "c04fa0"},
 ]
 
-MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up")
+MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up", "ferry")
 
 
 def read_csv(path, name):
@@ -429,6 +429,75 @@ for feed in FEEDS:
                     (int(row["shape_pt_sequence"]), float(row["shape_pt_lat"]),
                      float(row["shape_pt_lon"]))
                 )
+
+# --- Toronto Island Ferry -------------------------------------------------
+# The City publishes the ferry timetable as an HTML table, not GTFS. These are
+# the winter departures (14 October - mid-April, Ward's Island is the only
+# winter route) copied from toronto.ca on 2026-11-08. Summer adds Centre
+# Island and Hanlan's Point; each crossing is modelled as 10 minutes.
+FERRY_CITY_TERMINAL = (43.64036, -79.37508)     # Jack Layton Ferry Terminal
+FERRY_WARD_DOCK = (43.63143, -79.35764)
+FERRY_FROM_CITY = ["06:30", "07:00", "07:30", "08:15", "09:00", "09:30",
+                   "10:30", "11:30", "12:00", "12:30", "13:30", "14:00",
+                   "14:30", "15:30", "16:00", "16:30", "17:30", "18:00",
+                   "18:30", "19:30", "20:30", "21:30", "22:30", "23:00",
+                   "23:30"]
+FERRY_FROM_WARD = ["06:45", "07:15", "07:45", "08:30", "09:15", "09:45",
+                   "10:45", "11:45", "12:15", "12:45", "13:45", "14:15",
+                   "14:45", "15:45", "16:15", "16:45", "17:45", "18:15",
+                   "18:45", "19:45", "20:45", "21:45", "22:45", "23:15",
+                   "23:45"]
+
+
+def hhmm(value):
+    h, m = value.split(":")
+    return int(h) * 3600 + int(m) * 60
+
+
+routes["ferry:WARD"] = {
+    "s": "Ward's Island", "l": "Toronto Island Ferry", "m": "ferry",
+    "c": "1f8a9e", "a": "Toronto Island Ferry",
+}
+raw_shapes[("ferry", "to-ward")] = [
+    (1, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
+    (2, FERRY_WARD_DOCK[0], FERRY_WARD_DOCK[1]),
+]
+raw_shapes[("ferry", "to-city")] = [
+    (1, FERRY_WARD_DOCK[0], FERRY_WARD_DOCK[1]),
+    (2, FERRY_CITY_TERMINAL[0], FERRY_CITY_TERMINAL[1]),
+]
+
+
+def add_ferry_day(spec, times, shape, start_lat, start_lon, end_lat, end_lon):
+    hist = day_hist[spec["key"]]
+    for dep in times:
+        t0 = hhmm(dep)
+        t1 = t0 + 600
+        day_trips[spec["key"]].append(("ferry", shape, t0, t1, "ferry:WARD"))
+        for b in range(t0 // 600, (t1 - 1) // 600 + 1):
+            lo = max(t0, b * 600)
+            hi = min(t1, (b + 1) * 600)
+            if hi > lo:
+                hist["ferry"][b % 144] += hi - lo
+
+
+for spec in DAY_SPECS:
+    add_ferry_day(spec, FERRY_FROM_CITY, "to-ward", *FERRY_CITY_TERMINAL, *FERRY_WARD_DOCK)
+    add_ferry_day(spec, FERRY_FROM_WARD, "to-city", *FERRY_WARD_DOCK, *FERRY_CITY_TERMINAL)
+
+ferry_km = haversine_km(*FERRY_CITY_TERMINAL, *FERRY_WARD_DOCK)
+ferry_stops = {
+    "s": [[round(FERRY_CITY_TERMINAL[0], 5), round(FERRY_CITY_TERMINAL[1], 5),
+           "Jack Layton Ferry Terminal"],
+          [round(FERRY_WARD_DOCK[0], 5), round(FERRY_WARD_DOCK[1], 5),
+           "Ward's Island"]],
+    "r": {"WARD": [[0, 1], round(ferry_km, 1), 600]},
+}
+with open(os.path.join(os.path.dirname(OUT), "stops-ferry.json"), "w",
+          encoding="utf-8") as fh:
+    json.dump(ferry_stops, fh, separators=(",", ":"))
+print(f"  ferry      stops: 2 terminals, 1 route, {ferry_km:.1f} km crossing",
+      file=sys.stderr)
 
 print(f"routes: {len(routes)}  shapes: {len(raw_shapes)}  "
       + "  ".join(f"{k}: {len(v)} trips" for k, v in day_trips.items()), file=sys.stderr)

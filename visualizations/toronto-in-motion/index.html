@@ -176,6 +176,7 @@
         <button data-mode="gobus" aria-pressed="true" title="GO Transit buses"><span class="dot" style="background:#5aa93f"></span>GO bus<span class="n" id="n-gobus">0</span></button>
         <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Niagara Region"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
         <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#3867d6"></span>UP<span class="n" id="n-up">0</span></button>
+        <button data-mode="ferry" aria-pressed="true" title="Toronto Island Ferry"><span class="dot" style="background:#1f8a9e"></span>Ferry<span class="n" id="n-ferry">0</span></button>
       </div>
       <div class="controls">
         <div class="days" id="days" role="group" aria-label="Service day">
@@ -230,14 +231,14 @@
   <dialog id="about">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2>Toronto in Motion</h2>
-    <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express and 15 local agencies — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express, 15 local agencies and the Island ferry — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
     <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
-    <p>Data: the agencies' published GTFS feeds under their open data licences. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Data: the agencies' published GTFS feeds under their open data licences; the Island ferry uses the City's winter timetable. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108t"></script>
+<script src="app.js?v=20261108u"></script>
 </body>
 </html>
