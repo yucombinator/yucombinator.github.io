@@ -13,14 +13,46 @@ import os
 import sys
 import urllib.request
 import zipfile
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "gtfs")
 OUT = os.path.abspath(os.path.join(HERE, "..", "data.json"))
 
-TARGET_DAY = "2026-11-11"          # a regular Wednesday
-TARGET_YMD = TARGET_DAY.replace("-", "")
-DOW = "wednesday"
+# Three service days, picked at build time: the most recent Wednesday (a plain
+# weekday) plus the most recent Saturday and Sunday, so the run shows how
+# weekend service thins out.
+WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
+               "August", "September", "October", "November", "December"]
+
+
+def recent(weekday_index, today=None):
+    today = today or date.today()
+    return today - timedelta(days=(today.weekday() - weekday_index) % 7)
+
+
+def day_spec(key, weekday_index):
+    d = recent(weekday_index)
+    noon = datetime(d.year, d.month, d.day, 12)
+    tz = ZoneInfo("America/Toronto")
+    return {
+        "key": key,
+        "dow": WEEKDAY_NAMES[weekday_index].lower(),
+        "date": d,
+        "ymd": d.strftime("%Y%m%d"),
+        "iso": d.isoformat(),
+        "label": f"{WEEKDAY_NAMES[weekday_index]} · {d.day} {MONTH_NAMES[d.month - 1]} {d.year}",
+        "tz": noon.replace(tzinfo=tz).tzname(),
+    }
+
+
+DAY_SPECS = [
+    day_spec("weekday", 2),    # most recent Wednesday
+    day_spec("saturday", 5),
+    day_spec("sunday", 6),
+]
 
 # Official TTC line colours; Lines 5 and 6 are coded as trams in the TTC feed.
 TTC_LINES = {
@@ -118,32 +150,35 @@ def feed_dir(feed):
     return path
 
 
-def active_services(path):
-    """Service ids running on TARGET_DAY; fall back to the busiest service."""
+def active_services(path, spec, counts):
+    """Service ids running on spec's date, with a like-for-like fallback."""
     svc = set()
+    calendar = []
     cal = os.path.join(path, "calendar.txt")
     if os.path.exists(cal):
-        for row in read_csv(path, "calendar.txt"):
-            if row[DOW] == "1" and row["start_date"] <= TARGET_YMD <= row["end_date"]:
+        calendar = list(read_csv(path, "calendar.txt"))
+        for row in calendar:
+            if row.get(spec["dow"]) == "1" and row["start_date"] <= spec["ymd"] <= row["end_date"]:
                 svc.add(row["service_id"])
     if os.path.exists(os.path.join(path, "calendar_dates.txt")):
         for row in read_csv(path, "calendar_dates.txt"):
-            if row["date"] == TARGET_YMD:
+            if row["date"] == spec["ymd"]:
                 if row["exception_type"] == "1":
                     svc.add(row["service_id"])
                 elif row["exception_type"] == "2":
                     svc.discard(row["service_id"])
     if svc:
         return svc
-    # fallback: the service with the most trips
-    counts = {}
-    for row in read_csv(path, "trips.txt"):
-        sid = row.get("service_id")
-        counts[sid] = counts.get(sid, 0) + 1
+    # The feed has no service on that date (usually a stale calendar window).
+    # Fall back to the busiest service that runs on that weekday, so a Sunday
+    # still looks like a Sunday rather than borrowing a weekday schedule.
     if not counts:
         return set()
-    best = max(counts, key=counts.get)
-    print(f"  ! {os.path.basename(path)}: no service on {TARGET_DAY}, using {best}", file=sys.stderr)
+    same_dow = [r["service_id"] for r in calendar if r.get(spec["dow"]) == "1"]
+    pool = same_dow or list(counts)
+    best = max(pool, key=lambda sid: counts.get(sid, 0))
+    print(f"  ! {os.path.basename(path)}: no service on {spec['iso']}, "
+          f"using {best}", file=sys.stderr)
     return {best}
 
 
@@ -202,16 +237,13 @@ KY = 110_574.0
 
 routes = {}          # "feed:route" -> meta
 raw_shapes = {}      # (feed, shape_id) -> [(lat, lon)]
-trips = []           # (feed, shape_key, t0, t1, route_key)
-hist = {m: [0] * 144 for m in MODES}
+day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
+day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
+shape_ids = set()
 
 for feed in FEEDS:
     path = feed_dir(feed)
     if not path:
-        continue
-    services = active_services(path)
-    if not services:
-        print(f"  ! {feed['id']}: no services", file=sys.stderr)
         continue
 
     # routes
@@ -230,21 +262,22 @@ for feed in FEEDS:
             "a": feed["agency"],
         }
 
-    # trips on the target service day
+    # every trip in the feed, tagged with its service id (read once)
     local_trips = {}
+    svc_counts = {}
     for row in read_csv(path, "trips.txt"):
-        if row["service_id"] not in services:
-            continue
         rid = row["route_id"]
         if rid not in local_routes:
             continue
-        key = f"{feed['id']}:{row['trip_id']}"
+        sid = row["service_id"]
         local_trips[row["trip_id"]] = {
             "route": local_routes[rid],
             "shape": row.get("shape_id", ""),
+            "service": sid,
             "t0": None,
             "t1": None,
         }
+        svc_counts[sid] = svc_counts.get(sid, 0) + 1
 
     # first/last stop time per trip
     st = os.path.join(path, "stop_times.txt")
@@ -253,41 +286,49 @@ for feed in FEEDS:
             t = local_trips.get(row["trip_id"])
             if t is None:
                 continue
-            a = secs(row["arrival_time"])
-            d = secs(row["departure_time"])
-            if t["t0"] is None or d < t["t0"]:
-                t["t0"] = d
-            if t["t1"] is None or a > t["t1"]:
-                t["t1"] = a
+            arr = secs(row["arrival_time"])
+            dep = secs(row["departure_time"])
+            if t["t0"] is None or dep < t["t0"]:
+                t["t0"] = dep
+            if t["t1"] is None or arr > t["t1"]:
+                t["t1"] = arr
 
-    # shapes
-    shape_ids = {t["shape"] for t in local_trips.values() if t["shape"]}
-    for row in read_csv(path, "shapes.txt"):
-        sid = row["shape_id"]
-        if sid in shape_ids:
-            raw_shapes.setdefault((feed["id"], sid), []).append(
-                (int(row["shape_pt_sequence"]), float(row["shape_pt_lat"]), float(row["shape_pt_lon"]))
-            )
+    for spec in DAY_SPECS:
+        services = active_services(path, spec, svc_counts)
+        hist = day_hist[spec["key"]]
+        kept = 0
+        for tid, t in local_trips.items():
+            if t["service"] not in services:
+                continue
+            if t["t0"] is None or not t["shape"]:
+                continue
+            t0 = max(0, min(86_399, t["t0"]))
+            t1 = max(t0 + 30, min(86_400, t["t1"]))
+            day_trips[spec["key"]].append((feed["id"], t["shape"], t0, t1, t["route"]))
+            shape_ids.add((feed["id"], t["shape"]))
+            kept += 1
+            mode = routes[t["route"]]["m"]
+            for b in range(t0 // 600, min(143, (t1 - 1) // 600) + 1):
+                lo = max(t0, b * 600)
+                hi = min(t1, (b + 1) * 600)
+                if hi > lo:
+                    hist[mode][b] += hi - lo
+        print(f"  {feed['id']:10s} {spec['key']:8s} {kept:6d} trips  ({feed['agency']})",
+              file=sys.stderr)
 
-    kept = 0
-    for tid, t in local_trips.items():
-        if t["t0"] is None or not t["shape"]:
-            continue
-        t0 = max(0, min(86_399, t["t0"]))
-        t1 = max(t0 + 30, min(86_400, t["t1"]))
-        trips.append((feed["id"], t["shape"], t0, t1, t["route"]))
-        kept += 1
-        mode = routes[t["route"]]["m"]
-        if mode not in hist:
-            hist[mode] = [0] * 144
-        for b in range(t0 // 600, min(143, (t1 - 1) // 600) + 1):
-            lo = max(t0, b * 600)
-            hi = min(t1, (b + 1) * 600)
-            if hi > lo:
-                hist[mode][b] += hi - lo
-    print(f"  {feed['id']:10s} {kept:6d} trips  ({feed['agency']})", file=sys.stderr)
+    # shapes used by any of the three days
+    wanted = {sid for fid, sid in shape_ids if fid == feed["id"]}
+    if wanted:
+        for row in read_csv(path, "shapes.txt"):
+            sid = row["shape_id"]
+            if sid in wanted:
+                raw_shapes.setdefault((feed["id"], sid), []).append(
+                    (int(row["shape_pt_sequence"]), float(row["shape_pt_lat"]),
+                     float(row["shape_pt_lon"]))
+                )
 
-print(f"total trips: {len(trips)}  routes: {len(routes)}  shapes: {len(raw_shapes)}", file=sys.stderr)
+print(f"routes: {len(routes)}  shapes: {len(raw_shapes)}  "
+      + "  ".join(f"{k}: {len(v)} trips" for k, v in day_trips.items()), file=sys.stderr)
 
 # ---- project + simplify shapes
 minx = miny = float("inf")
@@ -317,13 +358,35 @@ route_keys = sorted(routes)
 route_index = {k: i for i, k in enumerate(route_keys)}
 route_out = {k: routes[k] for k in route_keys}
 
-trip_out = [
-    [shape_index[(fid, sid)], t0, t1, route_index[rk]]
-    for fid, sid, t0, t1, rk in trips
-    if (fid, sid) in shape_index
-]
+days_out = {}
+for spec in DAY_SPECS:
+    key = spec["key"]
+    days_out[key] = {
+        "label": spec["label"],
+        "date": spec["iso"],
+        "tz": spec["tz"],
+        "trips": [
+            [shape_index[(fid, sid)], t0, t1, route_index[rk]]
+            for fid, sid, t0, t1, rk in day_trips[key]
+            if (fid, sid) in shape_index
+        ],
+        "hist": {
+            m: [round(v / 600.0, 1) for v in arr]
+            for m, arr in day_hist[key].items() if any(arr)
+        },
+    }
 
-hist_out = {m: [round(v / 600.0, 1) for v in arr] for m, arr in hist.items() if any(arr)}
+# The first day ships with the shared shapes/routes; the other two are fetched
+# on demand so the initial page load stays close to one service day of trips.
+BASE_KEY = DAY_SPECS[0]["key"]
+for spec in DAY_SPECS[1:]:
+    key = spec["key"]
+    day_path = os.path.join(os.path.dirname(OUT), f"data-{key}.json")
+    with open(day_path, "w", encoding="utf-8") as fh:
+        json.dump(days_out[key], fh, separators=(",", ":"))
+    print(f"wrote {day_path}  {os.path.getsize(day_path)/1e6:.2f} MB", file=sys.stderr)
+
+days_out = {BASE_KEY: days_out[BASE_KEY]}
 
 allxs = sorted(p[0] for s in shapes for p in s)
 allys = sorted(p[1] for s in shapes for p in s)
@@ -335,13 +398,15 @@ def pct(arr, f):
 
 doc = {
     "city": "Greater Golden Horseshoe",
-    "source": "GTFS feeds: TTC, GO, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie (weekday of 2026-11-11)",
+    "source": "GTFS feeds: TTC, GO, UP Express, MiWay, Brampton, YRT, Durham, "
+              "Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie ("
+              + ", ".join(f"{spec['label']}" for spec in DAY_SPECS) + ")",
     "fit": [pct(allxs, 0.002), pct(allys, 0.002), pct(allxs, 0.998), pct(allys, 0.998)],
     "proj": {"lat0": LAT0, "kx": KX, "ky": KY, "x0": minx, "y0": miny},
     "routes": route_out,
     "shapes": shapes,
-    "trips": trip_out,
-    "hist": hist_out,
+    "days": days_out,
+    "order": [spec["key"] for spec in DAY_SPECS],
 }
 
 with open(OUT, "w", encoding="utf-8") as fh:

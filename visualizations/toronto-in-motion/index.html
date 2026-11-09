@@ -65,6 +65,10 @@
   .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
   .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
   .controls{display:flex;align-items:center;gap:10px}
+  .days{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
+  .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
+  .days button[aria-pressed="true"]{background:#1b3a33;color:#b9f0dc}
+  .days button:hover{color:#d6ece4}
   .play{width:34px;height:34px;border-radius:50%;border:1px solid #3f6b5f;background:rgba(110,231,183,.05);color:#a5e6cf;display:grid;place-items:center;padding:0}
   .play:hover{background:rgba(110,231,183,.14)}
   .play svg{width:15px;height:15px;fill:currentColor}
@@ -106,7 +110,9 @@
   @media (max-width:680px){
     .clock{font-size:26px}
     .meta .sub{display:none}
-    .legend{gap:10px}
+    .row{flex-wrap:wrap;gap:8px}
+    .legend{gap:10px;width:100%}
+    .controls{width:100%;justify-content:space-between}
     .legend .n{min-width:20px}
     .panel{padding:9px 10px 6px}
     .chartwrap{height:42px}
@@ -132,7 +138,7 @@
   </header>
 
   <div class="meta">
-    <div class="day">Wednesday · 11 November 2026</div>
+    <div class="day" id="dayLabel">—</div>
     <div class="sub">Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO, UP Express and a dozen local agencies — as moving dots, 24 hours at a time. Drag or scroll the map to explore.</div>
   </div>
 
@@ -150,6 +156,11 @@
         <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#3867d6"></span>UP<span class="n" id="n-up">0</span></button>
       </div>
       <div class="controls">
+        <div class="days" id="days" role="group" aria-label="Service day">
+          <button data-day="weekday" aria-pressed="true">Weekday</button>
+          <button data-day="saturday" aria-pressed="false">Sat</button>
+          <button data-day="sunday" aria-pressed="false">Sun</button>
+        </div>
         <button class="play" id="playBtn" aria-label="Pause">
           <svg id="playIcon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
         </button>
@@ -177,24 +188,27 @@
         <a class="src" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Data: TTC GTFS · City of Toronto Open Data Licence</a>
         <span class="src-sep">·</span>
         <a class="src" href="https://openfreemap.org/" target="_blank" rel="noopener">Basemap © OpenFreeMap / OpenStreetMap</a>
+        <span class="src-sep">·</span>
+        <a class="src" href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Inspired by Montreal in Motion (Allemanns Data)</a>
       </span>
     </div>
   </section>
 
-  <div id="loading"><span>Loading 40,001 trips…</span></div>
+  <div id="loading"><span>Loading trips…</span></div>
 
   <dialog id="about">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2>Toronto in Motion</h2>
-    <p>Every scheduled trip for a regular Wednesday across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph and Barrie — animated as a dot moving along its route, with a 24-hour scrubber.</p>
+    <p>Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph and Barrie — animated as a dot moving along its route, with a 24-hour scrubber. Switch between the most recent weekday, Saturday and Sunday to see how service thins out on weekends.</p>
     <p><strong>This is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
     <p>Data: the agencies' published GTFS feeds, each used under its open data licence (TTC, Metrolinx, MiWay, Brampton, YRT, Durham, Oakville, Burlington, Hamilton, Region of Waterloo, Guelph, Barrie). TTC lines use the TTC's own colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Other agencies are coloured for legibility, not to match their brands.</p>
     <p>Basemap: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, built from OpenStreetMap data. You can drag and zoom the map; the dots are reprojected to follow it.</p>
+    <p>Format and interaction inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>.</p>
     <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108e"></script>
+<script src="app.js?v=20261108f"></script>
 </body>
 </html>

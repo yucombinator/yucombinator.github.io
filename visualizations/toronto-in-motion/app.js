@@ -65,6 +65,10 @@
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
   let uiAccum = 0;
+  let dayCache = {};
+  let curDay = null, curHist = null;
+  let routeSlot = null, routeMode = null;
+  const seenRailShape = new Set();
 
   const lngLatOf = (x, y) => {
     const { kx, ky, x0, y0 } = D.proj;
@@ -327,7 +331,7 @@
     const w = chart.clientWidth, h = chart.clientHeight;
     chartCtx.clearRect(0, 0, w, h);
     const buckets = 144;
-    const series = MODES.map((m) => D.hist[m] || new Array(buckets).fill(0));
+    const series = MODES.map((m) => curHist?.[m] || new Array(buckets).fill(0));
     let max = 0;
     for (let b = 0; b < buckets; b++) {
       let s = 0;
@@ -352,6 +356,85 @@
       chartCtx.lineWidth = 1.1;
       chartCtx.stroke();
     });
+  }
+
+  /* ---------- service days ---------- */
+
+  function addRailShapes(dd) {
+    for (const [shapeIdx, , , ridx] of dd.trips) {
+      const slot = routeSlot[ridx];
+      const k = shapeIdx + ':' + slot;
+      if (seenRailShape.has(k)) continue;
+      seenRailShape.add(k);
+      railShapes.push({ shapeIdx, color: slotColors[slot] });
+    }
+    linesDirty = true;
+  }
+
+  function prepareDay(key, dd) {
+    const n = dd.trips.length;
+    const tripsArr = new Int32Array(n * 4);
+    const modes = new Uint8Array(n);
+    const slots = new Uint8Array(n);
+    const starts = new Int32Array(n);
+    const buckets = Array.from({ length: 24 }, () => []);
+    for (let i = 0; i < n; i++) {
+      const [shape, t0, t1, ridx] = dd.trips[i];
+      buckets[Math.min(23, t0 / 3600 | 0)].push(i);
+      tripsArr[i * 4] = shape; tripsArr[i * 4 + 1] = t0;
+      tripsArr[i * 4 + 2] = t1; tripsArr[i * 4 + 3] = ridx;
+      modes[i] = routeMode[ridx];
+      slots[i] = routeSlot[ridx];
+      starts[i] = t0;
+    }
+    return {
+      key, label: dd.label, date: dd.date, tz: dd.tz,
+      trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
+      hourBuckets: buckets, startTimes: starts.slice().sort(), hist: dd.hist,
+    };
+  }
+
+  async function activateDay(key) {
+    if (!dayCache[key]) {
+      const btn = document.querySelector(`#days button[data-day="${key}"]`);
+      if (btn) btn.setAttribute('aria-busy', 'true');
+      try {
+        const res = await fetch(`data-${key}.json?v=20261108f`);
+        if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
+        const dd = await res.json();
+        dayCache[key] = prepareDay(key, dd);
+        addRailShapes(dd);
+      } catch (err) {
+        console.warn('day load failed:', err);
+        if (btn) btn.removeAttribute('aria-busy');
+        return;
+      }
+      if (btn) btn.removeAttribute('aria-busy');
+    }
+    if (!dayCache[key]) return;
+    const d = dayCache[key];
+    curDay = key;
+    trips = d.trips; tripCount = d.n;
+    modeOfTrip = d.modeOfTrip; slotOfTrip = d.slotOfTrip;
+    hourBuckets = d.hourBuckets; startTimes = d.startTimes;
+    curHist = d.hist;
+    $('dayLabel').textContent = d.label;
+    $('zone').textContent = d.tz || 'EST';
+    $('s-total').textContent = d.n.toLocaleString();
+    let bestB = 0, bestV = 0;
+    for (let b = 0; b < 144; b++) {
+      const v = MODES.reduce((sum, m) => sum + (curHist[m]?.[b] || 0), 0);
+      if (v > bestV) { bestV = v; bestB = b; }
+    }
+    const hh = String(Math.floor(bestB / 6)).padStart(2, '0');
+    document.querySelector('.stats').children[2].innerHTML =
+      `Peak hour <b>${hh}:00</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
+    document.querySelectorAll('#days button').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.day === key));
+    });
+    drawChart();
+    state.dirty = true;
+    updateUI();
   }
 
   /* ---------- UI ---------- */
@@ -399,6 +482,12 @@
 
   function wire() {
     $('playBtn').addEventListener('click', () => setPlaying(!state.playing));
+
+    $('days').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-day]');
+      if (!btn || btn.dataset.day === curDay) return;
+      activateDay(btn.dataset.day);
+    });
     $('speed').addEventListener('change', (e) => { state.speed = +e.target.value; });
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
 
@@ -463,18 +552,13 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108e');
+    const res = await fetch('data.json?v=20261108f');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
     shapes = D.shapes.map((pts) => ({ pts }));
 
     routeIds = Object.keys(D.routes);
-    const routePtr = new Map(routeIds.map((id, i) => [id, i]));
-    tripCount = D.trips.length;
-    trips = new Int32Array(tripCount * 4);
-    modeOfTrip = new Uint8Array(tripCount);
-    const starts = new Int32Array(tripCount);
     const colorToSlot = new Map();
     const slotFor = (hex, modeIdx) => {
       let slot = colorToSlot.get(hex);
@@ -487,49 +571,34 @@
       return slot;
     };
 
-    slotOfTrip = new Uint8Array(tripCount);
-    hourBuckets = Array.from({ length: 24 }, () => []);
-    for (let i = 0; i < tripCount; i++) {
-      const [shape, t0, t1, ridx] = D.trips[i];
-      hourBuckets[Math.min(23, t0 / 3600 | 0)].push(i);
-      trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1;
-      trips[i * 4 + 3] = ridx;
-      const route = D.routes[routeIds[ridx]];
+    // one colour slot + mode per route, shared by every service day
+    routeSlot = new Uint8Array(routeIds.length);
+    routeMode = new Uint8Array(routeIds.length);
+    for (let r = 0; r < routeIds.length; r++) {
+      const route = D.routes[routeIds[r]];
       const mode = route?.m || 'localbus';
       const modeIdx = Math.max(0, MODES.indexOf(mode));
       const hex = route?.c ? '#' + route.c : MODE_COLOR[MODES[modeIdx]];
-      modeOfTrip[i] = modeIdx;
-      slotOfTrip[i] = slotFor(hex, modeIdx);
-      starts[i] = t0;
+      routeMode[r] = modeIdx;
+      routeSlot[r] = slotFor(hex, modeIdx);
     }
-    startTimes = starts.slice().sort();
 
     px = new Float32Array(6000); py = new Float32Array(6000); pTrip = new Int32Array(6000);
 
-    const BUS = MODES.indexOf('bus');
-    const seenShape = new Set();
-    for (let i = 0; i < tripCount; i++) {
-      if (modeOfTrip[i] === BUS) continue;
-      const shapeIdx = trips[i * 4];
-      const slot = slotOfTrip[i];
-      const key = shapeIdx + ':' + slot;
-      if (seenShape.has(key)) continue;
-      seenShape.add(key);
-      railShapes.push({ shapeIdx, color: slotColors[slot] });
+    // background lines cover every day that has been loaded; a day fetched
+    // later adds its own weekend-only shapes when it arrives
+    for (const key of D.order) {
+      if (D.days[key]) addRailShapes(D.days[key]);
     }
 
-    let bestB = 0, bestV = 0;
-    for (let b = 0; b < 144; b++) {
-      const v = MODES.reduce((s, m) => s + (D.hist[m]?.[b] || 0), 0);
-      if (v > bestV) { bestV = v; bestB = b; }
+    dayCache = {};
+    for (const key of D.order) {
+      if (D.days[key]) dayCache[key] = prepareDay(key, D.days[key]);
     }
-    const peakHour = String(Math.floor(bestB / 6)).padStart(2, '0') + ':00';
-    document.querySelector('.stats').children[2].innerHTML = `Peak hour <b>${peakHour}</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
+    activateDay(D.order[0]);
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
-    $('s-total').textContent = tripCount.toLocaleString();
-    $('zone').textContent = 'EST';
     resize();
     setPlaying(state.playing);
     seek(state.t);
@@ -582,6 +651,6 @@
   wire();
   boot().catch((err) => {
     $('loading').textContent = 'Could not load trip data: ' + err.message;
-    console.error(err);
+    console.error('boot failed:', err);
   });
 })();
