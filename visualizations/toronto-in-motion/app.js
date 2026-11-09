@@ -871,7 +871,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261110i`);
+        const res = await fetch(`data-${key}.json?v=20261110k`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -944,7 +944,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261110i');
+      const res = await fetch('busways.json?v=20261110k');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1070,7 +1070,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261110i`);
+        const res = await fetch(`stops-${feed}.json?v=20261110k`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1446,6 +1446,59 @@
     $('closeAbout').addEventListener('click', () => dlg.close());
     const sources = $('sources');
     $('sourcesBtn').addEventListener('click', () => sources.showModal());
+  const cityBtn = $('cityBtn'), cityMenu = $('cityMenu');
+  if (cityBtn && cityMenu) {
+    const wrap = cityBtn.closest('.city-wrap');
+    const current = wrap ? wrap.dataset.current : '';
+    const items = [...cityMenu.querySelectorAll('[role="menuitemradio"]')];
+    let open = false;
+    const close = (refocus) => {
+      open = false;
+      cityBtn.setAttribute('aria-expanded', 'false');
+      cityMenu.hidden = true;
+      if (refocus) cityBtn.focus();
+    };
+    const openMenu = (index) => {
+      open = true;
+      cityBtn.setAttribute('aria-expanded', 'true');
+      cityMenu.hidden = false;
+      const checked = items.findIndex((b) => b.getAttribute('aria-checked') === 'true');
+      const at = index != null ? index : (checked < 0 ? 0 : checked);
+      items[at] && items[at].focus();
+    };
+    cityBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (open) close();
+      else openMenu();
+    });
+    cityBtn.addEventListener('keydown', (e) => {
+      if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openMenu();
+      }
+    });
+    items.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const city = btn.dataset.city;
+        if (!city || city === current) { close(true); return; }
+        location.href = city === 'toronto'
+          ? '../toronto-in-motion/' : '../vancouver-in-motion/';
+      });
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+        else if (e.key === 'Home') { e.preventDefault(); items[0].focus(); }
+        else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
+        else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (open && !e.target.closest('.city-wrap')) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (open && e.key === 'Escape') close(true);
+    });
+  }
     $('closeSources').addEventListener('click', () => sources.close());
 
     window.addEventListener('resize', resize);
@@ -1455,7 +1508,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261110i');
+    const res = await fetch('data.json?v=20261110k');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
