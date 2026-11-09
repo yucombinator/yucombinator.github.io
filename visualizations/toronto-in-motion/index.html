@@ -63,7 +63,7 @@
   .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
   .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
   .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
-  .controls .clock{font-size:21px;font-weight:400;letter-spacing:-.3px;color:var(--accent);margin-right:2px}
+  .controls .clock{font-size:21px;font-weight:400;letter-spacing:-.3px;color:var(--accent);margin-left:2px;margin-right:2px}
   .controls .clock small{font-size:9px;letter-spacing:.7px;color:#93aab0;margin-left:5px}
   .days{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
   .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
@@ -186,12 +186,12 @@
         <button data-mode="ferry" aria-pressed="true" title="Toronto Island Ferry"><span class="dot" style="background:#1f8a9e"></span>Ferry<span class="n" id="n-ferry">0</span></button>
       </div>
       <div class="controls">
-        <div class="clock"><span id="clock">07:00</span><small id="zone">EST</small></div>
         <div class="days" id="days" role="group" aria-label="Service day">
           <button data-day="weekday" aria-pressed="true">Weekday</button>
           <button data-day="saturday" aria-pressed="false">Sat</button>
           <button data-day="sunday" aria-pressed="false">Sun</button>
         </div>
+        <div class="clock"><span id="clock">07:00</span><small id="zone">EST</small></div>
         <div class="speeds" id="speed" role="group" aria-label="Playback">
           <button class="pp" data-play="toggle" aria-pressed="false" aria-label="Pause">
             <svg class="ic-pause" viewBox="0 0 9 10" aria-hidden="true"><rect x="1" y="0" width="2.4" height="10" rx="1"/><rect x="5.6" y="0" width="2.4" height="10" rx="1"/></svg>
@@ -250,6 +250,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108y"></script>
+<script src="app.js?v=20261108z"></script>
 </body>
 </html>
