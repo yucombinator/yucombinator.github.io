@@ -54,10 +54,13 @@ jobs:
           feeds = d.get("feeds") or []
           age_ms = time.time() * 1000 - d.get("generated", 0)
           print(f"{n} vehicles across {len(feeds)} feeds, age {age_ms/1000:.0f}s")
-          if n < 100:
+          # TTC surface runs 24 hours, so it is the one feed that should
+          # always answer; the 905 agencies legitimately drop to zero
+          # vehicles in the small hours and must not fail the run.
+          if "ttc" not in feeds:
+              sys.exit(f"TTC feed missing, got: {feeds}")
+          if n < 50:
               sys.exit(f"only {n} vehicles — the feeds are probably down")
-          if len(feeds) < 3:
-              sys.exit(f"only {len(feeds)} feeds responded: {feeds}")
           if not (0 <= age_ms <= 10 * 60 * 1000):
               sys.exit("snapshot timestamp is missing or out of range")
           PY
