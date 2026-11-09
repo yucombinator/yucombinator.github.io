@@ -151,6 +151,15 @@ FEEDS = [
     {"id": "kawartha", "agency": "Lindsay Transit",
      "url": "https://metrolinx.tmix.se/gtfs/gtfs-kawartha.zip",
      "kind": "local", "color": "4f8fd0"},
+    {"id": "orillia", "agency": "Orillia Transit",
+     "url": "https://metrolinx.tmix.se/gtfs/gtfs-orillia.zip",
+     "kind": "local", "color": "c26b3f"},
+    # Small operator on the Transit app platform; the public GTFS URL carries
+    # their feed token, so this can rot if Midland rotates it.
+    {"id": "midpen", "agency": "Mid-Pen Transit",
+     "url": "https://midland.usetransit.com/api/1/public/gtfs/2/gtfs.zip"
+            "?token=64186b9ee7bea60d7638268206162c0c9c1a3f49e",
+     "kind": "local", "color": "7b8f3a"},
     # Niagara's official host redirects to a broken HTTPS endpoint; this is
     # the same GTFSExport bundle its own trip planner consumes.
     {"id": "niagara", "agency": "Niagara Region Transit",
@@ -317,7 +326,8 @@ KY = 110_574.0
 
 routes = {}          # "feed:route" -> meta
 raw_shapes = {}      # (feed, shape_id) -> [(lat, lon)]
-dwell_raw = {}       # (feed, shape_id) -> [(lat, lon), ...]
+dwell_raw = {}       # (feed, shape_id, stops) -> [(lat, lon), ...]
+trip_pattern = {}    # (feed, trip_id) -> dwell_raw key
 day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
 day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
 shape_ids = set()
@@ -389,7 +399,10 @@ for feed in FEEDS:
         if cur is None or n > stop_counts[cur]:
             rep_trip[route] = tid
 
-    rep_seq = {tid: [] for tid in rep_trip.values()}
+    rail_trip_ids = {tid for tid, t in local_trips.items()
+                     if routes.get(t["route"], {}).get("m") in RAIL_MODES}
+    seq_ids = set(rep_trip.values()) | rail_trip_ids
+    rep_seq = {tid: [] for tid in seq_ids}
     if rep_seq:
         for row in read_csv(path, "stop_times.txt"):
             tid = row["trip_id"]
@@ -459,7 +472,7 @@ for feed in FEEDS:
             # starts after midnight, which emptied 00:00-05:00 on the map.
             t0 = max(0, t["t0"])
             t1 = max(t0 + 30, min(2 * 86_400, t["t1"]))
-            day_trips[spec["key"]].append((feed["id"], t["shape"], t0, t1, t["route"]))
+            day_trips[spec["key"]].append((feed["id"], t["shape"], t0, t1, t["route"], tid))
             shape_ids.add((feed["id"], t["shape"]))
             kept += 1
             mode = routes[t["route"]]["m"]
@@ -482,24 +495,26 @@ for feed in FEEDS:
                      float(row["shape_pt_lon"]))
                 )
 
-    # Rail dwell inputs: the route's representative stops, to be projected on
-    # every shape the route uses. Using the same stop coordinates the map draws
-    # guarantees dwells land on the station dots even on the reverse shape.
-    for route_key, tid in rep_trip.items():
-        if routes.get(route_key, {}).get("m") not in RAIL_MODES:
+    # Dwell inputs keyed by (shape, stop pattern): an express trip must not
+    # inherit the local trip's stops on the same shape.
+    for tid in rail_trip_ids:
+        t = local_trips[tid]
+        shape_id = t["shape"]
+        seq = sorted(rep_seq.get(tid) or [])
+        if not shape_id or len(seq) < 2:
             continue
-        seen, coords = set(), []
-        for _, sid in sorted(rep_seq.get(tid) or []):
-            if sid in seen:
-                continue
-            seen.add(sid)
+        stops = tuple(sid for _, sid in seq)
+        coords = []
+        for sid in stops:
             meta = stop_meta.get(sid)
             if meta:
                 coords.append((meta[0], meta[1]))
         if len(coords) < 2:
             continue
-        for shape_id in route_shapes.get(route_key, ()):
-            dwell_raw[(feed["id"], shape_id)] = coords
+        key = (feed["id"], shape_id, stops)
+        if key not in dwell_raw:
+            dwell_raw[key] = coords
+        trip_pattern[(feed["id"], tid)] = key
 
 
 # --- Toronto Island Ferry -------------------------------------------------
@@ -620,7 +635,7 @@ for term, times in ferry_schedule.items():
         for city_dep, island_dep in times:
             for t0, shape in ((city_dep, f"to-{slug}"), (island_dep, f"from-{slug}")):
                 t1 = t0 + 600
-                day_trips[spec["key"]].append(("ferry", shape, t0, t1, route_key))
+                day_trips[spec["key"]].append(("ferry", shape, t0, t1, route_key, None))
                 for b in range(t0 // 600, (t1 - 1) // 600 + 1):
                     lo = max(t0, b * 600)
                     hi = min(t1, (b + 1) * 600)
@@ -660,9 +675,11 @@ for key, pts in raw_shapes.items():
 shape_keys = sorted(projected)
 shape_index = {k: i for i, k in enumerate(shape_keys)}
 
-dwell_out = {}
-for key, rows in dwell_raw.items():
-    pts = projected.get(key)
+dwell_out = []
+profile_index = {}
+for key in sorted(dwell_raw):
+    rows = dwell_raw[key]
+    pts = projected.get(key[:2])
     if not pts or len(pts) < 2:
         continue
     cum = [0.0]
@@ -679,9 +696,8 @@ for key, rows in dwell_raw.items():
         if f > clean[-1] + 0.0005:
             clean.append(f)
     if len(clean) >= 2:
-        idx = shape_index.get(key)
-        if idx is not None:
-            dwell_out[str(idx)] = [round(f, 4) for f in clean]
+        profile_index[key] = len(dwell_out)
+        dwell_out.append([round(f, 4) for f in clean])
 shapes = [[[round(x - minx), round(y - miny)] for x, y in projected[k]] for k in shape_keys]
 
 route_keys = sorted(routes)
@@ -691,16 +707,20 @@ route_out = {k: routes[k] for k in route_keys}
 days_out = {}
 for spec in DAY_SPECS:
     key = spec["key"]
+    trips_list, prof_list = [], []
+    for fid, sid, t0, t1, rk, tid in day_trips[key]:
+        if (fid, sid) not in shape_index:
+            continue
+        trips_list.append([shape_index[(fid, sid)], t0, t1, route_index[rk]])
+        prof_list.append(profile_index.get(trip_pattern.get((fid, tid)), -1)
+                         if tid is not None else -1)
     days_out[key] = {
         "label": spec["label"],
         "date": spec["iso"],
         "tz": spec["tz"],
         "sun": sun_times(spec["date"]),
-        "trips": [
-            [shape_index[(fid, sid)], t0, t1, route_index[rk]]
-            for fid, sid, t0, t1, rk in day_trips[key]
-            if (fid, sid) in shape_index
-        ],
+        "trips": trips_list,
+        "prof": prof_list,
         "hist": {
             m: [round(v / 600.0, 1) for v in arr]
             for m, arr in day_hist[key].items() if any(arr)

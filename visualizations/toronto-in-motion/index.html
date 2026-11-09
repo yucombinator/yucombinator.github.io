@@ -223,7 +223,7 @@
         <button data-mode="lrt" aria-pressed="true" title="Line 5, Line 6, ION"><span class="swatches"><i style="background:#f87005"></i><i style="background:#8a999a"></i><i style="background:#00b3b0"></i></span>LRT<span class="n" id="n-lrt">0</span></button>
         <button data-mode="gorail" aria-pressed="true" title="GO Transit trains"><span class="swatches"><i style="background:#98002e"></i><i style="background:#00853e"></i><i style="background:#003767"></i><i style="background:#f57f25"></i></span>GO train<span class="n" id="n-gorail">0</span></button>
         <button data-mode="gobus" aria-pressed="true" title="GO Transit buses"><span class="dot" style="background:#5aa93f"></span>GO bus<span class="n" id="n-gobus">0</span></button>
-        <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Niagara Region"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
+        <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Orillia, Mid-Pen, Niagara Region"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
         <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#0075d2"></span>UP<span class="n" id="n-up">0</span></button>
         <button data-mode="ferry" aria-pressed="true" title="Toronto Island Ferry"><span class="dot" style="background:#1f8a9e"></span>Ferry<span class="n" id="n-ferry">0</span></button>
       </div>
@@ -247,7 +247,7 @@
       </div>
     </div>
 
-    <div class="chartwrap" title="Scheduled departures per 10 minutes — filtered by the mode toggles"><canvas id="chart" aria-label="Scheduled departures per 10 minutes"></canvas><canvas id="chartline"></canvas></div>
+    <div class="chartwrap" title="Scheduled departures per 10 minutes — filtered by the mode toggles"><canvas id="chart" role="img" aria-label="Scheduled departures per 10 minutes"></canvas><canvas id="chartline"></canvas></div>
 
     <input class="scrub" id="scrub" type="range" min="0" max="86400" step="60" value="25200" aria-label="Time of day">
     <div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
@@ -281,18 +281,18 @@
 
   <div id="loading"><span>Loading trips…</span></div>
 
-  <dialog id="about">
+  <dialog id="about" aria-labelledby="aboutTitle">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
-    <h2>Toronto in Motion</h2>
-    <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express, 15 local agencies and the Island ferry — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <h2 id="aboutTitle">Toronto in Motion</h2>
+    <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express, 17 local agencies and the Island ferry — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
     <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
     <p>Data: the agencies' published GTFS feeds under their open data licences; the Island ferry uses the City's winter timetable. <button class="linkish" id="sourcesBtn">See the full list</button>. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
 
-  <dialog id="sources">
+  <dialog id="sources" aria-labelledby="sourcesTitle">
     <button class="close" id="closeSources" aria-label="Close">×</button>
-    <h2>Data sources</h2>
+    <h2 id="sourcesTitle">Data sources</h2>
     <ul class="srclist">
       <li>TTC — Toronto Transit Commission</li>
       <li>GO Transit — Metrolinx</li>
@@ -312,6 +312,8 @@
       <li>Orangeville Transit</li>
       <li>Lindsay Transit — City of Kawartha Lakes</li>
       <li>Niagara Region Transit</li>
+    <li>Orillia Transit</li>
+    <li>Mid-Pen Transit — Midland &amp; Penetanguishene</li>
       <li>Toronto Island Ferry — City of Toronto timetable</li>
     </ul>
     <p class="srclist-note">GTFS feeds are used under each agency's open data licence. The Island ferry has no GTFS feed; its winter timetable is read from toronto.ca at build time.</p>
@@ -319,6 +321,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261110a"></script>
+<script src="app.js?v=20261110d"></script>
 </body>
 </html>

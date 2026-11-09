@@ -72,6 +72,7 @@
   let anchorA = null, anchorB = null;
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
+  const VIEW_KEY = 'tim-view';
   let routeSig = -1, lastLineRefresh = 0;
   let uiAccum = 0;
   let chartW = 0, chartH = 0, lastCursorT = -1;
@@ -87,6 +88,7 @@
   let activeRoutes = new Set();    // routes running now, or within the grace window
   const LINE_GRACE = 15 * 60;      // seconds of schedule time
   let curDay = null, curHist = null, curStarts = null, curSun = null;
+  let tripProfile = null, dayMaxDur = 0;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
   let live = null;                 // parsed live.json
@@ -173,6 +175,7 @@
     const ss = view.screenShapes;
     const zLine = mapObj ? mapObj.getZoom() : fitZoom;
     const showIdle = zLine >= 13.5;
+    const cull = aff.sx === 1 && aff.sy === 1 && aff.ox === 0 && aff.oy === 0;
     for (const { shapeIdx, color, mode, route } of railShapes) {
       if (!state.modes[mode]) continue;
       const liveRoute = activeRoutes.has(route);
@@ -180,6 +183,8 @@
       const shape = ss[shapeIdx];
       const xy = shape && shape.xy;
       if (!xy || xy.length < 4) continue;
+      if (cull && (shape.maxx < -4 || shape.minx > w + 4
+                   || shape.maxy < -4 || shape.miny > h + 4)) continue;
       lctx.strokeStyle = liveRoute
         ? color + (isBus(mode) ? '2b' : '5c')
         : 'rgba(158,170,176,.17)';
@@ -198,15 +203,12 @@
   let dwellProfiles = null;
 
   function initDwell() {
-    if (!D.dwell) return;
-    dwellProfiles = [];
-    for (const [k, fracs] of Object.entries(D.dwell)) {
-      if (fracs.length >= 3) dwellProfiles[+k] = Float32Array.from(fracs);
-    }
+    if (!Array.isArray(D.dwell)) return;
+    dwellProfiles = D.dwell.map((fracs) => Float32Array.from(fracs));
   }
 
-  function dwellFrac(shapeIdx, u, dur, mode) {
-    const fr = dwellProfiles && dwellProfiles[shapeIdx];
+  function dwellFrac(profileIdx, u, dur, mode) {
+    const fr = dwellProfiles && dwellProfiles[profileIdx];
     if (!fr) return u;
     const per = DWELL_SECONDS[mode] || 0;
     if (!per) return u;
@@ -329,7 +331,8 @@
     activeRoutes.clear();
     let routeSigCount = 0, routeSigSum = 0;
     const hEnd = t / 3600 | 0;
-    for (let back = 0, mask = 0; back <= 4; back++) {
+    const lookback = Math.min(23, Math.ceil((dayMaxDur || 5 * 3600) / 3600));
+    for (let back = 0, mask = 0; back <= lookback; back++) {
       const hh = (hEnd - back + 24) % 24;
       if (mask & (1 << hh)) continue;
       mask |= 1 << hh;
@@ -360,7 +363,10 @@
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
         let frac = (tt - t0) / (t1 - t0);
-        if (dwellProfiles && z >= 12) frac = dwellFrac(trips[i * 4], frac, t1 - t0, MODES[mode]);
+        if (dwellProfiles && z >= 12 && tripProfile) {
+          const pr = tripProfile[i];
+          if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
+        }
         const [bx, by, dx, dy] = pointAtScreen(shape, frac);
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
@@ -819,6 +825,11 @@
     const modes = new Uint8Array(n);
     const slots = new Uint8Array(n);
     const starts = new Int32Array(n);
+    const profiles = new Int16Array(n);
+    const profSrc = dd.prof;
+    if (profSrc) for (let i = 0; i < n; i++) profiles[i] = profSrc[i];
+    else profiles.fill(-1);
+    let maxDur = 0;
     const startsBins = new Uint16Array(MODES.length * 144);
     const buckets = Array.from({ length: 24 }, () => []);
     for (let i = 0; i < n; i++) {
@@ -829,6 +840,7 @@
       modes[i] = routeMode[ridx];
       slots[i] = routeSlot[ridx];
       starts[i] = t0;
+      if (t1 - t0 > maxDur) maxDur = t1 - t0;
       startsBins[routeMode[ridx] * 144 + ((t0 % DAY) / 600 | 0)]++;
     }
     return {
@@ -836,6 +848,7 @@
       trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
       hourBuckets: buckets, startTimes: starts.slice().sort(),
       hist: dd.hist, startsBins, sun: dd.sun,
+      tripProfile: profiles, maxDur,
     };
   }
 
@@ -844,7 +857,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261110a`);
+        const res = await fetch(`data-${key}.json?v=20261110d`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -865,6 +878,8 @@
     curHist = d.hist;
     curStarts = d.startsBins;
     curSun = d.sun || null;
+    tripProfile = d.tripProfile;
+    dayMaxDur = d.maxDur || 0;
     linesDirty = true;
     routeSig = -1;
     $('dayLabel').textContent = d.label;
@@ -915,7 +930,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261110a');
+      const res = await fetch('busways.json?v=20261110d');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1011,7 +1026,6 @@
   function fillRoutePanel(idx) {
     const key = routeIds[idx];
     const meta = D.routes[key] || {};
-    const stats = routeStats(idx);
     $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
     const modeLabel = MODE_LABEL[meta.m] || meta.m;
     const parts = [meta.a, modeLabel].filter(Boolean);
@@ -1021,15 +1035,17 @@
     updateRouteStats(idx);
   }
 
-  async function selectRoute(idx) {
+  async function selectRoute(idx, fromKeyboard = false) {
     if (idx < 0 || idx >= routeIds.length) return;
     selected = idx;
     selStops = null;
-    setPanelCollapsed(false);
+    if (panelEl.classList.contains('collapsed') && matchMedia('(max-width: 680px)').matches) {
+      setPanelCollapsed(false);
+    }
     $('panelMain').hidden = true;
     $('routePanel').hidden = false;
     const closeBtn = $('rClose');
-    if (closeBtn) closeBtn.focus();
+    if (closeBtn && !fromKeyboard) closeBtn.focus();
     fillRoutePanel(idx);
     state.dirty = true;
 
@@ -1040,7 +1056,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261110a`);
+        const res = await fetch(`stops-${feed}.json?v=20261110d`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1293,6 +1309,7 @@
     });
     $('rClose').addEventListener('click', clearSelection);
     window.addEventListener('keydown', (e) => {
+      if (document.querySelector('dialog[open]')) return;
       if (e.key === 'Escape') { clearSelection(); return; }
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
       if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea,dialog')) return;
@@ -1302,12 +1319,13 @@
       const next = at < 0
         ? (e.key === 'ArrowDown' ? list[0] : list[list.length - 1])
         : list[(at + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length];
-      selectRoute(next);
+      selectRoute(next, true);
       e.preventDefault();
     });
 
     $('panelToggle').addEventListener('click', () => {
       setPanelCollapsed(!panelEl.classList.contains('collapsed'));
+      resize();
     });
     try {
       if (localStorage.getItem('tim-panel-collapsed') === '1'
@@ -1341,6 +1359,7 @@
       state.modes[m] = !state.modes[m];
       btn.setAttribute('aria-pressed', String(state.modes[m]));
       drawChart();
+      linesDirty = true;
       state.dirty = true;
     });
 
@@ -1399,7 +1418,9 @@
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.target.matches('input,select,dialog')) return;
+      if (document.querySelector('dialog[open]')) return;   // modal owns the keyboard
+      const t = e.target;
+      if (t && t.closest && t.closest('button,a,summary,input,select,textarea')) return;
       if (e.code === 'Space') { e.preventDefault(); setPlaying(!state.playing); }
       else if (e.key === 'ArrowRight') { setPlaying(false); seek(state.t + (e.shiftKey ? 3600 : 300)); }
       else if (e.key === 'ArrowLeft') { setPlaying(false); seek(state.t - (e.shiftKey ? 3600 : 300)); }
@@ -1420,7 +1441,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261110a');
+    const res = await fetch('data.json?v=20261110d');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1509,7 +1530,19 @@
       // the camera then opens on the city instead of the whole GTHA, which
       // was mostly empty Basemap at zoom 8.2.
       fitZoom = mapObj.getZoom();
-      mapObj.jumpTo({ center: [-79.383, 43.653], zoom: 9.8 });
+      let restored = false;
+      try {
+        const v = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null');
+        if (Array.isArray(v) && v.length === 3
+            && Number.isFinite(v[0]) && Number.isFinite(v[1]) && Number.isFinite(v[2])) {
+          mapObj.jumpTo({
+            center: [v[0], v[1]],
+            zoom: Math.max(8, Math.min(15, v[2])),
+          });
+          restored = true;
+        }
+      } catch { /* private mode */ }
+      if (!restored) mapObj.jumpTo({ center: [-79.383, 43.653], zoom: 9.8 });
       projectPieces();
       needsProjection = false;
       state.dirty = true;
@@ -1528,6 +1561,20 @@
       exactTimer = setTimeout(() => { needsProjection = true; state.dirty = true; }, 60);
     });
     mapObj.on('error', (e) => console.warn('basemap:', e?.error?.message || e));
+    let viewTimer = 0;
+    const saveView = () => {
+      const c = mapObj.getCenter();
+      try {
+        localStorage.setItem(VIEW_KEY, JSON.stringify([
+          +c.lng.toFixed(5), +c.lat.toFixed(5), +mapObj.getZoom().toFixed(2),
+        ]));
+      } catch { /* private mode */ }
+    };
+    mapObj.on('moveend', () => {
+      clearTimeout(viewTimer);
+      viewTimer = setTimeout(saveView, 200);
+    });
+    window.addEventListener('pagehide', saveView);
 
     last = performance.now();
     requestAnimationFrame(frame);
