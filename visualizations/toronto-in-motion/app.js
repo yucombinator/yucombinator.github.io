@@ -802,7 +802,11 @@
         padding: { top: 92, bottom: bottomPad(), left: 20, right: 20 },
         duration: 0,
       });
+      // fitZoom is the region-wide reference the dot and glow scaling use;
+      // the camera then opens on the city instead of the whole GTHA, which
+      // was mostly empty Basemap at zoom 8.2.
       fitZoom = mapObj.getZoom();
+      mapObj.jumpTo({ center: [-79.383, 43.653], zoom: 9.8 });
       projectPieces();
       needsProjection = false;
       state.dirty = true;
