@@ -139,7 +139,7 @@
 
   <div class="meta">
     <div class="day" id="dayLabel">—</div>
-    <div class="sub">Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO, UP Express and a dozen local agencies — as moving dots, 24 hours at a time. Drag or scroll the map to explore.</div>
+    <div class="sub">Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO, UP Express and 15 local agencies — as moving dots, 24 hours at a time. Drag or scroll the map to explore.</div>
   </div>
 
   <div id="tip" role="status" aria-live="polite"></div>
@@ -152,7 +152,7 @@
         <button data-mode="lrt" aria-pressed="true" title="Line 5, Line 6, ION"><span class="swatches"><i style="background:#f87005"></i><i style="background:#8a999a"></i><i style="background:#00b3b0"></i></span>LRT<span class="n" id="n-lrt">0</span></button>
         <button data-mode="gorail" aria-pressed="true" title="GO Transit trains"><span class="dot" style="background:#00853e"></span>GO rail<span class="n" id="n-gorail">0</span></button>
         <button data-mode="gobus" aria-pressed="true" title="GO Transit buses"><span class="dot" style="background:#5aa93f"></span>GO bus<span class="n" id="n-gobus">0</span></button>
-        <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
+        <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Niagara Region"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
         <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#3867d6"></span>UP<span class="n" id="n-up">0</span></button>
       </div>
       <div class="controls">
@@ -199,9 +199,9 @@
   <dialog id="about">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2>Toronto in Motion</h2>
-    <p>Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph and Barrie — animated as a dot moving along its route, with a 24-hour scrubber. Switch between the most recent weekday, Saturday and Sunday to see how service thins out on weekends.</p>
+    <p>Every scheduled trip across the Greater Golden Horseshoe and Waterloo Region — TTC, GO Transit, UP Express, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay and Niagara Region — animated as a dot moving along its route, with a 24-hour scrubber. Switch between the most recent weekday, Saturday and Sunday to see how service thins out on weekends.</p>
     <p><strong>This is the timetable, not live tracking.</strong> Each dot is a scheduled trip interpolated along its official GTFS shape between its first and last stop time, at uniform speed. No vehicle positions, delays or cancellations are included.</p>
-    <p>Data: the agencies' published GTFS feeds, each used under its open data licence (TTC, Metrolinx, MiWay, Brampton, YRT, Durham, Oakville, Burlington, Hamilton, Region of Waterloo, Guelph, Barrie). TTC lines use the TTC's own colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Other agencies are coloured for legibility, not to match their brands.</p>
+    <p>Data: the agencies' published GTFS feeds, each used under its open data licence (TTC, Metrolinx, MiWay, Brampton, YRT, Durham, Oakville, Burlington, Hamilton, Region of Waterloo, Guelph, Barrie, Milton, Simcoe County, Orangeville, Kawartha Lakes, Niagara Region). TTC lines use the TTC's own colours — Line 1 yellow, Line 2 green, Line 4 magenta, Line 5 orange, Line 6 grey, streetcars red. Other agencies are coloured for legibility, not to match their brands.</p>
     <p>Basemap: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, built from OpenStreetMap data. You can drag and zoom the map; the dots are reprojected to follow it.</p>
     <p>Format and interaction inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>.</p>
     <p>Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
@@ -209,6 +209,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261108f"></script>
+<script src="app.js?v=20261108g"></script>
 </body>
 </html>

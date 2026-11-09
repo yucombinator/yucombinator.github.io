@@ -111,6 +111,24 @@ FEEDS = [
     {"id": "barrie", "agency": "Barrie Transit",
      "url": "http://www.myridebarrie.ca/gtfs/Google_transit.zip",
      "kind": "local", "color": "546e7a"},
+    # Metrolinx-hosted feeds for the fast-growing 905 fringes of the GGH
+    {"id": "milton", "agency": "Milton Transit",
+     "url": "https://metrolinx.tmix.se/gtfs/gtfs-milton.zip",
+     "kind": "local", "color": "7fa650"},
+    {"id": "simcoe", "agency": "Simcoe County LINX",
+     "url": "https://metrolinx.tmix.se/gtfs/gtfs-simcoe.zip",
+     "kind": "local", "color": "b06fd0"},
+    {"id": "orangeville", "agency": "Orangeville Transit",
+     "url": "https://metrolinx.tmix.se/gtfs/gtfs-orangeville.zip",
+     "kind": "local", "color": "d0563a"},
+    {"id": "kawartha", "agency": "Lindsay Transit",
+     "url": "https://metrolinx.tmix.se/gtfs/gtfs-kawartha.zip",
+     "kind": "local", "color": "4f8fd0"},
+    # Niagara's official host redirects to a broken HTTPS endpoint; this is
+    # the same GTFSExport bundle its own trip planner consumes.
+    {"id": "niagara", "agency": "Niagara Region Transit",
+     "url": "http://68.71.24.110/gtfs/GTFSExport.zip",
+     "kind": "local", "color": "c04fa0"},
 ]
 
 MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up")
@@ -169,14 +187,16 @@ def active_services(path, spec, counts):
                     svc.discard(row["service_id"])
     if svc:
         return svc
-    # The feed has no service on that date (usually a stale calendar window).
-    # Fall back to the busiest service that runs on that weekday, so a Sunday
-    # still looks like a Sunday rather than borrowing a weekday schedule.
+    # The feed has no service on that date. If its calendar covers this
+    # weekday in some other window (usually a stale or future board period),
+    # borrow the busiest matching service; otherwise the agency really does
+    # not run that day (e.g. Orangeville on Sunday) and the day is empty.
     if not counts:
         return set()
     same_dow = [r["service_id"] for r in calendar if r.get(spec["dow"]) == "1"]
-    pool = same_dow or list(counts)
-    best = max(pool, key=lambda sid: counts.get(sid, 0))
+    if not same_dow:
+        return set()
+    best = max(same_dow, key=lambda sid: counts.get(sid, 0))
     print(f"  ! {os.path.basename(path)}: no service on {spec['iso']}, "
           f"using {best}", file=sys.stderr)
     return {best}
@@ -341,10 +361,15 @@ for key, pts in raw_shapes.items():
     for p in xy[1:]:
         if (p[0] - clean[-1][0]) ** 2 + (p[1] - clean[-1][1]) ** 2 >= 9:
             clean.append(p)
-    simp = dp(clean, 30.0)
-    if len(simp) > 80:
-        step = len(simp) / 80.0
-        simp = [simp[min(len(simp) - 1, int(i * step))] for i in range(80)]
+    simp = dp(clean, 20.0)
+    # Cap by length, not a flat 80 points: a 130 km GO bus shape squeezed
+    # into 80 points was 1.7 km per segment and read as a jagged polygon.
+    length = sum(((simp[i][0] - simp[i - 1][0]) ** 2 + (simp[i][1] - simp[i - 1][1]) ** 2) ** 0.5
+                 for i in range(1, len(simp)))
+    cap = max(80, min(700, int(length / 150) + 1))
+    if len(simp) > cap:
+        step = len(simp) / cap
+        simp = [simp[min(len(simp) - 1, int(i * step))] for i in range(cap)]
     projected[key] = simp
     for x, y in simp:
         minx, maxx = min(minx, x), max(maxx, x)
@@ -398,9 +423,8 @@ def pct(arr, f):
 
 doc = {
     "city": "Greater Golden Horseshoe",
-    "source": "GTFS feeds: TTC, GO, UP Express, MiWay, Brampton, YRT, Durham, "
-              "Oakville, Burlington, HSR, GRT/ION, Guelph, Barrie ("
-              + ", ".join(f"{spec['label']}" for spec in DAY_SPECS) + ")",
+    "source": "GTFS feeds: " + ", ".join(f["agency"] for f in FEEDS)
+              + " (" + ", ".join(spec["label"] for spec in DAY_SPECS) + ")",
     "fit": [pct(allxs, 0.002), pct(allys, 0.002), pct(allxs, 0.998), pct(allys, 0.998)],
     "proj": {"lat0": LAT0, "kx": KX, "ky": KY, "x0": minx, "y0": miny},
     "routes": route_out,

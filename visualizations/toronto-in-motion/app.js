@@ -118,16 +118,25 @@
     const { w, h } = view;
     lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     lctx.clearRect(0, 0, w, h);
-    lctx.lineWidth = 1;
+    lctx.lineWidth = 1.1;
+    lctx.lineJoin = 'round';
+    lctx.lineCap = 'round';
     const ss = view.screenShapes;
     for (const { shapeIdx, color } of railShapes) {
       const shape = ss[shapeIdx];
-      if (!shape || shape.xy.length < 4) continue;
-      lctx.strokeStyle = color + '55';
+      const xy = shape && shape.xy;
+      if (!xy || xy.length < 4) continue;
+      lctx.strokeStyle = color + '5c';
       lctx.beginPath();
-      const xy = shape.xy;
-      for (let p = 0; p < xy.length; p += 2) {
-        if (p === 0) lctx.moveTo(xy[p], xy[p + 1]); else lctx.lineTo(xy[p], xy[p + 1]);
+      lctx.moveTo(xy[0], xy[1]);
+      if (xy.length === 4) {
+        lctx.lineTo(xy[2], xy[3]);
+      } else {
+        // quadratic through segment midpoints: same path, rounded corners
+        for (let p = 2; p < xy.length - 2; p += 2) {
+          lctx.quadraticCurveTo(xy[p], xy[p + 1], (xy[p] + xy[p + 2]) / 2, (xy[p + 1] + xy[p + 3]) / 2);
+        }
+        lctx.lineTo(xy[xy.length - 2], xy[xy.length - 1]);
       }
       lctx.stroke();
     }
@@ -399,7 +408,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261108f`);
+        const res = await fetch(`data-${key}.json?v=20261108g`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -552,7 +561,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108f');
+    const res = await fetch('data.json?v=20261108g');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
