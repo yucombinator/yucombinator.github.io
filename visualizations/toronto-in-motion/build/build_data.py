@@ -56,6 +56,25 @@ def day_spec(key, weekday_index):
     }
 
 
+def sun_times(d, lat=43.6532, lon=-79.3832):
+    """Local sunrise/sunset in seconds for the map's latitude/longitude."""
+    tz = ZoneInfo("America/Toronto")
+    off = datetime(d.year, d.month, d.day, 12, tzinfo=tz).utcoffset().total_seconds() / 3600
+    n = d.timetuple().tm_yday
+    b = math.radians(360 / 365 * (n - 81))
+    eot = 9.87 * math.sin(2 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b)
+    decl = math.radians(23.44 * math.sin(b))
+    solar_noon = 720 - 4 * (lon - 15 * off) - eot
+    cos_h = ((math.sin(math.radians(-0.833))
+              - math.sin(math.radians(lat)) * math.sin(decl))
+             / (math.cos(math.radians(lat)) * math.cos(decl)))
+    if cos_h <= -1 or cos_h >= 1:
+        return [0, 86400]
+    h = math.degrees(math.acos(cos_h)) * 4
+    return [int(max(0, min(86400, (solar_noon - h) * 60))),
+            int(max(0, min(86400, (solar_noon + h) * 60)))]
+
+
 DAY_SPECS = [
     day_spec("weekday", 2),    # most recent Wednesday
     day_spec("saturday", 5),
@@ -676,6 +695,7 @@ for spec in DAY_SPECS:
         "label": spec["label"],
         "date": spec["iso"],
         "tz": spec["tz"],
+        "sun": sun_times(spec["date"]),
         "trips": [
             [shape_index[(fid, sid)], t0, t1, route_index[rk]]
             for fid, sid, t0, t1, rk in day_trips[key]

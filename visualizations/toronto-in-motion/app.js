@@ -86,7 +86,7 @@
   let corridors = null;            // dedicated busways / RapidTO lanes
   let activeRoutes = new Set();    // routes running now, or within the grace window
   const LINE_GRACE = 15 * 60;      // seconds of schedule time
-  let curDay = null, curHist = null, curStarts = null;
+  let curDay = null, curHist = null, curStarts = null, curSun = null;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
   let live = null;                 // parsed live.json
@@ -171,12 +171,18 @@
     lctx.lineJoin = 'round';
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
+    const zLine = mapObj ? mapObj.getZoom() : fitZoom;
+    const showIdle = zLine >= 12;
     for (const { shapeIdx, color, mode, route } of railShapes) {
-      if (!activeRoutes.has(route)) continue;
+      if (!state.modes[mode]) continue;
+      const liveRoute = activeRoutes.has(route);
+      if (!liveRoute && !showIdle) continue;
       const shape = ss[shapeIdx];
       const xy = shape && shape.xy;
       if (!xy || xy.length < 4) continue;
-      lctx.strokeStyle = color + (isBus(mode) ? '2b' : '5c');
+      lctx.strokeStyle = color + (liveRoute
+        ? (isBus(mode) ? '2b' : '5c')
+        : (isBus(mode) ? '16' : '26'));
       lctx.lineWidth = isBus(mode) ? 1 : 1.15;
       lctx.beginPath();
       lctx.moveTo(xy[0], xy[1]);
@@ -748,6 +754,22 @@
     let max = 0;
     for (let b = 0; b < buckets; b++) if (smooth[b] > max) max = smooth[b];
     if (!max) return;
+    // solar bands behind the bars: night, morning, afternoon, evening
+    const rise = curSun ? curSun[0] : 7 * 3600;
+    const set = curSun ? curSun[1] : 18 * 3600;
+    const X = (sec) => (sec / DAY) * w;
+    const bands = [
+      [0, rise, 'rgba(58,88,148,.20)'],
+      [rise, 12 * 3600, 'rgba(245,194,107,.07)'],
+      [12 * 3600, set, 'rgba(245,194,107,.16)'],
+      [set, DAY, 'rgba(146,88,166,.16)'],
+    ];
+    for (const [a, b, color] of bands) {
+      if (b <= a) continue;
+      chartCtx.fillStyle = color;
+      chartCtx.fillRect(X(a), 0, X(b) - X(a), h);
+    }
+
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
     grad.addColorStop(0, 'rgba(245,194,107,.20)');
@@ -759,6 +781,18 @@
       const bh = Math.max(1, (v / max) * (h - 3));
       chartCtx.fillRect(b * bw + 0.5, h - bh, Math.max(1, bw - 1), bh);
     }
+
+    chartCtx.font = '700 8px system-ui, sans-serif';
+    chartCtx.textAlign = 'center';
+    chartCtx.textBaseline = 'top';
+    chartCtx.fillStyle = 'rgba(226,240,235,.42)';
+    for (const [label, a, b] of [['AM', rise, 12 * 3600],
+                                 ['PM', 12 * 3600, set],
+                                 ['EVE', set, DAY]]) {
+      if (X(b) - X(a) < 28) continue;
+      chartCtx.fillText(label, X((a + b) / 2), 2);
+    }
+    chartCtx.textAlign = 'start';
   }
 
   /* ---------- service days ---------- */
@@ -797,7 +831,7 @@
       key, label: dd.label, date: dd.date, tz: dd.tz,
       trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
       hourBuckets: buckets, startTimes: starts.slice().sort(),
-      hist: dd.hist, startsBins,
+      hist: dd.hist, startsBins, sun: dd.sun,
     };
   }
 
@@ -806,7 +840,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109t`);
+        const res = await fetch(`data-${key}.json?v=20261109u`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -826,6 +860,7 @@
     hourBuckets = d.hourBuckets; startTimes = d.startTimes;
     curHist = d.hist;
     curStarts = d.startsBins;
+    curSun = d.sun || null;
     linesDirty = true;
     routeSig = -1;
     $('dayLabel').textContent = d.label;
@@ -876,7 +911,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109t');
+      const res = await fetch('busways.json?v=20261109u');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1001,7 +1036,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109t`);
+        const res = await fetch(`stops-${feed}.json?v=20261109u`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1370,6 +1405,9 @@
     const dlg = $('about');
     $('aboutBtn').addEventListener('click', () => dlg.showModal());
     $('closeAbout').addEventListener('click', () => dlg.close());
+    const sources = $('sources');
+    $('sourcesBtn').addEventListener('click', () => sources.showModal());
+    $('closeSources').addEventListener('click', () => sources.close());
 
     window.addEventListener('resize', resize);
     if (document.fonts?.ready) document.fonts.ready.then(resize);
@@ -1378,7 +1416,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109t');
+    const res = await fetch('data.json?v=20261109u');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

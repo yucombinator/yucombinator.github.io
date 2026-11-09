@@ -50,6 +50,11 @@
   .clock small{font-size:11px;letter-spacing:.6px;color:var(--muted);margin-left:5px}
   .about-btn{background:none;border:0;color:#9db3b8;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:6px 0}
   .about-btn:hover{color:var(--accent)}
+  .linkish{background:none;border:0;padding:0;color:var(--accent);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+  #sources{max-width:560px}
+  .srclist{columns:2;column-gap:24px;margin:14px 0 0;padding-left:18px;font-size:12px;line-height:1.45;color:#c2d3cf}
+  .srclist li{break-inside:avoid;margin:0 0 6px}
+  .srclist-note{margin-top:16px;font-size:11px;color:#8fa6ab;line-height:1.5}
 
   .meta{position:absolute;left:max(22px,env(safe-area-inset-left));top:64px;pointer-events:none;z-index:4;text-shadow:0 1px 10px rgba(7,13,20,.95),0 0 3px rgba(7,13,20,.9)}
   header{text-shadow:0 1px 10px rgba(7,13,20,.9)}
@@ -281,12 +286,39 @@
     <h2>Toronto in Motion</h2>
     <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express, 15 local agencies and the Island ferry — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
     <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
-    <p>Data: the agencies' published GTFS feeds under their open data licences; the Island ferry uses the City's winter timetable. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Data: the agencies' published GTFS feeds under their open data licences; the Island ferry uses the City's winter timetable. <button class="linkish" id="sourcesBtn">See the full list</button>. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
+  </dialog>
+
+  <dialog id="sources">
+    <button class="close" id="closeSources" aria-label="Close">×</button>
+    <h2>Data sources</h2>
+    <ul class="srclist">
+      <li>TTC — Toronto Transit Commission</li>
+      <li>GO Transit — Metrolinx</li>
+      <li>UP Express — Metrolinx</li>
+      <li>MiWay — City of Mississauga</li>
+      <li>Brampton Transit</li>
+      <li>York Region Transit</li>
+      <li>Durham Region Transit</li>
+      <li>Oakville Transit</li>
+      <li>Burlington Transit</li>
+      <li>Hamilton Street Railway</li>
+      <li>Grand River Transit and ION — Region of Waterloo</li>
+      <li>Guelph Transit</li>
+      <li>Barrie Transit</li>
+      <li>Milton Transit</li>
+      <li>Simcoe County LINX</li>
+      <li>Orangeville Transit</li>
+      <li>Lindsay Transit — City of Kawartha Lakes</li>
+      <li>Niagara Region Transit</li>
+      <li>Toronto Island Ferry — City of Toronto timetable</li>
+    </ul>
+    <p class="srclist-note">GTFS feeds are used under each agency's open data licence. The Island ferry has no GTFS feed; its winter timetable is read from toronto.ca at build time.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261109t"></script>
+<script src="app.js?v=20261109u"></script>
 </body>
 </html>
