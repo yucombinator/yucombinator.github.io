@@ -4,9 +4,16 @@
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'lrt', 'streetcar', 'bus'];
-  const MODE_COLOR = { subway: '#f8c302', lrt: '#f87005', streetcar: '#da251d', bus: '#5aa9e6' };
-  const MODE_RADIUS = { subway: 2.7, lrt: 2.3, streetcar: 2.0, bus: 1.45 };
+  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'up'];
+  const MODE_COLOR = {
+    subway: '#f8c302', streetcar: '#da251d', lrt: '#f87005',
+    gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', up: '#3867d6',
+  };
+  const MODE_RADIUS = {
+    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, up: 2.5,
+  };
+  const isBus = (mode) => mode === 'localbus' || mode === 'gobus';
+  const isTrain = (mode) => mode === 'gorail' || mode === 'up';
   const DAY = 86400;
 
   const $ = (id) => document.getElementById(id);
@@ -22,7 +29,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, lrt: true, streetcar: true, bus: true },
+    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true },
     hover: null,
     dirty: true,
   };
@@ -42,9 +49,15 @@
   let px = null, py = null, pTrip = null;
   let activeCount = 0;       // dots currently drawn (viewport)
   let activeTotal = 0;       // trips running, on screen or not
-  const modeTotals = [0, 0, 0, 0];
+  const modeTotals = new Array(MODES.length).fill(0);
   let view = { w: 0, h: 0, screenShapes: [] };
   let needsProjection = false;
+  let dotsCanvas = document.createElement('canvas');
+  let dctx = dotsCanvas.getContext('2d');
+  let dpr = 1;
+  let trailReset = true;
+  let fitZoom = 10;
+  let dens = null, densW = 0, densH = 0;
   let last = 0;
   let uiAccum = 0;
 
@@ -145,7 +158,7 @@
     // dots: count every running trip, draw only the ones on screen
     activeCount = 0;
     activeTotal = 0;
-    modeTotals[0] = modeTotals[1] = modeTotals[2] = modeTotals[3] = 0;
+    modeTotals.fill(0);
     const t = state.t;
     for (let i = 0; i < tripCount; i++) {
       const t0 = trips[i * 4 + 1], t1 = trips[i * 4 + 2];
@@ -163,14 +176,17 @@
       activeCount++;
     }
 
+    const z = mapObj ? mapObj.getZoom() : fitZoom;
+    const zf = Math.min(1.6, Math.max(0.72, Math.pow(1.22, z - fitZoom)));
+
     // soft additive halo behind the dots (cheap glow: no canvas shadows)
     octx.globalCompositeOperation = 'lighter';
     for (let si = 0; si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
       octx.fillStyle = slotColors[si];
-      octx.globalAlpha = mode === 'bus' ? 0.055 : 0.13;
-      const glowR = MODE_RADIUS[mode] * 2.7;
+      octx.globalAlpha = isBus(mode) ? 0.055 : 0.13;
+      const glowR = MODE_RADIUS[mode] * 2.7 * zf;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
@@ -186,13 +202,13 @@
       const mode = MODES[slotMode[si]];
       if (!state.modes[mode]) continue;
       octx.fillStyle = slotColors[si];
-      octx.globalAlpha = mode === 'bus' ? 0.85 : 1;
-      const r = MODE_RADIUS[mode];
+      octx.globalAlpha = isBus(mode) ? 0.85 : 1;
+      const r = MODE_RADIUS[mode] * zf;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        octx.moveTo(px[k] + r, py[k]);
-        octx.arc(px[k], py[k], r, 0, Math.PI * 2);
+        if (isTrain(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
+        else { octx.moveTo(px[k] + r, py[k]); octx.arc(px[k], py[k], r, 0, Math.PI * 2); }
       }
       octx.fill();
     }
@@ -203,13 +219,13 @@
     octx.strokeStyle = 'rgba(255,255,255,.30)';
     for (let si = 0; si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
-      if (mode === 'bus' || !state.modes[mode]) continue;
-      const r = MODE_RADIUS[mode] + 0.3;
+      if (isBus(mode) || !state.modes[mode]) continue;
+      const r = MODE_RADIUS[mode] * zf + 0.3;
       octx.beginPath();
       for (let k = 0; k < activeCount; k++) {
         if (slotOfTrip[pTrip[k]] !== si) continue;
-        octx.moveTo(px[k] + r, py[k]);
-        octx.arc(px[k], py[k], r, 0, Math.PI * 2);
+        if (isTrain(mode)) octx.rect(px[k] - r, py[k] - r, r * 2, r * 2);
+        else { octx.moveTo(px[k] + r, py[k]); octx.arc(px[k], py[k], r, 0, Math.PI * 2); }
       }
       octx.stroke();
     }
@@ -231,11 +247,16 @@
   };
 
   function resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = overlay.clientWidth, h = overlay.clientHeight;
     overlay.width = Math.round(w * dpr); overlay.height = Math.round(h * dpr);
     octx.setTransform(dpr, 0, 0, dpr, 0, 0);
     view.w = w; view.h = h;
+    dotsCanvas.width = Math.round(w * dpr);
+    dotsCanvas.height = Math.round(h * dpr);
+    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dctx.clearRect(0, 0, w, h);
+    trailReset = true;
 
     const cw = chart.clientWidth, ch = chart.clientHeight;
     chart.width = Math.round(cw * dpr); chart.height = Math.round(ch * dpr);
@@ -297,10 +318,10 @@
 
   function updateUI() {
     $('clock').textContent = fmt(state.t);
-    $('n-subway').textContent = modeTotals[0];
-    $('n-lrt').textContent = modeTotals[1];
-    $('n-streetcar').textContent = modeTotals[2];
-    $('n-bus').textContent = modeTotals[3];
+    for (let m = 0; m < MODES.length; m++) {
+      const el = $('n-' + MODES[m]);
+      if (el) el.textContent = modeTotals[m];
+    }
     $('s-active').textContent = activeTotal.toLocaleString();
     $('s-started').textContent = startedBefore(state.t).toLocaleString();
     $('scrub').value = Math.round(state.t);
@@ -317,6 +338,7 @@
 
   function seek(t) {
     state.t = Math.max(0, Math.min(DAY - 1, t));
+    trailReset = true;
     state.dirty = true;
     updateUI();
   }
@@ -356,7 +378,7 @@
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
@@ -391,7 +413,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261108c');
+    const res = await fetch('data.json?v=20261108d');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -417,11 +439,11 @@
 
     slotOfTrip = new Uint8Array(tripCount);
     for (let i = 0; i < tripCount; i++) {
-      const [shape, t0, t1, rid] = D.trips[i];
+      const [shape, t0, t1, ridx] = D.trips[i];
       trips[i * 4] = shape; trips[i * 4 + 1] = t0; trips[i * 4 + 2] = t1;
-      trips[i * 4 + 3] = routePtr.get(rid) ?? 0;
-      const route = D.routes[rid];
-      const mode = route?.m || 'bus';
+      trips[i * 4 + 3] = ridx;
+      const route = D.routes[routeIds[ridx]];
+      const mode = route?.m || 'localbus';
       const modeIdx = Math.max(0, MODES.indexOf(mode));
       const hex = route?.c ? '#' + route.c : MODE_COLOR[MODES[modeIdx]];
       modeOfTrip[i] = modeIdx;
@@ -452,6 +474,7 @@
     const peakHour = String(Math.floor(bestB / 6)).padStart(2, '0') + ':00';
     document.querySelector('.stats').children[2].innerHTML = `Peak hour <b>${peakHour}</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
 
+    $('s-total').textContent = tripCount.toLocaleString();
     $('zone').textContent = 'EST';
     resize();
     setPlaying(state.playing);
@@ -476,6 +499,7 @@
         padding: { top: 92, bottom: bottomPad(), left: 20, right: 20 },
         duration: 0,
       });
+      fitZoom = mapObj.getZoom();
       projectPieces();
       needsProjection = false;
       state.dirty = true;
