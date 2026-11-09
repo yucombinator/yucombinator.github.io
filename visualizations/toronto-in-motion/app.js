@@ -175,6 +175,11 @@
     const ss = view.screenShapes;
     const zLine = mapObj ? mapObj.getZoom() : fitZoom;
     const showIdle = zLine >= 13.5;
+    // Bus routes are noise at region zoom: drop them below z11, then ease
+    // them back in (quadratically, so the packed-shape overlap stays light)
+    // until they are fully drawn at z13.
+    const busRaw = Math.max(0, Math.min(1, (zLine - 11) / 2));
+    const busFade = busRaw * busRaw;
     const cull = aff.sx === 1 && aff.sy === 1 && aff.ox === 0 && aff.oy === 0;
     for (const { shapeIdx, color, mode, route } of railShapes) {
       if (!state.modes[mode]) continue;
@@ -185,15 +190,19 @@
       if (!xy || xy.length < 4) continue;
       if (cull && (shape.maxx < -4 || shape.minx > w + 4
                    || shape.maxy < -4 || shape.miny > h + 4)) continue;
+      const bus = isBus(mode);
+      if (bus && busFade < 0.01) continue;
       lctx.strokeStyle = liveRoute
-        ? color + (isBus(mode) ? '2b' : '5c')
+        ? color + (bus ? '2b' : '5c')
         : 'rgba(158,170,176,.17)';
-      lctx.lineWidth = isBus(mode) ? 1 : 1.15;
+      lctx.lineWidth = bus ? 1 : 1.15;
+      lctx.globalAlpha = bus ? busFade : 1;
       lctx.beginPath();
       lctx.moveTo(xy[0], xy[1]);
       for (let p = 2; p < xy.length; p += 2) lctx.lineTo(xy[p], xy[p + 1]);
       lctx.stroke();
     }
+    lctx.globalAlpha = 1;
   }
 
   // GTFS in this region publishes arrival == departure at every stop, so the
@@ -857,7 +866,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261110d`);
+        const res = await fetch(`data-${key}.json?v=20261110e`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -930,7 +939,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261110d');
+      const res = await fetch('busways.json?v=20261110e');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1056,7 +1065,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261110d`);
+        const res = await fetch(`stops-${feed}.json?v=20261110e`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1441,7 +1450,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261110d');
+    const res = await fetch('data.json?v=20261110e');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
