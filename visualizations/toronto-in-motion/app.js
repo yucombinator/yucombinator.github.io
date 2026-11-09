@@ -766,7 +766,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109r`);
+        const res = await fetch(`data-${key}.json?v=20261109s`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -836,13 +836,22 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109r');
+      const res = await fetch('busways.json?v=20261109s');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
       if (mapObj) projectCorridors();
       state.dirty = true;
     } catch { /* overlay is optional */ }
+  }
+
+  function cleanStopName(name) {
+    return String(name)
+      .replace(/\s*-\s*(?:North|South|East|West)?bound Platform$/i, '')
+      .replace(/\s+Drop-off Platform$/i, '')
+      .replace(/\s*-\s*Platform\b.*$/i, '')
+      .replace(/\s+Platform\b.*$/i, '')
+      .trim();
   }
 
   function projectStops() {
@@ -952,7 +961,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109r`);
+        const res = await fetch(`stops-${feed}.json?v=20261109s`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -969,9 +978,7 @@
           const row = doc.s[ids[i]];
           selStops.lat[i] = row[0];
           selStops.lon[i] = row[1];
-          selStops.name.push(String(row[2])
-            .replace(/\s*-\s*(East|West)bound Platform$/i, '')
-            .replace(/\s*-\s*Platform\s+\d+$/i, ''));
+          selStops.name.push(cleanStopName(row[2]));
         }
         projectStops();
         if (selected === idx) fillRoutePanel(idx);
@@ -1331,7 +1338,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109r');
+    const res = await fetch('data.json?v=20261109s');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
