@@ -298,7 +298,7 @@ KY = 110_574.0
 
 routes = {}          # "feed:route" -> meta
 raw_shapes = {}      # (feed, shape_id) -> [(lat, lon)]
-dwell_profiles = {}  # (feed, shape_id) -> [[fraction, dwell seconds], ...]
+dwell_raw = {}       # (feed, shape_id) -> [(lat, lon), ...]
 day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
 day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
 shape_ids = set()
@@ -370,34 +370,18 @@ for feed in FEEDS:
         if cur is None or n > stop_counts[cur]:
             rep_trip[route] = tid
 
-    # a representative per rail shape, so dwells follow the direction's shape
-    rep_shape_trip = {}
-    for tid, n in stop_counts.items():
-        t = local_trips.get(tid)
-        if not t or not t["shape"]:
-            continue
-        if routes.get(t["route"], {}).get("m") not in RAIL_MODES:
-            continue
-        cur = rep_shape_trip.get(t["shape"])
-        if cur is None or n > stop_counts[cur]:
-            rep_shape_trip[t["shape"]] = tid
-
-    rep_ids = set(rep_trip.values()) | set(rep_shape_trip.values())
-    rep_seq = {tid: [] for tid in rep_ids}
+    rep_seq = {tid: [] for tid in rep_trip.values()}
     if rep_seq:
         for row in read_csv(path, "stop_times.txt"):
             tid = row["trip_id"]
-            if tid not in rep_seq:
-                continue
-            try:
-                arr = secs(row["arrival_time"])
-            except Exception:                 # noqa: BLE001
-                arr = None
-            try:
-                dep = secs(row["departure_time"])
-            except Exception:                 # noqa: BLE001
-                dep = None
-            rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"], arr, dep))
+            if tid in rep_seq:
+                rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"]))
+
+    # which shapes each route uses, for projecting its stops onto them
+    route_shapes = {}
+    for t in local_trips.values():
+        if t["shape"]:
+            route_shapes.setdefault(t["route"], set()).add(t["shape"])
 
     stop_meta = {}
     sp = os.path.join(path, "stops.txt")
@@ -416,7 +400,7 @@ for feed in FEEDS:
         seq = sorted(rep_seq.get(tid) or [])
         idxs = []
         last = None
-        for _, sid, _arr, _dep in seq:
+        for _, sid in seq:
             meta = stop_meta.get(sid)
             if not meta or sid == last:
                 continue
@@ -479,45 +463,24 @@ for feed in FEEDS:
                      float(row["shape_pt_lon"]))
                 )
 
-    # dwell profiles for rail shapes, measured from the representative trip
-    for shape_id, tid in rep_shape_trip.items():
-        pts = raw_shapes.get((feed["id"], shape_id))
-        seq = sorted(rep_seq.get(tid) or [])
-        if not pts or len(pts) < 2 or len(seq) < 2:
+    # Rail dwell inputs: the route's representative stops, to be projected on
+    # every shape the route uses. Using the same stop coordinates the map draws
+    # guarantees dwells land on the station dots even on the reverse shape.
+    for route_key, tid in rep_trip.items():
+        if routes.get(route_key, {}).get("m") not in RAIL_MODES:
             continue
-        xy = [(lon * KX, lat * KY) for _, lat, lon in sorted(pts)]
-        cum = [0.0]
-        for i in range(1, len(xy)):
-            cum.append(cum[-1] + math.hypot(xy[i][0] - xy[i - 1][0],
-                                            xy[i][1] - xy[i - 1][1]))
-        total = cum[-1]
-        if total <= 0:
-            continue
-        prof, prev = [], 0.0
-        for _, sid, arr, dep in seq:
-            meta = stop_meta.get(sid)
-            if not meta:
+        seen, coords = set(), []
+        for _, sid in sorted(rep_seq.get(tid) or []):
+            if sid in seen:
                 continue
-            f = nearest_frac(xy, cum, total, meta[1] * KX, meta[0] * KY)
-            f = max(prev, min(1.0, f))
-            prev = f
-            dwell = 0
-            if arr is not None and dep is not None:
-                gap = dep - arr
-                if 0 <= gap <= 600:
-                    dwell = gap
-            prof.append([round(f, 4), dwell])
-        if len(prof) < 2:
+            seen.add(sid)
+            meta = stop_meta.get(sid)
+            if meta:
+                coords.append((meta[0], meta[1]))
+        if len(coords) < 2:
             continue
-        prof[-1][1] = 0
-        clean = [prof[0]]
-        for item in prof[1:]:
-            if item[0] > clean[-1][0]:
-                clean.append(item)
-            else:
-                clean[-1][1] = max(clean[-1][1], item[1])
-        if len(clean) >= 2 and clean[-1][0] > 0:
-            dwell_profiles[(feed["id"], shape_id)] = clean
+        for shape_id in route_shapes.get(route_key, ()):
+            dwell_raw[(feed["id"], shape_id)] = coords
 
 
 # --- Toronto Island Ferry -------------------------------------------------
@@ -679,10 +642,27 @@ shape_keys = sorted(projected)
 shape_index = {k: i for i, k in enumerate(shape_keys)}
 
 dwell_out = {}
-for key, prof in dwell_profiles.items():
-    idx = shape_index.get(key)
-    if idx is not None:
-        dwell_out[str(idx)] = [f for f, _dwell in prof]
+for key, rows in dwell_raw.items():
+    pts = projected.get(key)
+    if not pts or len(pts) < 2:
+        continue
+    cum = [0.0]
+    for i in range(1, len(pts)):
+        cum.append(cum[-1] + math.hypot(pts[i][0] - pts[i - 1][0],
+                                        pts[i][1] - pts[i - 1][1]))
+    total = cum[-1]
+    if total <= 0:
+        continue
+    prof = sorted(nearest_frac(pts, cum, total, lon * KX, lat * KY)
+                  for lat, lon in rows)
+    clean = [prof[0]]
+    for f in prof[1:]:
+        if f > clean[-1] + 0.0005:
+            clean.append(f)
+    if len(clean) >= 2:
+        idx = shape_index.get(key)
+        if idx is not None:
+            dwell_out[str(idx)] = [round(f, 4) for f in clean]
 shapes = [[[round(x - minx), round(y - miny)] for x, y in projected[k]] for k in shape_keys]
 
 route_keys = sorted(routes)
