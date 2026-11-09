@@ -557,33 +557,6 @@
         octx.stroke();
 
         const badge = meta.s;
-        const drawGoBadge = (i, fromI) => {
-          let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
-          const len = Math.hypot(dx, dy) || 1;
-          dx /= len; dy /= len;
-          const w = sr * 5.2, h = sr * 3.4;
-          const bx = sx(i) + dx * sr * 4.2;
-          const by = sy(i) + dy * sr * 4.2;
-          const rr = Math.min(h / 2, 3.5);
-          octx.beginPath();
-          octx.moveTo(bx - w / 2 + rr, by - h / 2);
-          octx.arcTo(bx + w / 2, by - h / 2, bx + w / 2, by + h / 2, rr);
-          octx.arcTo(bx + w / 2, by + h / 2, bx - w / 2, by + h / 2, rr);
-          octx.arcTo(bx - w / 2, by + h / 2, bx - w / 2, by - h / 2, rr);
-          octx.arcTo(bx - w / 2, by - h / 2, bx + w / 2, by - h / 2, rr);
-          octx.closePath();
-          octx.fillStyle = selMode === 'up' ? col : '#00853e';
-          octx.fill();
-          octx.strokeStyle = '#ffffff';
-          octx.lineWidth = 1.3;
-          octx.stroke();
-          octx.fillStyle = '#ffffff';
-          octx.font = `800 ${Math.max(8, Math.round(h * 0.62))}px system-ui, sans-serif`;
-          octx.textAlign = 'center';
-          octx.textBaseline = 'middle';
-          octx.fillText(selMode === 'up' ? 'UP' : 'GO', bx, by + 0.5);
-          octx.textAlign = 'start';
-        };
         const drawBadge = (i, fromI) => {
           let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
           const len = Math.hypot(dx, dy) || 1;
@@ -605,14 +578,9 @@
           octx.fillText(badge, bx, by + 0.5);
           octx.textAlign = 'start';
         };
-        if (n >= 2 && (branded || badge)) {
-          if (branded) {
-            drawGoBadge(0, 1);
-            drawGoBadge(n - 1, n - 2);
-          } else {
-            drawBadge(0, 1);
-            drawBadge(n - 1, n - 2);
-          }
+        if (n >= 2 && badge) {
+          drawBadge(0, 1);
+          drawBadge(n - 1, n - 2);
         }
       } else {
         octx.fillStyle = '#0b141b';
@@ -774,7 +742,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109p`);
+        const res = await fetch(`data-${key}.json?v=20261109q`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -844,7 +812,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109p');
+      const res = await fetch('busways.json?v=20261109q');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -960,7 +928,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109p`);
+        const res = await fetch(`stops-${feed}.json?v=20261109q`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1337,7 +1305,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109p');
+    const res = await fetch('data.json?v=20261109q');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
