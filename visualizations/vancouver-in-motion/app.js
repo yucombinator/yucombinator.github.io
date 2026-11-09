@@ -283,10 +283,10 @@
     if (chartW && state.t !== lastCursorT) {
       lineCtx.clearRect(0, 0, chartW, chartH);
       const cx = (state.t / DAY) * chartW;
-      lineCtx.strokeStyle = 'rgba(245,194,107,.85)';
+      lineCtx.strokeStyle = 'rgba(111,224,164,.85)';
       lineCtx.lineWidth = 1;
       lineCtx.beginPath(); lineCtx.moveTo(cx, 0); lineCtx.lineTo(cx, chartH); lineCtx.stroke();
-      lineCtx.fillStyle = 'rgba(245,194,107,.9)';
+      lineCtx.fillStyle = 'rgba(111,224,164,.9)';
       lineCtx.beginPath(); lineCtx.arc(cx, chartH - 2, 2.5, 0, Math.PI * 2); lineCtx.fill();
       lastCursorT = state.t;
     }
@@ -783,10 +783,10 @@
     const bg = chartCtx.createLinearGradient(0, 0, w, 0);
     bg.addColorStop(0, 'rgba(58,88,148,.20)');
     bg.addColorStop(F(rise - blend), 'rgba(58,88,148,.20)');
-    bg.addColorStop(F(rise + blend), 'rgba(245,194,107,.07)');
-    bg.addColorStop(F(12 * 3600 - blend), 'rgba(245,194,107,.07)');
-    bg.addColorStop(F(12 * 3600 + blend), 'rgba(245,194,107,.16)');
-    bg.addColorStop(F(set - blend), 'rgba(245,194,107,.16)');
+    bg.addColorStop(F(rise + blend), 'rgba(111,224,164,.07)');
+    bg.addColorStop(F(12 * 3600 - blend), 'rgba(111,224,164,.07)');
+    bg.addColorStop(F(12 * 3600 + blend), 'rgba(111,224,164,.16)');
+    bg.addColorStop(F(set - blend), 'rgba(111,224,164,.16)');
     bg.addColorStop(F(set + blend), 'rgba(146,88,166,.16)');
     bg.addColorStop(1, 'rgba(146,88,166,.16)');
     chartCtx.fillStyle = bg;
@@ -796,8 +796,8 @@
     const labelH = 13;
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
-    grad.addColorStop(0, 'rgba(245,194,107,.20)');
-    grad.addColorStop(1, 'rgba(245,194,107,.90)');
+    grad.addColorStop(0, 'rgba(111,224,164,.20)');
+    grad.addColorStop(1, 'rgba(111,224,164,.90)');
     chartCtx.fillStyle = grad;
     for (let b = 0; b < buckets; b++) {
       const v = smooth[b];
@@ -871,7 +871,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109n`);
+        const res = await fetch(`data-${key}.json?v=20261109o`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -944,7 +944,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109n');
+      const res = await fetch('busways.json?v=20261109o');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1074,7 +1074,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109n`);
+        const res = await fetch(`stops-${feed}.json?v=20261109o`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1515,7 +1515,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109n');
+    const res = await fetch('data.json?v=20261109o');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
