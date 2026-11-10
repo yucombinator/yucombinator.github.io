@@ -112,6 +112,7 @@
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
   let routeShapeIdx = null;        // route pointer -> shape indexes
+  let shapeCum = null;             // cumulative length per shape
   // Live is opt-in per city: a city with liveUrls gets the toggle.
   const LIVE_ENABLED = Array.isArray(CFG.liveUrls) && CFG.liveUrls.length > 0;
   const LIVE_STALE_MS = 30 * 60 * 1000;
@@ -328,6 +329,74 @@
     return routeShapeIdx.get(routePtr);
   }
 
+  function ensureShapeCum() {
+    if (shapeCum && shapeCum.length === shapes.length) return shapeCum;
+    shapeCum = shapes.map(({ pts }) => {
+      const cum = new Float32Array(pts.length);
+      let len = 0;
+      for (let i = 1; i < pts.length; i++) {
+        len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        cum[i] = len;
+      }
+      return cum;
+    });
+    return shapeCum;
+  }
+
+  function pointOnShape(si, distance) {
+    const shape = shapes[si];
+    const pts = shape && shape.pts;
+    if (!pts || pts.length < 2) return null;
+    const cum = ensureShapeCum()[si];
+    const d = Math.max(0, Math.min(cum[cum.length - 1], distance));
+    let lo = 1, hi = cum.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cum[mid] < d) lo = mid + 1; else hi = mid;
+    }
+    const i = Math.max(1, lo);
+    const seg = cum[i] - cum[i - 1] || 1;
+    const f = (d - cum[i - 1]) / seg;
+    const x1 = pts[i - 1][0], y1 = pts[i - 1][1];
+    const x2 = pts[i][0], y2 = pts[i][1];
+    return {
+      x: x1 + (x2 - x1) * f,
+      y: y1 + (y2 - y1) * f,
+      angle: Math.atan2(x2 - x1, y2 - y1) - Math.PI / 2,
+    };
+  }
+
+  function nearestOnRoute(routePtr, lat, lon) {
+    if (routePtr == null || !shapeRoute || !shapes.length) return null;
+    const list = routeShapeIndexes(routePtr);
+    if (!list || !list.length) return null;
+    const { kx, ky, x0, y0 } = D.proj;
+    const qx = lon * kx - x0, qy = lat * ky - y0;
+    const cumAll = ensureShapeCum();
+    let best = Infinity, bestSi = -1, bestS = 0, bestAngle = 0;
+    for (const si of list) {
+      const pts = shapes[si].pts;
+      const cum = cumAll[si];
+      for (let p = 1; p < pts.length; p++) {
+        const x1 = pts[p - 1][0], y1 = pts[p - 1][1];
+        const x2 = pts[p][0], y2 = pts[p][1];
+        const dx = x2 - x1, dy = y2 - y1;
+        const l2 = dx * dx + dy * dy;
+        if (!l2) continue;
+        const t = Math.max(0, Math.min(1, ((qx - x1) * dx + (qy - y1) * dy) / l2));
+        const ex = qx - (x1 + t * dx), ey = qy - (y1 + t * dy);
+        const d = ex * ex + ey * ey;
+        if (d < best) {
+          best = d;
+          bestSi = si;
+          bestS = cum[p - 1] + t * (cum[p] - cum[p - 1]);
+          bestAngle = Math.atan2(dx, dy) - Math.PI / 2;
+        }
+      }
+    }
+    return bestSi < 0 ? null : { si: bestSi, s: bestS, angle: bestAngle };
+  }
+
   // Feeds frequently omit position.bearing. Fall back to the direction of
   // the nearest segment of the route's own shape before giving up on angle.
   function shapeHeading(routePtr, lat, lon) {
@@ -369,31 +438,54 @@
     return Math.atan2(dlon, dlat) - Math.PI / 2;
   }
 
-  function makeLiveAnim(prevDoc) {
+  function routePtrFor(doc, row) {
+    return routeIndexByKey.get(doc.routes[row[0]]);
+  }
+
+  function makeLiveAnim(prevDoc, doc) {
     const prev = new Map();
+    const paths = new Map();
     for (const row of prevDoc.v) {
       if (row[5]) prev.set(row[5], row);
     }
-    return { prev, start: performance.now(), duration: LIVE_INTERP_MS };
+    for (const row of doc.v) {
+      if (!row[5]) continue;
+      const ptr = routePtrFor(doc, row);
+      if (ptr == null) continue;
+      const cur = nearestOnRoute(ptr, row[1], row[2]);
+      const old = prev.get(row[5]);
+      if (!cur || !old) continue;
+      const from = nearestOnRoute(ptr, old[1], old[2]);
+      if (from && from.si === cur.si) {
+        paths.set(row[5], { si: cur.si, s0: from.s, s1: cur.s });
+      }
+    }
+    return { prev, paths, start: performance.now(), duration: LIVE_INTERP_MS };
   }
 
-  // The first snapshot has no history to interpolate from. Dead-reckon a
-  // short backward position so arrows start moving immediately; the next
-  // real snapshot replaces this estimate.
+  // The first snapshot has no history to interpolate from. Walk a short
+  // distance backward along the route shape so arrows move immediately
+  // without leaving the alignment.
   function initialLiveAnim(doc) {
     const prev = new Map();
-    if (!liveHeadings) return null;
+    const paths = new Map();
     const back = 250;
     for (let i = 0; i < doc.v.length; i++) {
       const row = doc.v[i];
       if (!row[5]) continue;
-      const angle = Number.isFinite(liveHeadings[i]) ? liveHeadings[i] : 0;
-      const lat = row[1] + Math.sin(angle) * back / 111320;
-      const lon = row[2] - Math.cos(angle) * back
-        / (111320 * Math.cos(row[1] * Math.PI / 180));
-      prev.set(row[5], [row[0], lat, lon, row[3], row[4], row[5]]);
+      const ptr = routePtrFor(doc, row);
+      const cur = ptr == null ? null : nearestOnRoute(ptr, row[1], row[2]);
+      if (cur) {
+        paths.set(row[5], { si: cur.si, s0: Math.max(0, cur.s - back), s1: cur.s });
+      } else {
+        const angle = liveHeadings && Number.isFinite(liveHeadings[i]) ? liveHeadings[i] : 0;
+        const lat = row[1] + Math.sin(angle) * back / 111320;
+        const lon = row[2] - Math.cos(angle) * back
+          / (111320 * Math.cos(row[1] * Math.PI / 180));
+        prev.set(row[5], [row[0], lat, lon, row[3], row[4], row[5]]);
+      }
     }
-    return { prev, start: performance.now(), duration: LIVE_INTERP_MS };
+    return { prev, paths, start: performance.now(), duration: LIVE_INTERP_MS };
   }
 
   function liveHeadingsFor(doc, prevDoc) {
@@ -430,25 +522,31 @@
       const row = rows[i];
       const slot = liveRoutes.get(live.routes[row[0]]);
       if (slot === undefined) continue;
+      const path = anim && row[5] ? anim.paths.get(row[5]) : null;
       const old = anim && row[5] ? anim.prev.get(row[5]) : null;
       let lat = row[1], lon = row[2];
-      if (old) {
-        lat += (row[1] - old[1]) * t;
-        lon += (row[2] - old[2]) * t;
-      }
-      const p = mapObj.project([lon, lat]);
-      if (p.x < -40 || p.y < -40 || p.x > view.w + 40 || p.y > view.h + 40) continue;
       const bearing = row[3];
       let angle = liveHeadings && !Number.isNaN(liveHeadings[i])
         ? liveHeadings[i]
         : (bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0);
-      if (old) {
+      if (path) {
+        const pt = pointOnShape(path.si, path.s0 + (path.s1 - path.s0) * t);
+        if (pt) {
+          const ll = lngLatOf(pt.x, pt.y);
+          lat = ll[1];
+          lon = ll[0];
+          angle = pt.angle + (path.s1 < path.s0 ? Math.PI : 0);
+        }
+      } else if (old) {
+        lat += (row[1] - old[1]) * t;
+        lon += (row[2] - old[2]) * t;
         const dlat = row[1] - old[1];
         const dlon = (row[2] - old[2]) * Math.cos(lat * Math.PI / 180);
         if (Math.hypot(dlat, dlon) * 111320 > 8) {
           angle = Math.atan2(dlon, dlat) - Math.PI / 2;
         }
       }
+      const p = mapObj.project([lon, lat]);
       liveScreen[m * 4] = p.x;
       liveScreen[m * 4 + 1] = p.y;
       liveScreen[m * 4 + 2] = angle;
@@ -1369,7 +1467,7 @@
         liveRoutes = new Map();
         for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
         liveHeadings = liveHeadingsFor(doc, prevDoc);
-        liveAnim = prevDoc ? makeLiveAnim(prevDoc) : null;
+        liveAnim = prevDoc ? makeLiveAnim(prevDoc, doc) : null;
       }
       const stale = Date.now() - live.generated > LIVE_STALE_MS;
       const btn = $('liveBtn');
@@ -1837,6 +1935,7 @@
 
     shapes = D.shapes.map((pts) => ({ pts }));
     routeShapeIdx = null;
+    shapeCum = null;
 
     routeIds = Object.keys(D.routes);
     const colorToSlot = new Map();
