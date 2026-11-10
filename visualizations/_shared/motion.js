@@ -1325,9 +1325,22 @@
     state.dirty = true;
   }
 
+  // Live is a fixed snapshot: do not let the scheduled-day or playback
+  // controls quietly change the timeline underneath it.
+  function setLiveControlsDisabled(disabled) {
+    const days = $('days'), speed = $('speed'), scrub = $('scrub');
+    for (const el of document.querySelectorAll('#days button, #speed button, #scrub')) {
+      el.disabled = disabled;
+    }
+    if (days) days.setAttribute('aria-disabled', String(disabled));
+    if (speed) speed.setAttribute('aria-disabled', String(disabled));
+    if (scrub) scrub.setAttribute('aria-disabled', String(disabled));
+  }
+
   function setLive(on) {
     if (on && !live) return;
     state.liveOn = on;
+    setLiveControlsDisabled(on);
     if (on) {
       setPlaying(false);
       const c = cityClock(live.generated);
