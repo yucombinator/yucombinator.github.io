@@ -397,6 +397,31 @@
     return bestSi < 0 ? null : { si: bestSi, s: bestS, angle: bestAngle };
   }
 
+  function nearestOnShape(si, lat, lon) {
+    const pts = shapes[si] && shapes[si].pts;
+    if (!pts || pts.length < 2) return null;
+    const { kx, ky, x0, y0 } = D.proj;
+    const qx = lon * kx - x0, qy = lat * ky - y0;
+    const cum = ensureShapeCum()[si];
+    let best = Infinity, bestS = 0, bestAngle = 0;
+    for (let p = 1; p < pts.length; p++) {
+      const x1 = pts[p - 1][0], y1 = pts[p - 1][1];
+      const x2 = pts[p][0], y2 = pts[p][1];
+      const dx = x2 - x1, dy = y2 - y1;
+      const l2 = dx * dx + dy * dy;
+      if (!l2) continue;
+      const t = Math.max(0, Math.min(1, ((qx - x1) * dx + (qy - y1) * dy) / l2));
+      const ex = qx - (x1 + t * dx), ey = qy - (y1 + t * dy);
+      const d = ex * ex + ey * ey;
+      if (d < best) {
+        best = d;
+        bestS = cum[p - 1] + t * (cum[p] - cum[p - 1]);
+        bestAngle = Math.atan2(dx, dy) - Math.PI / 2;
+      }
+    }
+    return best === Infinity ? null : { s: bestS, angle: bestAngle };
+  }
+
   // Feeds frequently omit position.bearing. Fall back to the direction of
   // the nearest segment of the route's own shape before giving up on angle.
   function shapeHeading(routePtr, lat, lon) {
@@ -466,11 +491,19 @@
       if (oldPath && oldPath.si === cur.si) {
         s0 = oldPath.s0 + (oldPath.s1 - oldPath.s0) * oldT;
       } else {
-        const old = prev.get(row[5]);
-        if (old) {
-          const from = nearestOnRoute(ptr, old[1], old[2]);
-          if (from && from.si === cur.si) s0 = from.s;
+        let from = null;
+        if (oldPath) {
+          const pt = pointOnShape(oldPath.si, oldPath.s0 + (oldPath.s1 - oldPath.s0) * oldT);
+          if (pt) {
+            const ll = lngLatOf(pt.x, pt.y);
+            from = nearestOnShape(cur.si, ll[1], ll[0]);
+          }
         }
+        if (!from) {
+          const old = prev.get(row[5]);
+          if (old) from = nearestOnShape(cur.si, old[1], old[2]);
+        }
+        if (from) s0 = from.s;
       }
       if (s0 !== null) {
         paths.set(row[5], { si: cur.si, s0, s1: cur.s });
