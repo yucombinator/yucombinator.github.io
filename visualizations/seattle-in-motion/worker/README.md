@@ -9,7 +9,7 @@ GET /live.json
   "generated": 1762400000000,
   "feeds": ["sound", "kcm", ...],
   "routes": ["puget:100479", ...],
-  "v": [[routeIndex, lat, lon, bearing, timestampMs], ...]
+  "v": [[routeIndex, lat, lon, bearing, timestampMs, "feed:vehicleId"], ...]
 }
 ```
 
@@ -25,6 +25,10 @@ Pierce Transit's feed returns 401 without an API key, and Everett Transit's
 vehicle entities carry no `route_id`; both stay on the scheduled layer. The
 engine already treats live routes as an overlay: routes absent from the feed
 keep their timetable arrows.
+
+`bearing` is the feed value when present; the client derives direction from
+successive positions and then from the route shape, because most feeds omit
+it. Rows include a feed-prefixed vehicle ID for that movement lookup.
 
 Route IDs were verified against `../data.json`: 100% of the live route IDs
 matched `puget:<route_id>` for the five feeds above (~737 vehicles at test
