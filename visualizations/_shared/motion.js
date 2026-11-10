@@ -828,7 +828,7 @@
 
         octx.strokeStyle = 'rgba(232,242,238,.55)';
         octx.lineWidth = 1.2;
-        octx.setLineDash([5, 4]);
+        octx.setLineDash(g.solid ? [] : [5, 4]);
         octx.beginPath();
         for (const xy of g.screen) {
           for (let p = 0; p < xy.length; p += 2) {
@@ -1369,7 +1369,7 @@
       const res = await fetch(`busways.json?v=${window.MOTION_VERSION || 'local'}`);
       if (!res.ok) return;
       const doc = await res.json();
-      corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
+      corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines, solid: !!g.solid }));
       if (mapObj) projectCorridors();
       state.dirty = true;
     } catch { /* overlay is optional */ }

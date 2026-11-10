@@ -238,7 +238,10 @@ def main():
         ]
         stats[G_NAME] = len(groups[G_NAME])
 
-    out = {"groups": [{"name": n, "lines": ls} for n, ls in sorted(groups.items())]}
+    out = {"groups": [
+        {"name": n, "lines": ls, **({"solid": True} if n == G_NAME else {})}
+        for n, ls in sorted(groups.items())
+    ]}
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(out, fh, separators=(",", ":"))
     pts = sum(len(line) for g in out["groups"] for line in g["lines"])
