@@ -7,10 +7,13 @@
   const CFG = window.MOTION_CONFIG || {};
   const MODES = (CFG.modes || []).map((m) => m.key);
   const MODE_LABEL = {}, MODE_COLOR = {}, MODE_RADIUS = {};
+  const MODE_LINE_WIDTH = {}, MODE_LINE_ALPHA = {};
   for (const m of CFG.modes || []) {
     MODE_LABEL[m.key] = m.label || m.key;
     MODE_COLOR[m.key] = m.color || '#8fa6ab';
     MODE_RADIUS[m.key] = m.radius || 1.7;
+    MODE_LINE_WIDTH[m.key] = m.lineWidth || 0;
+    MODE_LINE_ALPHA[m.key] = m.lineAlpha || '';
   }
   const isBus = (mode) => (CFG.busModes || []).includes(mode);
   const isTrain = (mode) => (CFG.trainModes || []).includes(mode);
@@ -212,9 +215,9 @@
       const bus = isBus(mode);
       if (bus && busFade < 0.01) continue;
       lctx.strokeStyle = liveRoute
-        ? color + (bus ? '2b' : '5c')
+        ? color + (MODE_LINE_ALPHA[mode] || (bus ? '2b' : '5c'))
         : 'rgba(158,170,176,.17)';
-      lctx.lineWidth = bus ? 1 : 1.15;
+      lctx.lineWidth = MODE_LINE_WIDTH[mode] || (bus ? 1 : 1.15);
       lctx.globalAlpha = bus ? busFade : 1;
       lctx.beginPath();
       lctx.moveTo(xy[0], xy[1]);

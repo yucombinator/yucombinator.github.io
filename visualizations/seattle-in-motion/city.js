@@ -20,7 +20,9 @@ window.MOTION_CONFIG = {
       "key": "brt",
       "label": "BRT",
       "color": "#d7263d",
-      "radius": 1.7
+      "radius": 1.7,
+      "lineWidth": 0.9,
+      "lineAlpha": "24"
     },
     {
       "key": "ferry",
@@ -44,7 +46,9 @@ window.MOTION_CONFIG = {
       "key": "lrt",
       "label": "Link light rail",
       "color": "#28813f",
-      "radius": 2.3
+      "radius": 2.3,
+      "lineWidth": 2.4,
+      "lineAlpha": "a8"
     },
     {
       "key": "streetcar",
@@ -63,6 +67,7 @@ window.MOTION_CONFIG = {
     "localbus"
   ],
   "trainModes": [
+    "lrt",
     "gorail",
     "up"
   ],
