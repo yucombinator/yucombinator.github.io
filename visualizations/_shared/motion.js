@@ -442,9 +442,13 @@
     return routeIndexByKey.get(doc.routes[row[0]]);
   }
 
-  function makeLiveAnim(prevDoc, doc) {
+  function makeLiveAnim(prevDoc, doc, oldAnim) {
     const prev = new Map();
     const paths = new Map();
+    const now = performance.now();
+    const oldT = oldAnim
+      ? Math.min(1, Math.max(0, (now - oldAnim.start) / oldAnim.duration))
+      : 1;
     for (const row of prevDoc.v) {
       if (row[5]) prev.set(row[5], row);
     }
@@ -453,14 +457,26 @@
       const ptr = routePtrFor(doc, row);
       if (ptr == null) continue;
       const cur = nearestOnRoute(ptr, row[1], row[2]);
-      const old = prev.get(row[5]);
-      if (!cur || !old) continue;
-      const from = nearestOnRoute(ptr, old[1], old[2]);
-      if (from && from.si === cur.si) {
-        paths.set(row[5], { si: cur.si, s0: from.s, s1: cur.s });
+      if (!cur) continue;
+      // Start from wherever this vehicle is currently drawn, not from the
+      // previous raw snapshot. Otherwise a refresh mid-interpolation makes
+      // every arrow jump backward before moving forward again.
+      let s0 = null;
+      const oldPath = oldAnim && oldAnim.paths.get(row[5]);
+      if (oldPath && oldPath.si === cur.si) {
+        s0 = oldPath.s0 + (oldPath.s1 - oldPath.s0) * oldT;
+      } else {
+        const old = prev.get(row[5]);
+        if (old) {
+          const from = nearestOnRoute(ptr, old[1], old[2]);
+          if (from && from.si === cur.si) s0 = from.s;
+        }
+      }
+      if (s0 !== null) {
+        paths.set(row[5], { si: cur.si, s0, s1: cur.s });
       }
     }
-    return { prev, paths, start: performance.now(), duration: LIVE_INTERP_MS };
+    return { prev, paths, start: now, duration: LIVE_INTERP_MS };
   }
 
   // The first snapshot has no history to interpolate from. Walk a short
@@ -1467,7 +1483,7 @@
         liveRoutes = new Map();
         for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
         liveHeadings = liveHeadingsFor(doc, prevDoc);
-        liveAnim = prevDoc ? makeLiveAnim(prevDoc, doc) : null;
+        liveAnim = prevDoc ? makeLiveAnim(prevDoc, doc, liveAnim) : null;
       }
       const stale = Date.now() - live.generated > LIVE_STALE_MS;
       const btn = $('liveBtn');
