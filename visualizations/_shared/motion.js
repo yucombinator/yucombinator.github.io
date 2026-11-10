@@ -39,7 +39,7 @@
   const state = {
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-    speed: 120,
+    speed: 30,
     modes: Object.fromEntries(MODES.map((m) => [m, true])),
     hoverTrip: null,
     dirty: true,
