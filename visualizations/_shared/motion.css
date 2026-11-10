@@ -277,3 +277,13 @@
   html[data-theme="light"] .srclist{color:#4f666e}
   html[data-theme="light"] .srclist-note{color:#6f828a}
   #tip .sched{color:var(--accent);text-transform:uppercase;letter-spacing:.35px}
+
+  @media (min-width:1300px){
+    .panel{width:min(1320px,calc(100% - 24px))}
+    .row{gap:18px}
+    .legend,.controls{flex-wrap:nowrap}
+  }
+  @media (min-width:1300px){
+    .legend{flex:1 1 auto}
+    .controls{flex:0 0 auto}
+  }
