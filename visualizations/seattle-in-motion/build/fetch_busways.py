@@ -12,6 +12,7 @@ daily GTFS refresh.
     python3 build/fetch_busways.py
 """
 
+import csv
 import json
 import math
 import os
@@ -52,7 +53,7 @@ out tags geom;"""
 # geometry by latitude instead of by lane tags.
 BAT_BOUNDS = "(47.795,-122.37,47.87,-122.25)"
 BAT_LAT = (47.8055, 47.8585)
-BAT_NAME = "Swift Blue · SR 99 BAT lanes (156th–212th)"
+BAT_NAME = "Swift Blue · SR 99 BAT lanes (156th–212th + Edmonds)"
 QUERY_BAT = f"""[out:json][timeout:120];
 (
  way["name"~"Pacific Highway|Evergreen Way|Highway 99"]{BAT_BOUNDS};
@@ -174,6 +175,55 @@ def collect_bat(elements, groups, stats):
         stats[BAT_NAME] = len(lines)
 
 
+def add_edmonds_extension(groups):
+    """Edmonds runs BAT lanes on SR 99 through Esperance (212th-240th); the
+    city's Highway 99 plan documents them and asks to extend them over the
+    SR 104 overcrossing. OSM does not tag those lanes, so take the Swift Blue
+    shape from the cached GTFS and clip it to the Edmonds stretch."""
+    cache = os.path.join(HERE, "gtfs", "puget")
+    routes_p = os.path.join(cache, "routes.txt")
+    trips_p = os.path.join(cache, "trips.txt")
+    shapes_p = os.path.join(cache, "shapes.txt")
+    if not (os.path.exists(routes_p) and os.path.exists(trips_p)
+            and os.path.exists(shapes_p)):
+        print("  ! Edmonds BAT: GTFS cache missing, skipped", file=sys.stderr)
+        return
+    rid = None
+    with open(routes_p, newline="", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            if (row.get("route_short_name") or "") == "Swift Blue":
+                rid = row["route_id"]
+                break
+    if not rid:
+        return
+    shapes = set()
+    with open(trips_p, newline="", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            if row["route_id"] == rid:
+                shapes.add(row["shape_id"])
+    pts = {}
+    with open(shapes_p, newline="", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            sid = row["shape_id"]
+            if sid in shapes:
+                pts.setdefault(sid, []).append(
+                    (int(row["shape_pt_sequence"]), float(row["shape_pt_lat"]),
+                     float(row["shape_pt_lon"])))
+    if not pts:
+        return
+    sid = max(pts, key=lambda k: len(pts[k]))
+    lo, hi = 47.7860, 47.8070
+    seg = [(lat, lon) for _, lat, lon in sorted(pts[sid]) if lo <= lat <= hi]
+    if len(seg) < 2:
+        return
+    lat0 = seg[0][0]
+    sx, sy = 111320.0 * math.cos(math.radians(lat0)), 111320.0
+    simp = dp([(lon * sx, lat * sy) for lat, lon in seg], 2.0)
+    line = [[round(y / sy, 6), round(x / sx, 6)] for x, y in simp]
+    groups.setdefault(BAT_NAME, []).append(line)
+    print(f"  Edmonds BAT: {len(line)} points", file=sys.stderr)
+
+
 def main():
     old = {}
     if os.path.exists(OUT):
@@ -202,6 +252,7 @@ def main():
             continue
         if label == "bat":
             collect_bat(data.get("elements", []), groups, stats)
+            add_edmonds_extension(groups)
         else:
             collect(data.get("elements", []), groups, stats, label)
 

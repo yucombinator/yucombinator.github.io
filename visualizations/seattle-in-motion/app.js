@@ -4,20 +4,20 @@
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'up', 'ferry'];
+  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'brt', 'up', 'ferry'];
   const MODE_LABEL = {
     subway: 'Subway', streetcar: 'Streetcar', lrt: 'Link light rail',
-    gorail: 'Sounder', gobus: 'Regional bus', localbus: 'Bus', up: 'Monorail',
-    ferry: 'Ferry',
+    gorail: 'Sounder', gobus: 'Regional bus', localbus: 'Bus', brt: 'BRT',
+    up: 'Monorail', ferry: 'Ferry',
   };
   const MODE_COLOR = {
     subway: '#28813f', streetcar: '#f47836', lrt: '#28813f',
-    gorail: '#9ab6d3', gobus: '#007a53', localbus: '#2f6db3', up: '#d24b8f',
-    ferry: '#1b4f8f',
+    gorail: '#9ab6d3', gobus: '#007a53', localbus: '#2f6db3', brt: '#d7263d',
+    up: '#d24b8f', ferry: '#1b4f8f',
   };
   const MODE_RADIUS = {
-    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, up: 2.5,
-    ferry: 2.2,
+    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, brt: 1.7,
+    up: 2.5, ferry: 2.2,
   };
   const isBus = (mode) => mode === 'localbus' || mode === 'gobus';
   const isTrain = (mode) => mode === 'gorail' || mode === 'up';
@@ -36,7 +36,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true, ferry: true },
+    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, brt: true, up: true, ferry: true },
     hoverTrip: null,
     dirty: true,
     liveOn: false,
@@ -705,12 +705,20 @@
     if (state.hoverTrip != null) {
       // identify by trip, not array slot: the active list is rebuilt every
       // frame and an index would jump to whatever bus now occupies it
+      let hoverFound = false;
       for (let k = 0; k < activeCount; k++) {
         if (pTrip[k] !== state.hoverTrip) continue;
         octx.strokeStyle = 'rgba(255,255,255,.9)';
         octx.lineWidth = 1;
         octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
+        hoverFound = true;
         break;
+      }
+      if (!hoverFound) {
+        // the hovered vehicle finished or left the view; stop tracking it
+        state.hoverTrip = null;
+        const tip = $('tip');
+        if (tip) tip.style.display = 'none';
       }
     }
   }
@@ -877,7 +885,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109s12`);
+        const res = await fetch(`data-${key}.json?v=20261109s15`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -951,7 +959,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109s12');
+      const res = await fetch('busways.json?v=20261109s15');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1081,7 +1089,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109s12`);
+        const res = await fetch(`stops-${feed}.json?v=20261109s15`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1426,7 +1434,7 @@
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
@@ -1521,7 +1529,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109s12');
+    const res = await fetch('data.json?v=20261109s15');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

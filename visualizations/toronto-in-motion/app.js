@@ -704,12 +704,20 @@
     if (state.hoverTrip != null) {
       // identify by trip, not array slot: the active list is rebuilt every
       // frame and an index would jump to whatever bus now occupies it
+      let hoverFound = false;
       for (let k = 0; k < activeCount; k++) {
         if (pTrip[k] !== state.hoverTrip) continue;
         octx.strokeStyle = 'rgba(255,255,255,.9)';
         octx.lineWidth = 1;
         octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
+        hoverFound = true;
         break;
+      }
+      if (!hoverFound) {
+        // the hovered vehicle finished or left the view; stop tracking it
+        state.hoverTrip = null;
+        const tip = $('tip');
+        if (tip) tip.style.display = 'none';
       }
     }
   }

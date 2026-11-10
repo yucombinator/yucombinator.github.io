@@ -704,12 +704,20 @@
     if (state.hoverTrip != null) {
       // identify by trip, not array slot: the active list is rebuilt every
       // frame and an index would jump to whatever bus now occupies it
+      let hoverFound = false;
       for (let k = 0; k < activeCount; k++) {
         if (pTrip[k] !== state.hoverTrip) continue;
         octx.strokeStyle = 'rgba(255,255,255,.9)';
         octx.lineWidth = 1;
         octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
+        hoverFound = true;
         break;
+      }
+      if (!hoverFound) {
+        // the hovered vehicle finished or left the view; stop tracking it
+        state.hoverTrip = null;
+        const tip = $('tip');
+        if (tip) tip.style.display = 'none';
       }
     }
   }
@@ -876,7 +884,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109r`);
+        const res = await fetch(`data-${key}.json?v=20261109s`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -950,7 +958,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109r');
+      const res = await fetch('busways.json?v=20261109s');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1080,7 +1088,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109r`);
+        const res = await fetch(`stops-${feed}.json?v=20261109s`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1520,7 +1528,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109r');
+    const res = await fetch('data.json?v=20261109s');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
