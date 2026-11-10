@@ -505,9 +505,10 @@
         }
         if (from) s0 = from.s;
       }
-      if (s0 !== null) {
-        paths.set(row[5], { si: cur.si, s0, s1: cur.s });
-      }
+      // Even without a usable previous point, keep the vehicle on its route
+      // shape rather than falling back to the raw GPS coordinate.
+      if (s0 === null) s0 = cur.s;
+      paths.set(row[5], { si: cur.si, s0, s1: cur.s });
     }
     return { prev, paths, start: now, duration: LIVE_INTERP_MS };
   }
