@@ -26,6 +26,45 @@
   };
   document.documentElement.style.setProperty('--accent', ACCENT);
   const DAY = 86400;
+  const MAP_STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
+  const MAP_STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/positron';
+  const THEME_KEY = 'motion-theme';
+  let themeLight = document.documentElement.dataset.theme === 'light';
+  let mapStyleUrl = themeLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
+  let CANVAS = {};
+
+  function readCanvasPalette() {
+    return themeLight ? {
+      inactiveLine: 'rgba(40,60,70,.22)',
+      corridorBand: 'rgba(35,55,65,.10)',
+      corridorLine: 'rgba(35,55,65,.38)',
+      arrowOutline: '#f4f8f8',
+      rim: 'rgba(20,35,42,.32)',
+      stationFill: '#ffffff',
+      stationStroke: '#1b333d',
+      badgeFill: '#ffffff',
+      badgeText: '#1b333d',
+      textHalo: 'rgba(255,255,255,.9)',
+      label: 'rgba(22,40,48,.95)',
+      hover: 'rgba(20,40,48,.9)',
+      chartLabel: 'rgba(32,55,64,.58)',
+    } : {
+      inactiveLine: 'rgba(158,170,176,.17)',
+      corridorBand: 'rgba(232,242,238,.16)',
+      corridorLine: 'rgba(232,242,238,.55)',
+      arrowOutline: '#0a141b',
+      rim: 'rgba(255,255,255,.30)',
+      stationFill: '#ffffff',
+      stationStroke: '#0d1319',
+      badgeFill: '#ffffff',
+      badgeText: '#ffffff',
+      textHalo: 'rgba(6,12,18,.9)',
+      label: 'rgba(226,240,235,.95)',
+      hover: 'rgba(255,255,255,.9)',
+      chartLabel: 'rgba(226,240,235,.42)',
+    };
+  }
+  CANVAS = readCanvasPalette();
 
   const $ = (id) => document.getElementById(id);
   const mapEl = $('map');
@@ -39,7 +78,7 @@
   const state = {
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-    speed: 30,
+    speed: 24,
     modes: Object.fromEntries(MODES.map((m) => [m, true])),
     hoverTrip: null,
     dirty: true,
@@ -48,6 +87,69 @@
 
   let D = null;
   let mapObj = null;
+  let themeBtn = null;
+
+  function savedTheme() {
+    try {
+      const value = localStorage.getItem(THEME_KEY);
+      return value === 'light' || value === 'dark' ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function updateThemeButton() {
+    if (!themeBtn) return;
+    const sun = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M12.9 3.1l-1.4 1.4M4.5 11.5l-1.4 1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+    const moon = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 10.4A5.6 5.6 0 0 1 5.6 2.8a5.6 5.6 0 1 0 7.6 7.6Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+    themeBtn.innerHTML = (themeLight ? moon : sun)
+      + `<span>${themeLight ? 'Dark' : 'Light'}</span>`;
+    themeBtn.setAttribute('aria-label', themeLight ? 'Switch to dark mode' : 'Switch to light mode');
+    themeBtn.title = themeLight ? 'Switch to dark mode' : 'Switch to light mode';
+  }
+
+  function applyTheme(theme, persist = false) {
+    themeLight = theme === 'light';
+    document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, themeLight ? 'light' : 'dark'); } catch { /* private mode */ }
+    }
+    CANVAS = readCanvasPalette();
+    updateThemeButton();
+    const styleUrl = themeLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
+    if (styleUrl !== mapStyleUrl) {
+      mapStyleUrl = styleUrl;
+      if (mapObj) mapObj.setStyle(styleUrl);
+    }
+    if (D) {
+      linesDirty = true;
+      state.dirty = true;
+      drawChart();
+    }
+  }
+
+  function initTheme() {
+    const saved = savedTheme();
+    const osLight = !!(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+    themeLight = saved ? saved === 'light' : osLight;
+    mapStyleUrl = themeLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
+    const host = document.querySelector('.hright');
+    if (host) {
+      themeBtn = document.createElement('button');
+      themeBtn.type = 'button';
+      themeBtn.id = 'themeBtn';
+      themeBtn.className = 'theme-btn';
+      themeBtn.addEventListener('click', () => applyTheme(themeLight ? 'dark' : 'light', true));
+      host.insertBefore(themeBtn, host.firstChild);
+    }
+    applyTheme(themeLight ? 'light' : 'dark');
+    const mq = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+    if (mq) {
+      const onChange = (e) => { if (!savedTheme()) applyTheme(e.matches ? 'light' : 'dark'); };
+      if (mq.addEventListener) mq.addEventListener('change', onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    }
+  }
   let shapes = [];            // { pts: [[x,y]] in local metres }
   let routeIds = [];          // pointer -> route_id
   let railShapes = [];        // [{shapeIdx, color, mode}] background lines
@@ -329,7 +431,7 @@
       if (bus && busFade < 0.01) continue;
       lctx.strokeStyle = liveRoute
         ? color + (MODE_LINE_ALPHA[mode] || (bus ? '2b' : '5c'))
-        : 'rgba(158,170,176,.17)';
+        : CANVAS.inactiveLine;
       lctx.lineWidth = MODE_LINE_WIDTH[mode] || (bus ? 1 : 1.15);
       lctx.globalAlpha = bus ? busFade : 1;
       lctx.beginPath();
@@ -812,7 +914,7 @@
       octx.lineJoin = 'round';
       for (const g of corridors) {
         if (!g.screen) continue;
-        octx.strokeStyle = 'rgba(232,242,238,.16)';
+        octx.strokeStyle = CANVAS.corridorBand;
         octx.lineWidth = band;
         octx.beginPath();
         for (const xy of g.screen) {
@@ -824,7 +926,7 @@
         }
         octx.stroke();
 
-        octx.strokeStyle = 'rgba(232,242,238,.55)';
+        octx.strokeStyle = CANVAS.corridorLine;
         octx.lineWidth = 1.2;
         octx.setLineDash(g.solid ? [] : [5, 4]);
         octx.beginPath();
@@ -927,7 +1029,7 @@
           arrowPath(octx, px[k], py[k], pAng[k], len, wid);
         }
         if (any) {
-          octx.strokeStyle = '#0a141b';
+          octx.strokeStyle = CANVAS.arrowOutline;
           octx.lineWidth = 2.4;
           octx.stroke();
           octx.fillStyle = slotColors[si];
@@ -939,7 +1041,7 @@
 
     // thin rim on rail dots so Line 6 grey and Line 4 magenta read on the map
     octx.lineWidth = 0.8;
-    octx.strokeStyle = 'rgba(255,255,255,.30)';
+    octx.strokeStyle = CANVAS.rim;
     for (let si = 0; zf >= 0.95 && si < slotColors.length; si++) {
       const mode = MODES[slotMode[si]];
       if (isBus(mode) || !state.modes[mode]) continue;
@@ -1016,8 +1118,8 @@
         // a heavier line, bigger at the terminals, plus route-number badges
         const sr = 2.5 + zf * 1.2;
         const branded = BRANDED_MODES.has(selMode);
-        octx.fillStyle = '#ffffff';
-        octx.strokeStyle = branded ? col : '#0d1319';
+        octx.fillStyle = CANVAS.stationFill;
+        octx.strokeStyle = branded ? col : CANVAS.stationStroke;
         octx.lineWidth = 1.6;
         octx.beginPath();
         for (let i = 0; i < n; i++) {
@@ -1040,10 +1142,10 @@
           octx.arc(bx, by, br, 0, Math.PI * 2);
           octx.fillStyle = col;
           octx.fill();
-          octx.strokeStyle = '#ffffff';
+          octx.strokeStyle = CANVAS.badgeFill;
           octx.lineWidth = 1.5;
           octx.stroke();
-          octx.fillStyle = '#ffffff';
+          octx.fillStyle = CANVAS.badgeText;
           octx.font = `700 ${Math.max(9, Math.round(br * 1.05))}px system-ui, sans-serif`;
           octx.textAlign = 'center';
           octx.textBaseline = 'middle';
@@ -1055,7 +1157,7 @@
           drawBadge(n - 1, n - 2);
         }
       } else {
-        octx.fillStyle = '#0b141b';
+        octx.fillStyle = CANVAS.stationFill;
         octx.strokeStyle = col;
         octx.lineWidth = 1.6;
         octx.beginPath();
@@ -1076,7 +1178,7 @@
         octx.textBaseline = 'middle';
         octx.lineJoin = 'round';
         octx.lineWidth = 3;
-        octx.strokeStyle = 'rgba(6,12,18,.9)';
+        octx.strokeStyle = CANVAS.textHalo;
         const placed = [];
         for (let i = 0; i < n; i++) {
           const label = selStops.name[i];
@@ -1093,7 +1195,7 @@
           if (clash) continue;
           placed.push(box);
           octx.strokeText(label, x, y);
-          octx.fillStyle = 'rgba(226,240,235,.95)';
+          octx.fillStyle = CANVAS.label;
           octx.fillText(label, x, y);
         }
       }
@@ -1113,7 +1215,7 @@
       let hoverFound = false;
       for (let k = 0; k < activeCount; k++) {
         if (pTrip[k] !== state.hoverTrip) continue;
-        octx.strokeStyle = 'rgba(255,255,255,.9)';
+        octx.strokeStyle = CANVAS.hover;
         octx.lineWidth = 1;
         octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
         hoverFound = true;
@@ -1228,7 +1330,7 @@
     chartCtx.font = '700 8px system-ui, sans-serif';
     chartCtx.textAlign = 'center';
     chartCtx.textBaseline = 'top';
-    chartCtx.fillStyle = 'rgba(226,240,235,.42)';
+    chartCtx.fillStyle = CANVAS.chartLabel;
     for (const [label, a, b] of [['AM', rise, 12 * 3600],
                                  ['PM', 12 * 3600, set],
                                  ['EVENING', set, DAY]]) {
@@ -1888,6 +1990,7 @@
   }
 
   function wire() {
+    initTheme();
     buildLegend();
     buildCityMenu();
 
@@ -2162,7 +2265,7 @@
 
     mapObj = new maplibregl.Map({
       container: 'map',
-      style: 'https://tiles.openfreemap.org/styles/dark',
+      style: mapStyleUrl,
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
@@ -2205,6 +2308,12 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
+    mapObj.on('style.load', () => {
+      if (!D) return;
+      projectPieces();
+      linesDirty = true;
+      state.dirty = true;
+    });
     mapObj.on('move', () => {
       lastMoveAt = performance.now();
       updateAffine();
