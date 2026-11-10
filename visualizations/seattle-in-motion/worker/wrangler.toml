@@ -1,0 +1,7 @@
+name = "seattle-live"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[triggers]
+# 1-minute warm; the HTTP handler also builds on a cache miss.
+crons = ["* * * * *"]
