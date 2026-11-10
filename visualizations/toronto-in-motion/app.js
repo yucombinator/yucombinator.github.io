@@ -36,7 +36,7 @@
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
     modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true, ferry: true },
-    hover: null,
+    hoverTrip: null,
     dirty: true,
     liveOn: false,
   };
@@ -701,11 +701,16 @@
       state.dirty = true;      // the redraw needs another frame
     }
 
-    if (state.hover != null && state.hover < activeCount) {
-      const k = state.hover;
-      octx.strokeStyle = 'rgba(255,255,255,.9)';
-      octx.lineWidth = 1;
-      octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
+    if (state.hoverTrip != null) {
+      // identify by trip, not array slot: the active list is rebuilt every
+      // frame and an index would jump to whatever bus now occupies it
+      for (let k = 0; k < activeCount; k++) {
+        if (pTrip[k] !== state.hoverTrip) continue;
+        octx.strokeStyle = 'rgba(255,255,255,.9)';
+        octx.lineWidth = 1;
+        octx.beginPath(); octx.arc(px[k], py[k], 7, 0, Math.PI * 2); octx.stroke();
+        break;
+      }
     }
   }
 
@@ -893,6 +898,7 @@
     curStarts = d.startsBins;
     curSun = d.sun || null;
     tripProfile = d.tripProfile;
+    state.hoverTrip = null;
     dayMaxDur = d.maxDur || 0;
     linesDirty = true;
     routeSig = -1;
@@ -1398,7 +1404,7 @@
           }
         }
         if (hitName) {
-          state.hover = null;
+          state.hoverTrip = null;
           state.dirty = true;
           tip.innerHTML = `<div class="m">Busway</div><strong>${esc(hitName)}</strong>`;
           tip.style.display = 'block';
@@ -1409,7 +1415,7 @@
         }
       }
 
-      state.hover = best >= 0 ? best : null;
+      state.hoverTrip = best >= 0 ? pTrip[best] : null;
       state.dirty = true;
       if (best < 0) { tip.style.display = 'none'; return; }
       const ti = pTrip[best];
@@ -1421,7 +1427,7 @@
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
       tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
     });
-    mapEl.addEventListener('pointerleave', () => { state.hover = null; state.dirty = true; $('tip').style.display = 'none'; });
+    mapEl.addEventListener('pointerleave', () => { state.hoverTrip = null; state.dirty = true; $('tip').style.display = 'none'; });
 
     chartLine.addEventListener('pointerdown', seekFromChart);
     chartLine.addEventListener('pointermove', (e) => { if (e.buttons) seekFromChart(e); });
