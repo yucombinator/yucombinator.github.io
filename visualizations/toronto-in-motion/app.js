@@ -4,18 +4,18 @@
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'up', 'ferry'];
+  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'brt', 'up', 'ferry'];
   const MODE_LABEL = {
     subway: 'Subway', streetcar: 'Streetcar', lrt: 'LRT', gorail: 'GO train',
-    gobus: 'GO bus', localbus: 'Bus', up: 'UP Express', ferry: 'Ferry',
+    gobus: 'GO bus', localbus: 'Bus', brt: 'BRT', up: 'UP Express', ferry: 'Ferry',
   };
   const MODE_COLOR = {
     subway: '#f8c302', streetcar: '#da251d', lrt: '#f87005',
-    gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', up: '#0075d2',
+    gorail: '#00853e', gobus: '#5aa93f', localbus: '#5aa9e6', brt: '#d7263d', up: '#0075d2',
     ferry: '#1f8a9e',
   };
   const MODE_RADIUS = {
-    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, up: 2.5,
+    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, brt: 1.7, up: 2.5,
     ferry: 2.2,
   };
   const isBus = (mode) => mode === 'localbus' || mode === 'gobus';
@@ -35,7 +35,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true, ferry: true },
+    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, brt: true, up: true, ferry: true },
     hoverTrip: null,
     dirty: true,
     liveOn: false,
@@ -1429,7 +1429,7 @@
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';

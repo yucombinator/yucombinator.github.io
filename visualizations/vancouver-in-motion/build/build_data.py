@@ -126,7 +126,7 @@ FEEDS = [
      "kind": "ferry", "color": "2b6cb0", "approx": "fcf"},
 ]
 
-MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up", "ferry")
+MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "brt", "up", "ferry")
 RAIL_MODES = {"subway", "lrt", "gorail", "up"}
 
 
@@ -308,7 +308,7 @@ def active_services(path, spec, counts):
     return {best}
 
 
-def classify(feed, route_id, route_type, route_color=""):
+def classify(feed, route_id, route_type, route_color="", route_name="", route_short=""):
     kind = feed["kind"]
     if kind == "go":
         # GO's own feed carries each corridor's colour (Lakeshore West crimson,
@@ -330,8 +330,9 @@ def classify(feed, route_id, route_type, route_color=""):
         if route_type == 4:
             return ("ferry", (route_color or "746661").lstrip("#").lower())
         if route_type == 3:
-            # RapidBus (R1-R6) and the Broadway B-Line carry their own brand
-            # colour in the feed; ordinary buses fall back to TransLink blue.
+            # RapidBus (R1-R6) and the Broadway B-Line are the region's BRT.
+            if re.match(r"^R\d+$", (route_short or "").strip()) or re.search(r"b-line", route_name, re.I):
+                return ("brt", (route_color or "008522").lstrip("#").lower())
             return ("localbus", (route_color or feed["color"]).lstrip("#").lower())
         return None   # HandyDART is paratransit, not line service
     if kind in ("bcferries", "aquabus", "hullo", "ferry"):
@@ -424,7 +425,10 @@ for feed in FEEDS:
             if not any(k.lower() in name.lower() for k in feed["filter_routes"]):
                 continue
         rtype = int(row.get("route_type", 3))
-        cls = classify(feed, rid, rtype, row.get("route_color", ""))
+        route_name = ((row.get("route_short_name") or "") + " "
+                      + (row.get("route_long_name") or ""))
+        cls = classify(feed, rid, rtype, row.get("route_color", ""), route_name,
+                       row.get("route_short_name") or "")
         if not cls:
             continue
         mode, color = cls

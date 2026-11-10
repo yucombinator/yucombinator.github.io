@@ -4,18 +4,18 @@
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'up', 'ferry'];
+  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'brt', 'up', 'ferry'];
   const MODE_LABEL = {
     subway: 'SkyTrain', streetcar: 'Streetcar', lrt: 'LRT', gorail: 'West Coast Express',
-    gobus: 'GO bus', localbus: 'Bus', up: 'UP Express', ferry: 'SeaBus',
+    gobus: 'GO bus', localbus: 'Bus', brt: 'BRT', up: 'UP Express', ferry: 'SeaBus',
   };
   const MODE_COLOR = {
     subway: '#0033a0', streetcar: '#da251d', lrt: '#f87005',
-    gorail: '#87189d', gobus: '#5aa93f', localbus: '#0072bc', up: '#0075d2',
+    gorail: '#87189d', gobus: '#5aa93f', localbus: '#0072bc', brt: '#d7263d', up: '#0075d2',
     ferry: '#746661',
   };
   const MODE_RADIUS = {
-    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, up: 2.5,
+    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, brt: 1.7, up: 2.5,
     ferry: 2.2,
   };
   const isBus = (mode) => mode === 'localbus' || mode === 'gobus';
@@ -35,7 +35,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, up: true, ferry: true },
+    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, brt: true, up: true, ferry: true },
     hoverTrip: null,
     dirty: true,
     liveOn: false,
@@ -884,7 +884,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109s`);
+        const res = await fetch(`data-${key}.json?v=20261109t`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -958,7 +958,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109s');
+      const res = await fetch('busways.json?v=20261109t');
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1088,7 +1088,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109s`);
+        const res = await fetch(`stops-${feed}.json?v=20261109t`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1433,7 +1433,7 @@
       const ti = pTrip[best];
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
@@ -1528,7 +1528,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109s');
+    const res = await fetch('data.json?v=20261109t');
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 

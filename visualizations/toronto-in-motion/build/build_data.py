@@ -167,7 +167,7 @@ FEEDS = [
      "kind": "local", "color": "c04fa0"},
 ]
 
-MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "up", "ferry")
+MODES = ("subway", "streetcar", "lrt", "gorail", "gobus", "localbus", "brt", "up", "ferry")
 RAIL_MODES = {"subway", "lrt", "gorail", "up"}
 
 
@@ -239,7 +239,7 @@ def active_services(path, spec, counts):
     return {best}
 
 
-def classify(feed, route_id, route_type, route_color=""):
+def classify(feed, route_id, route_type, route_color="", route_name=""):
     kind = feed["kind"]
     if kind == "ttc":
         if route_id in TTC_LINES:
@@ -258,6 +258,9 @@ def classify(feed, route_id, route_type, route_color=""):
         return ("up", (route_color or "0075d2").lstrip("#").lower())
     if kind == "lrt":
         return ("lrt", feed["color"])
+    if re.search(r"viva|z[uü]m|pulse", route_name, re.I):
+        brt_shades = {"brampton": "f0a574", "drt": "4fc6ce", "yrt": "b07fd8"}
+        return ("brt", brt_shades.get(feed["id"], "d7263d"))
     return ("localbus", feed["color"])
 
 
@@ -342,7 +345,9 @@ for feed in FEEDS:
     for row in read_csv(path, "routes.txt"):
         rid = row["route_id"]
         rtype = int(row.get("route_type", 3))
-        mode, color = classify(feed, rid, rtype, row.get("route_color", ""))
+        route_name = ((row.get("route_short_name") or "") + " "
+                      + (row.get("route_long_name") or ""))
+        mode, color = classify(feed, rid, rtype, row.get("route_color", ""), route_name)
         key = f"{feed['id']}:{rid}"
         local_routes[rid] = key
         routes[key] = {

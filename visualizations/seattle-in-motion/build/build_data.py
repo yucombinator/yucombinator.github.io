@@ -307,7 +307,13 @@ def classify(feed, route_id, route_type, route_color="", agency="", route_name="
         color = (route_color or "").lstrip("#").lower()
         if route_type == 3:
             if re.search(r"rapid\s*ride|swift|stride|stream", route_name, re.I):
-                return ("brt", "d7263d")   # BRT: RapidRide, Swift, Stride, Stream
+                brt_shades = {
+                    "Metro Transit": "5b93d6",
+                    "Community Transit": "b18cff",
+                    "Pierce Transit": "d063a6",
+                    "Sound Transit": "4fb37f",
+                }
+                return ("brt", brt_shades.get(agency, "d7263d"))
             bus_colors = {
                 "Metro Transit": "2f6db3", "Sound Transit": "007a53",
                 "Pierce Transit": "a03b7a", "Community Transit": "8b5cf6",
