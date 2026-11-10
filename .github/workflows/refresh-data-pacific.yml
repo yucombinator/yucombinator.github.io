@@ -59,11 +59,16 @@ jobs:
         run: |
           rm -f visualizations/vancouver-in-motion/stops-*.json
           rm -f visualizations/seattle-in-motion/stops-*.json
-      - uses: actions/download-artifact@v4
+      - name: Download Vancouver artifact
+        uses: actions/download-artifact@v4
         with:
-          pattern: "*-in-motion"
-          path: .
-          merge-multiple: true
+          name: vancouver-in-motion
+          path: visualizations/vancouver-in-motion
+      - name: Download Seattle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: seattle-in-motion
+          path: visualizations/seattle-in-motion
       # Re-check against the checkout we are about to commit on top of.
       - name: Re-validate downloaded snapshots
         run: |
