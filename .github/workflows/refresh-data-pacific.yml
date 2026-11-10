@@ -1,0 +1,89 @@
+name: Refresh Pacific GTFS snapshots
+
+# Vancouver and Seattle share the Pacific timezone; 08:17 UTC is 00:17 PST /
+# 01:17 PDT, just after the local date rolls over. Toronto keeps its own
+# 05:17 UTC job. Busways are static OSM overlays and are not rebuilt here.
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gtfs-refresh
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    name: Rebuild ${{ matrix.city }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        city: [vancouver-in-motion, seattle-in-motion]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clear stale stops payloads
+        run: rm -f visualizations/${{ matrix.city }}/stops-*.json
+      - name: Rebuild the three service days
+        run: python3 visualizations/${{ matrix.city }}/build/build_data.py
+      - name: Check the snapshot is complete and current
+        run: python3 visualizations/tests/check_snapshot.py --city ${{ matrix.city }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.city }}
+          path: |
+            visualizations/${{ matrix.city }}/data.json
+            visualizations/${{ matrix.city }}/data-saturday.json
+            visualizations/${{ matrix.city }}/data-sunday.json
+            visualizations/${{ matrix.city }}/stops-*.json
+          if-no-files-found: error
+
+  commit:
+    name: Commit refreshed snapshots
+    needs: rebuild
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clear committed stops before merging artifacts
+        run: |
+          rm -f visualizations/vancouver-in-motion/stops-*.json
+          rm -f visualizations/seattle-in-motion/stops-*.json
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-in-motion"
+          path: .
+          merge-multiple: true
+      # Re-check against the checkout we are about to commit on top of.
+      - name: Re-validate downloaded snapshots
+        run: |
+          python3 visualizations/tests/check_snapshot.py --city vancouver-in-motion
+          python3 visualizations/tests/check_snapshot.py --city seattle-in-motion
+      - name: Stamp the data version
+        run: python3 visualizations/_shared/stamp_version.py
+      - name: Commit if a snapshot changed
+        run: |
+          git config user.name "gtfs-refresh-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add visualizations/vancouver-in-motion/data*.json \
+                  visualizations/vancouver-in-motion/stops-*.json \
+                  visualizations/seattle-in-motion/data*.json \
+                  visualizations/seattle-in-motion/stops-*.json \
+                  visualizations/_shared/version.js \
+                  visualizations/*/index.html
+          if git diff --cached --quiet; then
+            echo "No data changes — skipping commit"
+          else
+            git commit -m "Refresh Pacific GTFS snapshots ($(date -u +%F))"
+            git push
+          fi
