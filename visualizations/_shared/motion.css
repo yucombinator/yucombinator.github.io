@@ -276,3 +276,4 @@
   html[data-theme="light"] .close{color:#6b7f87}
   html[data-theme="light"] .srclist{color:#4f666e}
   html[data-theme="light"] .srclist-note{color:#6f828a}
+  #tip .sched{color:var(--accent);text-transform:uppercase;letter-spacing:.35px}
