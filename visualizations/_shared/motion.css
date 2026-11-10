@@ -93,7 +93,8 @@
   .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
   .controls .clock{font-size:21px;font-weight:400;letter-spacing:-.3px;color:var(--accent);order:1}
   .controls .days{order:2}
-  .controls .speeds{order:3}
+  .controls .live{order:3}
+  .controls .speeds{order:4}
   .controls .clock small{font-size:9px;letter-spacing:.7px;color:#93aab0;margin-left:5px}
   .days{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
   .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
@@ -197,7 +198,9 @@
     .legend{gap:10px;width:100%}
     .controls{width:100%;justify-content:space-between}
     .controls .days{order:1}
-    .controls .clock{order:2}
+    .controls .live{order:2}
+    .controls .clock{order:3}
+    .controls .speeds{order:4}
     .legend .n{min-width:20px}
     .panel{padding:9px 10px 6px}
     .chartwrap{height:54px}

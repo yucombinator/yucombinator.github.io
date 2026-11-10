@@ -106,12 +106,15 @@
   let liveScreen = null;           // Float32Array [x, y, angle, slot, size]
   let liveCount = 0;
   let liveHeadings = null;         // canvas angle per live row
+  let liveAnim = null;             // previous positions for smooth interpolation
+  let liveLoading = false;
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
   let routeShapeIdx = null;        // route pointer -> shape indexes
   // Live is opt-in per city: a city with liveUrls gets the toggle.
   const LIVE_ENABLED = Array.isArray(CFG.liveUrls) && CFG.liveUrls.length > 0;
   const LIVE_STALE_MS = 30 * 60 * 1000;
+  const LIVE_INTERP_MS = 60 * 1000;
 
   const lngLatOf = (x, y) => {
     const { kx, ky, x0, y0 } = D.proj;
@@ -284,6 +287,11 @@
       state.dirty = true;
     }
 
+    if (state.liveOn && liveAnim && now < liveAnim.start + liveAnim.duration) {
+      computeLiveScreen(now);
+      state.dirty = true;
+    }
+
     if (state.dirty) {
       const busy = state.playing && now - lastMoveAt > 250;
       if (!busy || now - lastDraw >= 32) { draw(); state.dirty = false; lastDraw = now; }
@@ -361,6 +369,14 @@
     return Math.atan2(dlon, dlat) - Math.PI / 2;
   }
 
+  function makeLiveAnim(prevDoc) {
+    const prev = new Map();
+    for (const row of prevDoc.v) {
+      if (row[5]) prev.set(row[5], row);
+    }
+    return { prev, start: performance.now(), duration: LIVE_INTERP_MS };
+  }
+
   function liveHeadingsFor(doc, prevDoc) {
     const prev = new Map();
     if (prevDoc) {
@@ -382,24 +398,41 @@
     return out;
   }
 
-  function computeLiveScreen() {
+  function computeLiveScreen(now = performance.now()) {
     if (!live || !mapObj || !liveRoutes) return;
     const rows = live.v;
-    liveScreen = new Float32Array(rows.length * 4);
-    liveRoutePtr = new Int32Array(rows.length);
+    const need = rows.length * 4;
+    if (!liveScreen || liveScreen.length < need) liveScreen = new Float32Array(need);
+    if (!liveRoutePtr || liveRoutePtr.length < rows.length) liveRoutePtr = new Int32Array(rows.length);
+    const anim = liveAnim;
+    const t = anim ? Math.min(1, Math.max(0, (now - anim.start) / anim.duration)) : 1;
     let m = 0;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const slot = liveRoutes.get(live.routes[row[0]]);
       if (slot === undefined) continue;
-      const p = mapObj.project([row[2], row[1]]);
+      const old = anim && row[5] ? anim.prev.get(row[5]) : null;
+      let lat = row[1], lon = row[2];
+      if (old) {
+        lat += (row[1] - old[1]) * t;
+        lon += (row[2] - old[2]) * t;
+      }
+      const p = mapObj.project([lon, lat]);
       if (p.x < -40 || p.y < -40 || p.x > view.w + 40 || p.y > view.h + 40) continue;
       const bearing = row[3];
-      liveScreen[m * 4] = p.x;
-      liveScreen[m * 4 + 1] = p.y;
-      liveScreen[m * 4 + 2] = liveHeadings && !Number.isNaN(liveHeadings[i])
+      let angle = liveHeadings && !Number.isNaN(liveHeadings[i])
         ? liveHeadings[i]
         : (bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0);
+      if (old) {
+        const dlat = row[1] - old[1];
+        const dlon = (row[2] - old[2]) * Math.cos(lat * Math.PI / 180);
+        if (Math.hypot(dlat, dlon) * 111320 > 8) {
+          angle = Math.atan2(dlon, dlat) - Math.PI / 2;
+        }
+      }
+      liveScreen[m * 4] = p.x;
+      liveScreen[m * 4 + 1] = p.y;
+      liveScreen[m * 4 + 2] = angle;
       liveScreen[m * 4 + 3] = slot;
       liveRoutePtr[m] = liveRoutes.has(live.routes[row[0]]) ? routeIndexByKey.get(live.routes[row[0]]) : -1;
       m++;
@@ -1291,38 +1324,54 @@
   const LIVE_URLS = CFG.liveUrls || [];
 
   async function loadLive() {
-    if (!LIVE_ENABLED) return;
-    let doc = null;
-    await Promise.all(LIVE_URLS.map(async (base) => {
-      try {
-        const url = base + (base.includes('?') ? '&' : '?') + 'ts=' + Date.now();
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) return;
-        const got = await res.json();
-        if (!got || !got.v || !got.v.length) return;
-        if (!doc || got.generated > doc.generated) doc = got;
-      } catch { /* one source down is fine */ }
-    }));
-    if (!doc) return;
-    const prevDoc = live;
-    live = doc;
-    liveRouteSet = new Set(doc.routes || []);
-    liveRoutes = new Map();
-    for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
-    liveHeadings = liveHeadingsFor(doc, prevDoc);
-    const age = Date.now() - doc.generated;
-    const btn = $('liveBtn');
-    if (btn) {
-      const stale = age > LIVE_STALE_MS;
-      btn.hidden = stale;
-      btn.disabled = stale;
-      btn.title = stale ? 'Live snapshot expired' : 'Live vehicle positions';
+    if (!LIVE_ENABLED || liveLoading) return;
+    liveLoading = true;
+    try {
+      let doc = null;
+      await Promise.all(LIVE_URLS.map(async (base) => {
+        try {
+          const url = base + (base.includes('?') ? '&' : '?') + 'ts=' + Date.now();
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) return;
+          const got = await res.json();
+          if (!got || !got.v || !got.v.length) return;
+          if (!doc || got.generated > doc.generated) doc = got;
+        } catch { /* one source down is fine */ }
+      }));
+      if (!doc) return;
+      const prevDoc = live;
+      const isNew = !prevDoc || doc.generated > prevDoc.generated;
+      if (isNew) {
+        live = doc;
+        liveRouteSet = new Set(doc.routes || []);
+        liveRoutes = new Map();
+        for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
+        liveHeadings = liveHeadingsFor(doc, prevDoc);
+        liveAnim = prevDoc ? makeLiveAnim(prevDoc) : null;
+      }
+      const age = Date.now() - live.generated;
+      const btn = $('liveBtn');
+      if (btn) {
+        const stale = age > LIVE_STALE_MS;
+        btn.hidden = stale;
+        btn.disabled = stale;
+        btn.title = stale ? 'Live snapshot expired' : 'Live vehicle positions';
+      }
+      if (state.liveOn) {
+        if (btn && btn.disabled) setLive(false);
+        else {
+          if (isNew) {
+            const c = cityClock(live.generated);
+            seek(c.h * 3600 + c.m * 60 + c.s);
+          }
+          computeLiveScreen();
+          if ($('liveNote')) $('liveNote').textContent = liveNoteText();
+        }
+      }
+      state.dirty = true;
+    } finally {
+      liveLoading = false;
     }
-    if (state.liveOn) {
-      if (btn && btn.disabled) setLive(false);
-      else if ($('liveNote')) { computeLiveScreen(); $('liveNote').textContent = liveNoteText(); }
-    }
-    state.dirty = true;
   }
 
   // Live is a fixed snapshot: do not let the scheduled-day or playback
@@ -1779,8 +1828,7 @@
     loadCorridors();
     if (LIVE_ENABLED) {
       loadLive();
-      setInterval(() => { if (state.liveOn) loadLive(); }, 60000);
-      setInterval(loadLive, 5 * 60 * 1000);
+      setInterval(loadLive, 60000);
     }
     resize();
     setPlaying(state.playing);
