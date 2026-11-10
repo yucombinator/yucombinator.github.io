@@ -1,6 +1,8 @@
 import { buildLive } from './gtfsrt.js';
 
 const CACHE_KEY = 'https://seattle-live.internal/live.json';
+const CACHE_REQUEST = new Request(CACHE_KEY);
+const MAX_AGE_MS = 60_000;
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET,HEAD,OPTIONS',
@@ -16,11 +18,16 @@ function json(doc, status = 200) {
 
 async function cached() {
   const cache = caches.default;
-  const hit = await cache.match(CACHE_KEY);
-  if (hit) return hit;
+  const hit = await cache.match(CACHE_REQUEST);
+  if (hit) {
+    try {
+      const doc = await hit.clone().json();
+      if (Date.now() - doc.generated <= MAX_AGE_MS) return hit;
+    } catch { /* rebuild malformed cache entries */ }
+  }
   const doc = await buildLive();
   const res = json(doc);
-  await cache.put(CACHE_KEY, res.clone());
+  await cache.put(CACHE_REQUEST, res.clone());
   return res;
 }
 
@@ -31,7 +38,7 @@ export default {
     try {
       return await cached();
     } catch (err) {
-      const stale = await caches.default.match(CACHE_KEY);
+      const stale = await caches.default.match(CACHE_REQUEST);
       if (stale) {
         const res = new Response(stale.body, stale);
         res.headers.set('x-stale', '1');
@@ -42,7 +49,7 @@ export default {
   },
   async scheduled() {
     try {
-      await caches.default.put(CACHE_KEY, json(await buildLive()));
+      await caches.default.put(CACHE_REQUEST, json(await buildLive()));
     } catch { /* the next HTTP miss retries */ }
   },
 };
