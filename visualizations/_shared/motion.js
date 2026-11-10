@@ -116,6 +116,7 @@
   let liveRouteSet = new Set();
   let routeShapeIdx = null;        // route pointer -> shape indexes
   let shapeCum = null;             // cumulative length per shape
+  let interlineSegments = null;    // shared LRT runs for candy-cane stripes
   // Live is opt-in per city: a city with liveUrls gets the toggle.
   const LIVE_ENABLED = Array.isArray(CFG.liveUrls) && CFG.liveUrls.length > 0;
   const LIVE_STALE_MS = 30 * 60 * 1000;
@@ -188,6 +189,120 @@
     ctx.closePath();
   }
 
+  function pointToPolylineDistance(x, y, pts) {
+    let best = Infinity;
+    for (let p = 1; p < pts.length; p++) {
+      const x1 = pts[p - 1][0], y1 = pts[p - 1][1];
+      const x2 = pts[p][0], y2 = pts[p][1];
+      const dx = x2 - x1, dy = y2 - y1;
+      const l2 = dx * dx + dy * dy;
+      if (!l2) continue;
+      const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / l2));
+      const ex = x - (x1 + t * dx), ey = y - (y1 + t * dy);
+      const d = ex * ex + ey * ey;
+      if (d < best) best = d;
+    }
+    return Math.sqrt(best);
+  }
+
+  function buildInterlineSegments() {
+    const modes = new Set(CFG.interlineModes || []);
+    if (!modes.size || !routeIds || !shapes.length) {
+      interlineSegments = [];
+      return interlineSegments;
+    }
+    const routes = [];
+    for (let r = 0; r < routeIds.length; r++) {
+      if (!modes.has(MODES[routeMode[r]])) continue;
+      const list = routeShapeIndexes(r);
+      if (list && list.length) {
+        routes.push({ r, list, color: slotColors[routeSlot[r]] });
+      }
+    }
+    const out = [];
+    const cum = ensureShapeCum();
+    const THRESHOLD = 35;
+    for (let ai = 0; ai < routes.length; ai++) {
+      for (let bi = ai + 1; bi < routes.length; bi++) {
+        const a = routes[ai], b = routes[bi];
+        if (a.color === b.color) continue;
+        for (const sa of a.list) {
+          const ptsA = shapes[sa].pts;
+          if (!ptsA || ptsA.length < 2) continue;
+          const chosen = [];
+          for (const sb of b.list) {
+            const ptsB = shapes[sb].pts;
+            if (!ptsB || ptsB.length < 2) continue;
+            let start = -1;
+            const addRun = (i0, i1) => {
+              if (i1 - i0 < 2) return;
+              const len = cum[sa][i1] - cum[sa][i0];
+              if (len < 120) return;
+              for (const c of chosen) {
+                if (i0 <= c.i1 && i1 >= c.i0) return; // opposite-direction duplicate
+              }
+              chosen.push({ i0, i1 });
+            };
+            for (let p = 0; p < ptsA.length; p++) {
+              const shared = pointToPolylineDistance(ptsA[p][0], ptsA[p][1], ptsB) <= THRESHOLD;
+              if (shared && start < 0) start = p;
+              if (!shared && start >= 0) { addRun(start, p - 1); start = -1; }
+            }
+            if (start >= 0) addRun(start, ptsA.length - 1);
+          }
+          for (const run of chosen) {
+            out.push({
+              si: sa, i0: run.i0, i1: run.i1,
+              a: a.r, b: b.r, ca: a.color, cb: b.color,
+            });
+          }
+        }
+      }
+    }
+    interlineSegments = out;
+    return out;
+  }
+
+  function drawInterlineStripes() {
+    const segs = interlineSegments || buildInterlineSegments();
+    if (!segs.length) return;
+    const dash = 9;
+    lctx.save();
+    lctx.lineCap = 'butt';
+    lctx.lineJoin = 'round';
+    lctx.setLineDash([dash, dash]);
+    for (const seg of segs) {
+      const modeA = MODES[routeMode[seg.a]], modeB = MODES[routeMode[seg.b]];
+      if (!state.modes[modeA] || !state.modes[modeB]) continue;
+      const activeA = activeRoutes.has(seg.a) || liveRouteSet.has(routeIds[seg.a]);
+      const activeB = activeRoutes.has(seg.b) || liveRouteSet.has(routeIds[seg.b]);
+      if (!activeA || !activeB) continue;
+      const shape = view.screenShapes[seg.si];
+      const xy = shape && shape.xy;
+      if (!xy) continue;
+      const path = () => {
+        lctx.beginPath();
+        lctx.moveTo(xy[seg.i0 * 2] * aff.sx + aff.ox,
+                    xy[seg.i0 * 2 + 1] * aff.sy + aff.oy);
+        for (let p = seg.i0 + 1; p <= seg.i1; p++) {
+          lctx.lineTo(xy[p * 2] * aff.sx + aff.ox,
+                      xy[p * 2 + 1] * aff.sy + aff.oy);
+        }
+      };
+      lctx.lineWidth = Math.max(MODE_LINE_WIDTH[modeA] || 2.4,
+                                MODE_LINE_WIDTH[modeB] || 2.4);
+      lctx.strokeStyle = seg.ca;
+      lctx.lineDashOffset = 0;
+      path();
+      lctx.stroke();
+      lctx.strokeStyle = seg.cb;
+      lctx.lineDashOffset = dash;
+      path();
+      lctx.stroke();
+    }
+    lctx.restore();
+  }
+
   function drawLines() {
     const { w, h } = view;
     lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -225,6 +340,7 @@
       lctx.stroke();
     }
     lctx.globalAlpha = 1;
+    drawInterlineStripes();
   }
 
   // GTFS in this region publishes arrival == departure at every stop, so the
@@ -1989,6 +2105,7 @@
     shapes = D.shapes.map((pts) => ({ pts }));
     routeShapeIdx = null;
     shapeCum = null;
+    interlineSegments = null;
 
     routeIds = Object.keys(D.routes);
     const colorToSlot = new Map();

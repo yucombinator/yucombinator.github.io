@@ -215,6 +215,9 @@ window.MOTION_CONFIG = {
     "gorail",
     "up"
   ],
+  "interlineModes": [
+    "lrt"
+  ],
   "brandedModes": [
     "gorail",
     "up"
