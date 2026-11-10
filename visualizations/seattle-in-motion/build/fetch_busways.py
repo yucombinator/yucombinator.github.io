@@ -33,6 +33,7 @@ BUS_CORRIDORS = [
     ("4th Avenue South", "SODO · 4th Ave S"),
     ("Spring Street", "Downtown · Spring St"),
     ("Montlake Boulevard", "Montlake · bus lanes"),
+    ("Bothell Way", "SR 522 · Bothell/Kenmore bus lanes"),
 ]
 
 QUERY_DEDICATED = f"""[out:json][timeout:180];
