@@ -107,7 +107,8 @@
   let liveCount = 0;
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
-  const LIVE_ENABLED = false;      // hidden for now; flip to true to restore
+  // Live is opt-in per city: a city with liveUrls gets the toggle.
+  const LIVE_ENABLED = Array.isArray(CFG.liveUrls) && CFG.liveUrls.length > 0;
   const LIVE_STALE_MS = 30 * 60 * 1000;
 
   const lngLatOf = (x, y) => {
@@ -1552,6 +1553,9 @@
       else if (e.key === 'ArrowLeft') { setPlaying(false); seek(state.t - (e.shiftKey ? 3600 : 300)); }
       else if (e.key === 'h' || e.key === 'H') { seek(0); }
     });
+
+    const liveBtn = $('liveBtn');
+    if (liveBtn) liveBtn.addEventListener('click', () => setLive(!state.liveOn));
 
     const dlg = $('about');
     $('aboutBtn').addEventListener('click', () => dlg.showModal());

@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link rel="stylesheet" href="../_shared/motion.css?v=6b002b1867bd">
+<link rel="stylesheet" href="../_shared/motion.css?v=837a3031bf69">
 <style>
   :root{--accent:#6aa9ff}
 </style>
@@ -55,6 +55,7 @@
           <button data-day="sunday" aria-pressed="false">Sun</button>
         </div>
         <div class="clock"><span id="clock">07:00</span><small id="zone">PST</small></div>
+        <button class="live" id="liveBtn" type="button" aria-pressed="false" hidden title="Show live vehicle positions"><span class="live-dot" aria-hidden="true"></span>Live</button>
         <div class="speeds" id="speed" role="group" aria-label="Playback">
           <button class="pp" data-play="toggle" aria-pressed="false" aria-label="Pause">
             <svg class="ic-pause" viewBox="0 0 9 10" aria-hidden="true"><rect x="1" y="0" width="2.4" height="10" rx="1"/><rect x="5.6" y="0" width="2.4" height="10" rx="1"/></svg>
@@ -78,6 +79,7 @@
         <span>On the road <b id="s-active">0</b></span>
         <span>Trips started <b id="s-started">0</b> / <b id="s-total">—</b></span>
         <span>Peak hour <b>—</b> · — vehicles</span>
+        <span id="liveNote" aria-live="polite"></span>
       </div>
       <span class="src-wrap">
         <span class="src-note" id="updated"></span>
@@ -106,7 +108,8 @@
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2 id="aboutTitle">Seattle in Motion</h2>
     <p>Every scheduled trip across Puget Sound — Link, Sounder, the Seattle streetcars, King County Metro and the regional bus systems, Washington State Ferries, the Kitsap fast ferries and the Seattle Center Monorail — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
-    <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>This is mostly the timetable. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>When the <b>Live</b> button is available, real vehicle positions from Sound Transit, King County Metro, Community Transit, Kitsap Transit and Intercity Transit replace the scheduled arrows for their routes. Pierce Transit, Everett Transit and Washington State Ferries stay on the timetable because their live feeds need a key or lack route IDs. The button only appears when a snapshot less than 30 minutes old is loaded.</p>
     <p>Data: the Puget Sound consolidated GTFS feed, published by the region's agencies under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. Link, the streetcars and Sounder use their line colours; regional buses and ferries are coloured by operator for legibility. BRT lines (RapidRide, Swift, Stride, Stream) are red and have their own toggle; dedicated busways and painted bus lanes from OpenStreetMap are outlined on the map. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Open source: the code behind this series lives in the <a href="https://github.com/yucombinator/yucombinator.github.io/tree/main/visualizations" target="_blank" rel="noopener">visualizations folder on GitHub</a>.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
@@ -132,9 +135,9 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../_shared/version.js?v=6b002b1867bd"></script>
-<script src="../_shared/cities.js?v=6b002b1867bd"></script>
-<script src="city.js?v=6b002b1867bd"></script>
-<script src="../_shared/motion.js?v=6b002b1867bd"></script>
+<script src="../_shared/version.js?v=837a3031bf69"></script>
+<script src="../_shared/cities.js?v=837a3031bf69"></script>
+<script src="city.js?v=837a3031bf69"></script>
+<script src="../_shared/motion.js?v=837a3031bf69"></script>
 </body>
 </html>

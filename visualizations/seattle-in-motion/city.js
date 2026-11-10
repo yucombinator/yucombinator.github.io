@@ -201,6 +201,9 @@ window.MOTION_CONFIG = {
       "label": "Ferry"
     }
   ],
+  "liveUrls": [
+    "https://seattle-live.seattle-live.workers.dev/live.json"
+  ],
   "storageKey": "sea",
   "railModes": [
     "lrt",
