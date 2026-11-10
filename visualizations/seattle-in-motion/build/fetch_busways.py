@@ -124,6 +124,23 @@ QUERY_BAT = f"""[out:json][timeout:120];
 out tags geom;"""
 
 
+# Unnamed highway=busway loops inside transit-center bus exchanges, not
+# on-street busways. Keep them out of the map overlay.
+BUS_EXCHANGE_EXCLUDES = [
+    (47.6680, -122.1070, 600),   # Redmond Transit Center
+    (47.5315, -122.0655, 600),   # Issaquah Transit Center
+    (47.3596, -122.2990, 600),   # Auburn Station
+]
+
+
+def in_bus_exchange(lat, lon):
+    for elat, elon, radius in BUS_EXCHANGE_EXCLUDES:
+        if math.hypot((lat - elat) * 111320,
+                      (lon - elon) * 111320 * math.cos(math.radians(elat))) <= radius:
+            return True
+    return False
+
+
 ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -204,6 +221,8 @@ def collect(elements, groups, stats, source):
             continue
         geom = [(p["lat"], p["lon"]) for p in el.get("geometry", [])]
         if len(geom) < 2:
+            continue
+        if source == "dedicated" and in_bus_exchange(geom[0][0], geom[0][1]):
             continue
         # planar simplification at ~8 m
         lat0 = geom[0][0]
@@ -286,7 +305,7 @@ def main():
 
     out = {"groups": [
         {"name": n, "lines": ls, **({"solid": True} if n in SOLID_GROUPS else {})}
-        for n, ls in sorted(groups.items())
+        for n, ls in sorted(groups.items()) if ls
     ]}
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(out, fh, separators=(",", ":"))
