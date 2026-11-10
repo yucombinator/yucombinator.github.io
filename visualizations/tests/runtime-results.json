@@ -1,0 +1,17 @@
+[
+  {
+    "city": "toronto-in-motion",
+    "pass": true,
+    "fails": []
+  },
+  {
+    "city": "vancouver-in-motion",
+    "pass": true,
+    "fails": []
+  },
+  {
+    "city": "seattle-in-motion",
+    "pass": true,
+    "fails": []
+  }
+]

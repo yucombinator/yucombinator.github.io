@@ -1,26 +1,27 @@
-/* Seattle in Motion — scheduled Puget Sound trips animated over a weekday,
-   on a MapLibre basemap. Dots are drawn to a canvas overlay that shares the
-   map's projection (shape vertices are re-projected whenever the map moves). */
+/* In Motion — shared rendering engine for every city page.
+   Per-city behaviour comes from window.MOTION_CONFIG (city.js) and the city
+   registry in cities.js; nothing below should name a city. */
 (() => {
   'use strict';
 
-  const MODES = ['subway', 'streetcar', 'lrt', 'gorail', 'gobus', 'localbus', 'brt', 'up', 'ferry'];
-  const MODE_LABEL = {
-    subway: 'Subway', streetcar: 'Streetcar', lrt: 'Link light rail',
-    gorail: 'Sounder', gobus: 'Regional bus', localbus: 'Bus', brt: 'BRT',
-    up: 'Monorail', ferry: 'Ferry',
+  const CFG = window.MOTION_CONFIG || {};
+  const MODES = (CFG.modes || []).map((m) => m.key);
+  const MODE_LABEL = {}, MODE_COLOR = {}, MODE_RADIUS = {};
+  for (const m of CFG.modes || []) {
+    MODE_LABEL[m.key] = m.label || m.key;
+    MODE_COLOR[m.key] = m.color || '#8fa6ab';
+    MODE_RADIUS[m.key] = m.radius || 1.7;
+  }
+  const isBus = (mode) => (CFG.busModes || []).includes(mode);
+  const isTrain = (mode) => (CFG.trainModes || []).includes(mode);
+  const TIME_ZONE = CFG.timeZone || 'UTC';
+  const ACCENT = CFG.accent || '#f5c26b';
+  const accentA = (alpha) => {
+    const h = ACCENT.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
   };
-  const MODE_COLOR = {
-    subway: '#28813f', streetcar: '#f47836', lrt: '#28813f',
-    gorail: '#9ab6d3', gobus: '#007a53', localbus: '#2f6db3', brt: '#d7263d',
-    up: '#d24b8f', ferry: '#1b4f8f',
-  };
-  const MODE_RADIUS = {
-    subway: 2.7, streetcar: 2.0, lrt: 2.3, gorail: 2.5, gobus: 1.9, localbus: 1.35, brt: 1.7,
-    up: 2.5, ferry: 2.2,
-  };
-  const isBus = (mode) => mode === 'localbus' || mode === 'gobus';
-  const isTrain = (mode) => mode === 'gorail' || mode === 'up';
+  document.documentElement.style.setProperty('--accent', ACCENT);
   const DAY = 86400;
 
   const $ = (id) => document.getElementById(id);
@@ -36,7 +37,7 @@
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
     speed: 120,
-    modes: { subway: true, streetcar: true, lrt: true, gorail: true, gobus: true, localbus: true, brt: true, up: true, ferry: true },
+    modes: Object.fromEntries(MODES.map((m) => [m, true])),
     hoverTrip: null,
     dirty: true,
     liveOn: false,
@@ -47,7 +48,7 @@
   let shapes = [];            // { pts: [[x,y]] in local metres }
   let routeIds = [];          // pointer -> route_id
   let railShapes = [];        // [{shapeIdx, color, mode}] background lines
-  let slotColors = [];        // palette of dot colours (one per TTC line / mode)
+  let slotColors = [];        // palette of dot colours (one per line / mode)
   let slotMode = [];          // mode index per palette slot
   let slotOfTrip = null;      // Uint8Array slot per trip
   let trips = null;           // flat Int32Array [shape, t0, t1, routePtr]
@@ -73,12 +74,14 @@
   let anchorA = null, anchorB = null;
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
-  const VIEW_KEY = 'sea-view';
+  const STORE = CFG.slug || 'motion';
+  const VIEW_KEY = STORE + '-view';
   // A saved camera is only trusted inside the region the data covers. A map
   // that has not been positioned yet reports [0, 0] (null island), and saving
   // that once used to boot every later visit to an empty ocean.
+  const BOUNDS = CFG.inBounds || [-180, -90, 180, 90];
   const viewInBounds = (lng, lat) =>
-    lng >= -123.4 && lng <= -120.9 && lat >= 46.7 && lat <= 49.0;
+    lng >= BOUNDS[0] && lat >= BOUNDS[1] && lng <= BOUNDS[2] && lat <= BOUNDS[3];
   let routeSig = -1, lastLineRefresh = 0;
   let uiAccum = 0;
   let chartW = 0, chartH = 0, lastCursorT = -1;
@@ -214,7 +217,7 @@
   // GTFS in this region publishes arrival == departure at every stop, so the
   // dwell has to be modelled. Modest, mode-specific stops only, and only once
   // the map is close enough for them to read (zoom >= 12).
-  const DWELL_SECONDS = { subway: 20, lrt: 20, gorail: 45, up: 30, ferry: 120 };
+  const DWELL_SECONDS = CFG.dwellSeconds || {};
   let dwellProfiles = null;
 
   function initDwell() {
@@ -284,10 +287,10 @@
     if (chartW && state.t !== lastCursorT) {
       lineCtx.clearRect(0, 0, chartW, chartH);
       const cx = (state.t / DAY) * chartW;
-      lineCtx.strokeStyle = 'rgba(106,169,255,.85)';
+      lineCtx.strokeStyle = accentA(.85);
       lineCtx.lineWidth = 1;
       lineCtx.beginPath(); lineCtx.moveTo(cx, 0); lineCtx.lineTo(cx, chartH); lineCtx.stroke();
-      lineCtx.fillStyle = 'rgba(106,169,255,.9)';
+      lineCtx.fillStyle = accentA(.9);
       lineCtx.beginPath(); lineCtx.arc(cx, chartH - 2, 2.5, 0, Math.PI * 2); lineCtx.fill();
       lastCursorT = state.t;
     }
@@ -607,7 +610,7 @@
       octx.globalAlpha = 1;
 
       if (selIsRail) {
-        // TTC official-map station treatment: white discs with a dark edge on
+        // rail station treatment: white discs with a dark edge on
         // a heavier line, bigger at the terminals, plus route-number badges
         const sr = 2.5 + zf * 1.2;
         const branded = selMode === 'gorail' || selMode === 'up';
@@ -797,10 +800,10 @@
     const bg = chartCtx.createLinearGradient(0, 0, w, 0);
     bg.addColorStop(0, 'rgba(58,88,148,.20)');
     bg.addColorStop(F(rise - blend), 'rgba(58,88,148,.20)');
-    bg.addColorStop(F(rise + blend), 'rgba(106,169,255,.07)');
-    bg.addColorStop(F(12 * 3600 - blend), 'rgba(106,169,255,.07)');
-    bg.addColorStop(F(12 * 3600 + blend), 'rgba(106,169,255,.16)');
-    bg.addColorStop(F(set - blend), 'rgba(106,169,255,.16)');
+    bg.addColorStop(F(rise + blend), accentA(.07));
+    bg.addColorStop(F(12 * 3600 - blend), accentA(.07));
+    bg.addColorStop(F(12 * 3600 + blend), accentA(.16));
+    bg.addColorStop(F(set - blend), accentA(.16));
     bg.addColorStop(F(set + blend), 'rgba(146,88,166,.16)');
     bg.addColorStop(1, 'rgba(146,88,166,.16)');
     chartCtx.fillStyle = bg;
@@ -810,8 +813,8 @@
     const labelH = 13;
     const bw = w / buckets;
     const grad = chartCtx.createLinearGradient(0, h, 0, 0);
-    grad.addColorStop(0, 'rgba(106,169,255,.20)');
-    grad.addColorStop(1, 'rgba(106,169,255,.90)');
+    grad.addColorStop(0, accentA(.20));
+    grad.addColorStop(1, accentA(.90));
     chartCtx.fillStyle = grad;
     for (let b = 0; b < buckets; b++) {
       const v = smooth[b];
@@ -885,7 +888,7 @@
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
       try {
-        const res = await fetch(`data-${key}.json?v=20261109s17`);
+        const res = await fetch(`data-${key}.json?v=${window.MOTION_VERSION || 'local'}`);
         if (!res.ok) throw new Error('data-' + key + ' ' + res.status);
         const dd = await res.json();
         dayCache[key] = prepareDay(key, dd);
@@ -912,11 +915,11 @@
     linesDirty = true;
     routeSig = -1;
     $('dayLabel').textContent = d.label;
-    $('zone').textContent = d.tz || 'PST';
+    $('zone').textContent = d.tz || CFG.zoneLabel || '';
     $('s-total').textContent = d.n.toLocaleString();
     if (D.built) {
       const when = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Los_Angeles', day: 'numeric', month: 'short',
+        timeZone: TIME_ZONE, day: 'numeric', month: 'short',
         hour: '2-digit', minute: '2-digit', hour12: false,
       }).format(new Date(D.built));
       const el = $('updated');
@@ -959,7 +962,7 @@
 
   async function loadCorridors() {
     try {
-      const res = await fetch('busways.json?v=20261109s17');
+      const res = await fetch(`busways.json?v=${window.MOTION_VERSION || 'local'}`);
       if (!res.ok) return;
       const doc = await res.json();
       corridors = (doc.groups || []).map((g) => ({ name: g.name, lines: g.lines }));
@@ -1089,7 +1092,7 @@
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
-        const res = await fetch(`stops-${feed}.json?v=20261109s17`);
+        const res = await fetch(`stops-${feed}.json?v=${window.MOTION_VERSION || 'local'}`);
         if (res.ok) { doc = await res.json(); stopsCache.set(feed, doc); }
       }
       if (selected !== idx) return;
@@ -1179,9 +1182,9 @@
 
   // The map clock is Pacific schedule time, so a viewer in another zone
   // must not get the snapshot's local-to-them hour (or seek to it).
-  function torontoClock(ms) {
+  function cityClock(ms) {
     const parts = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'America/Los_Angeles', hourCycle: 'h23',
+      timeZone: TIME_ZONE, hourCycle: 'h23',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     }).formatToParts(new Date(ms));
     const out = {};
@@ -1195,17 +1198,14 @@
 
   function liveNoteText() {
     if (!live) return '';
-    return `Live snapshot · ${torontoClock(live.generated).hm} · ${live.v.length.toLocaleString()} vehicles`;
+    return `Live snapshot · ${cityClock(live.generated).hm} · ${live.v.length.toLocaleString()} vehicles`;
   }
 
   // The RT feeds block browser reads, so a scheduled workflow publishes a
   // snapshot to the live-data branch; raw.githubusercontent serves it with
   // CORS. Same-origin live.json stays first for local runs and manual drops,
   // and the newest of the two wins.
-  const LIVE_URLS = [
-    'live.json',
-    'https://raw.githubusercontent.com/yucombinator/yucombinator.github.io/live-data/live.json',
-  ];
+  const LIVE_URLS = CFG.liveUrls || [];
 
   async function loadLive() {
     if (!LIVE_ENABLED) return;
@@ -1245,7 +1245,7 @@
     state.liveOn = on;
     if (on) {
       setPlaying(false);
-      const c = torontoClock(live.generated);
+      const c = cityClock(live.generated);
       seek(c.h * 3600 + c.m * 60 + c.s);
       computeLiveScreen();
     }
@@ -1297,7 +1297,7 @@
       btn.setAttribute('aria-expanded', String(!collapsed));
       btn.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
     }
-    try { localStorage.setItem('sea-panel-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
+    try { localStorage.setItem(STORE + '-panel-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
   }
 
   function setPlaying(on) {
@@ -1329,7 +1329,98 @@
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  function buildLegend() {
+    const box = $('legend');
+    if (!box) return;
+    box.innerHTML = '';
+    for (const item of CFG.legend || []) {
+      const btn = document.createElement('button');
+      btn.dataset.mode = item.mode;
+      btn.setAttribute('aria-pressed', 'true');
+      if (item.title) btn.title = item.title;
+      if (item.tip && item.tip.length) {
+        const tip = document.createElement('span');
+        tip.className = 'mode-tip' + (item.twoCol ? ' two-col' : '');
+        tip.id = item.tipId || (item.mode + 'Tip');
+        tip.setAttribute('role', 'tooltip');
+        btn.setAttribute('aria-describedby', tip.id);
+        for (const row of item.tip) {
+          const line = document.createElement('span');
+          const dot = document.createElement('i');
+          dot.style.background = row.color;
+          line.appendChild(dot);
+          line.appendChild(document.createTextNode(row.em ? row.text + ' ' : row.text));
+          if (row.em) {
+            const em = document.createElement('em');
+            em.textContent = row.em;
+            line.appendChild(em);
+          }
+          tip.appendChild(line);
+        }
+        btn.appendChild(tip);
+      }
+      const glyph = document.createElement('span');
+      if (item.dot) {
+        glyph.className = 'dot';
+        glyph.style.background = item.dot;
+      } else {
+        glyph.className = 'swatches';
+        for (const c of item.swatches || []) {
+          const i = document.createElement('i');
+          i.style.background = c;
+          glyph.appendChild(i);
+        }
+      }
+      btn.appendChild(glyph);
+      btn.appendChild(document.createTextNode(item.label));
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.id = 'n-' + item.mode;
+      n.textContent = '0';
+      btn.appendChild(n);
+      box.appendChild(btn);
+    }
+  }
+
+  function buildCityMenu() {
+    const wrap = $('cityWrap');
+    const cities = window.MOTION_CITIES || [];
+    const current = cities.find((c) => c.slug === STORE);
+    if (!wrap || !current) return;
+    wrap.dataset.current = current.slug;
+    wrap.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'city-btn';
+    btn.id = 'cityBtn';
+    btn.setAttribute('aria-haspopup', 'menu');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.appendChild(document.createTextNode(current.label));
+    btn.insertAdjacentHTML('beforeend',
+      '<svg class="city-caret" viewBox="0 0 8 5" aria-hidden="true">'
+      + '<path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" '
+      + 'stroke-width="1.4" stroke-linecap="round"/></svg>');
+    const menu = document.createElement('span');
+    menu.className = 'city-menu';
+    menu.id = 'cityMenu';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'Choose a city');
+    menu.hidden = true;
+    for (const c of cities) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.setAttribute('role', 'menuitemradio');
+      item.dataset.city = c.slug;
+      item.setAttribute('aria-checked', String(c.slug === current.slug));
+      item.textContent = c.label;
+      menu.appendChild(item);
+    }
+    wrap.append(btn, menu);
+  }
+
   function wire() {
+    buildLegend();
+    buildCityMenu();
+
 
     let down = null;
     mapEl.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
@@ -1361,7 +1452,7 @@
       resize();
     });
     try {
-      if (localStorage.getItem('sea-panel-collapsed') === '1'
+      if (localStorage.getItem(STORE + '-panel-collapsed') === '1'
           && matchMedia('(max-width: 680px)').matches) {
         setPanelCollapsed(true);
       }
@@ -1500,7 +1591,7 @@
       btn.addEventListener('click', () => {
         const city = btn.dataset.city;
         if (!city || city === current) { close(true); return; }
-        location.href = '../' + city + '-in-motion/';
+        location.href = '../' + city + '/';
       });
       btn.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
@@ -1529,7 +1620,7 @@
   /* ---------- boot ---------- */
 
   async function boot() {
-    const res = await fetch('data.json?v=20261109s17');
+    const res = await fetch(`data.json?v=${window.MOTION_VERSION || 'local'}`);
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
 
@@ -1631,7 +1722,7 @@
           restored = true;
         }
       } catch { /* private mode */ }
-      if (!restored) mapObj.jumpTo({ center: [-122.335, 47.606], zoom: 10.4 });
+      if (!restored) mapObj.jumpTo({ center: CFG.camera.slice(0, 2), zoom: CFG.camera[2] });
       projectPieces();
       needsProjection = false;
       state.dirty = true;

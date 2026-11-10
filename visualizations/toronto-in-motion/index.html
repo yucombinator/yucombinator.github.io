@@ -12,214 +12,9 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="../_shared/motion.css?v=0ba38d55a93d">
 <style>
-  :root{
-    --bg:#070d14;
-    --panel:#0a141b;
-    --line:#1d303b;
-    --text:#dce8e3;
-    --muted:#7f95a0;
-    --accent:#f5c26b;
-    --subway:#f5c451;
-    --streetcar:#ef6f6c;
-    --bus:#5aa9e6;
-    --font:"Avenir Next","Helvetica Neue",Arial,sans-serif;
-    color-scheme:dark;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;overflow:hidden}
-  button,select{font:inherit;color:inherit}
-  button{cursor:pointer}
-  button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  #app{position:relative;height:100%;overflow:hidden;background:var(--bg)}
-  #map{position:absolute;inset:0;background:#071014}
-  .basemap-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,rgba(7,13,20,.46),rgba(7,13,20,.62))}
-  #map .maplibregl-canvas{opacity:.82}
-  #overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
-  #rail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;transform-origin:0 0}
-  .maplibregl-ctrl{bottom:240px!important;right:10px!important}
-  .vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,13,20,.82),transparent 22%,transparent 62%,rgba(7,13,20,.8))}
-
-  header{position:absolute;left:max(22px,env(safe-area-inset-left));right:max(22px,env(safe-area-inset-right));top:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;pointer-events:none;z-index:5}
-  .brand{display:flex;align-items:center;gap:9px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:#c8d8d4}
-  .mark{width:24px;height:24px;color:var(--accent);display:block;flex:0 0 auto}
-  .brand .b1{color:var(--accent)}
-  .brand{pointer-events:auto}
-  .city-wrap{position:relative;display:inline-flex}
-  .city-btn{appearance:none;border:1px solid rgba(245,194,107,.38);
-    background:rgba(245,194,107,.07);color:var(--accent);
-    font:inherit;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
-    padding:5px 9px 4px;border-radius:7px;display:inline-flex;align-items:center;gap:7px;
-    cursor:pointer;line-height:1.05;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-  .city-btn:hover{background:rgba(245,194,107,.15);border-color:rgba(245,194,107,.65)}
-  .city-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .city-btn[aria-expanded="true"]{border-color:var(--accent);background:rgba(245,194,107,.17)}
-  .city-caret{width:8px;height:5px;transition:transform .15s ease}
-  .city-btn[aria-expanded="true"] .city-caret{transform:rotate(180deg)}
-  .city-menu{position:absolute;top:calc(100% + 9px);left:-9px;min-width:146px;padding:5px;
-    display:grid;gap:2px;background:#0b161e;border:1px solid #263c49;border-radius:9px;
-    box-shadow:0 16px 34px rgba(0,0,0,.55);z-index:40}
-  .city-menu[hidden]{display:none}
-  .city-menu button{background:none;border:0;text-align:left;color:var(--text);font:inherit;
-    font-size:11.5px;letter-spacing:.4px;text-transform:none;padding:7px 10px 7px 27px;
-    border-radius:5px;cursor:pointer;position:relative;white-space:nowrap}
-  .city-menu button:hover,.city-menu button:focus-visible{background:rgba(245,194,107,.13);color:#fff;outline:none}
-  .city-menu button::before{content:"";position:absolute;left:9px;top:50%;width:9px;height:9px;
-    transform:translateY(-57%) rotate(45deg);border-right:1.6px solid transparent;
-    border-bottom:1.6px solid transparent}
-  .city-menu button[aria-checked="true"]::before{border-color:var(--accent)}
-  .hright{display:flex;align-items:center;gap:16px;pointer-events:auto}
-  .clock{font-size:34px;font-weight:300;letter-spacing:-.6px;font-variant-numeric:tabular-nums;color:#d7e7e1;line-height:1}
-  .clock small{font-size:11px;letter-spacing:.6px;color:var(--muted);margin-left:5px}
-  .about-btn{background:none;border:0;color:#9db3b8;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:6px 0}
-  .about-btn:hover{color:var(--accent)}
-  .linkish{background:none;border:0;padding:0;color:var(--accent);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
-  #sources{max-width:560px}
-  .srclist{columns:2;column-gap:24px;margin:14px 0 0;padding-left:18px;font-size:12px;line-height:1.45;color:#c2d3cf}
-  .srclist li{break-inside:avoid;margin:0 0 6px}
-  .srclist-note{margin-top:16px;font-size:11px;color:#8fa6ab;line-height:1.5}
-
-  .meta{position:absolute;left:max(22px,env(safe-area-inset-left));top:64px;pointer-events:none;z-index:4;text-shadow:0 1px 10px rgba(7,13,20,.95),0 0 3px rgba(7,13,20,.9)}
-  header{text-shadow:0 1px 10px rgba(7,13,20,.9)}
-  .meta .day{font-size:11px;letter-spacing:1px;color:#93aab0;text-transform:uppercase}
-  .meta .sub{margin-top:5px;font-size:12px;color:#7d949b;max-width:34ch;line-height:1.5}
-
-  .panel{position:absolute;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));bottom:14px;background:var(--panel);border:1px solid #203440;border-radius:10px;padding:10px 14px 8px;z-index:4}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:14px}
-  .legend{display:flex;gap:16px;flex-wrap:wrap}
-  .legend button{background:none;border:0;padding:2px 0;display:flex;align-items:center;gap:6px;color:#b9cccf;font-size:11.5px}
-  .legend button[aria-pressed="false"]{opacity:.35}
-  .legend button{position:relative}
-  .mode-tip{position:absolute;left:0;bottom:calc(100% + 10px);z-index:12;min-width:192px;
-    padding:9px 12px;border:1px solid #263c49;border-radius:8px;background:rgba(7,16,22,.97);
-    box-shadow:0 12px 28px rgba(0,0,0,.5);color:var(--text);font-size:11px;line-height:1.55;
-    display:grid;gap:3px;opacity:0;transform:translateY(4px);pointer-events:none;
-    transition:opacity .12s ease,transform .12s ease;text-align:left;white-space:nowrap}
-  .legend button:hover .mode-tip,
-  .legend button:focus-visible .mode-tip{opacity:1;transform:none}
-  .mode-tip span{display:flex;align-items:center;gap:7px}
-  .mode-tip i{flex:0 0 auto;width:8px;height:8px;border-radius:2px}
-  .mode-tip em{font-style:normal;color:var(--muted)}
-  .mode-tip.two-col{grid-template-columns:1fr 1fr;column-gap:16px;min-width:336px}
-  @media (max-width:520px){.mode-tip.two-col{grid-template-columns:1fr;min-width:0}}
-  .legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-  .legend .swatches{display:inline-flex;gap:2px}
-  .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
-  .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
-  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
-  .controls .clock{font-size:21px;font-weight:400;letter-spacing:-.3px;color:var(--accent);order:1}
-  .controls .days{order:2}
-  .controls .speeds{order:3}
-  .controls .clock small{font-size:9px;letter-spacing:.7px;color:#93aab0;margin-left:5px}
-  .days{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
-  .days button{background:none;border:0;color:#8fa6ab;font-size:10.5px;letter-spacing:.3px;padding:4px 7px;border-radius:3px;font-variant-numeric:tabular-nums}
-  .days button[aria-pressed="true"]{background:rgba(245,194,107,.14);color:var(--accent)}
-  .days button:hover{color:#d6ece4}
-  .speeds{display:flex;gap:1px;background:#0c1a22;border:1px solid #27404a;border-radius:5px;padding:2px}
-  .speeds button{background:none;border:0;color:#8fa6ab;padding:5px 7px;border-radius:3px;display:flex;align-items:center}
-  .speeds button svg{height:10px;width:auto;fill:currentColor;display:block}
-  .speeds .pp{color:#c9d9d4;width:27px;height:24px;padding:0;justify-content:center;
-    border:1px solid #33505a;border-radius:50%;margin:0 1px}
-  .speeds .pp[aria-pressed="true"]{border-color:var(--accent);background:rgba(245,194,107,.14);color:var(--accent)}
-  .speeds .pp:hover{border-color:#4b6b74}
-  .speeds .pp svg{height:9px}
-  .speeds .pp .ic-play{display:none}
-  .speeds .pp[aria-pressed="true"] .ic-pause{display:none}
-  .speeds .pp[aria-pressed="true"] .ic-play{display:block}
-  .speed-sep{width:1px;background:#27404a;align-self:stretch;margin:2px 1px}
-  .speeds button[aria-pressed="true"]{background:rgba(245,194,107,.14);color:var(--accent)}
-  .speeds button:hover{color:#d6ece4}
-  .live{display:flex;align-items:center;gap:5px;background:rgba(255,92,92,.08);border:1px solid #6a3b3b;color:#ffb4b4;font-size:10.5px;letter-spacing:.4px;padding:6px 9px;border-radius:5px}
-  .live[aria-pressed="true"]{background:rgba(255,72,72,.22);border-color:#c35252;color:#ffd9d9}
-  .live:disabled{opacity:.4}
-  .live-dot{width:6px;height:6px;border-radius:50%;background:#ff5c5c;box-shadow:0 0 0 3px rgba(255,92,92,.18)}
-  .live[aria-pressed="true"] .live-dot{background:#ff3b3b;animation:livepulse 1.6s infinite}
-  @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.45)}70%{box-shadow:0 0 0 7px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
-  #liveNote{color:#ff9f9f}
-  select{background:#0c1a22;border:1px solid #27404a;border-radius:5px;color:#a9bfc4;font-size:10.5px;padding:6px 7px}
-  .chartwrap{position:relative;height:64px;margin-top:8px}
-  .chartwrap canvas{position:absolute;inset:0;width:100%;height:100%}
-  .scrub{width:100%;margin:0;appearance:none;-webkit-appearance:none;background:transparent;height:16px;margin-top:2px}
-  .scrub::-webkit-slider-runnable-track{background:#22363f;height:1px}
-  .scrub::-moz-range-track{background:#22363f;height:1px}
-  .scrub::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:-4px;box-shadow:0 0 0 3px rgba(245,194,107,.18)}
-  .scrub::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;background:var(--accent)}
-  .ticks{display:flex;justify-content:space-between;font-size:10px;color:#8aa0a6;font-variant-numeric:tabular-nums;margin-top:-2px}
-  .foot{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid #1a2b34;margin-top:6px;padding-top:6px;flex-wrap:wrap}
-  .stats{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#8ea5aa}
-  .stats b{color:#c3d5d1;font-weight:500;font-variant-numeric:tabular-nums}
-  .src{font-size:10px;color:#7f979d;text-decoration:none;border-bottom:1px solid #2a4048}
-  .src-note{font-size:10px;color:#7f979d}
-  .src:hover{color:var(--accent);border-color:var(--accent)}
-  .src-wrap{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
-  .src-sep{color:#41545a;font-size:10px}
-  .rhead{display:flex;align-items:center;gap:10px}
-  .rdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
-  .rtitle{display:flex;flex-direction:column;line-height:1.25;min-width:0}
-  .rtitle b{font-size:13.5px;color:#e2efea;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rtitle span{font-size:10px;color:#8fa6ab;letter-spacing:.5px;text-transform:uppercase}
-  .rclose{margin-left:auto;background:none;border:1px solid #33505a;color:#9db3b8;width:26px;height:26px;border-radius:5px;font-size:15px;line-height:1;flex:0 0 auto}
-  .rclose:hover{color:var(--accent);border-color:var(--accent)}
-  .rstats{margin-top:6px;font-size:11px;color:#8ea5aa;display:flex;gap:14px;flex-wrap:wrap}
-  .rstats b{color:#c3d5d1;font-weight:500}
-
-  .panel-toggle{display:none}
-  @media (max-width:680px){
-    .panel-toggle{display:grid;place-items:center;position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-      width:48px;height:15px;padding:0;border-radius:9px;background:#12232c;border:1px solid #27404a;color:#9db3b8;z-index:1}
-    .panel-toggle svg{width:13px;height:9px}
-    .panel-toggle:hover{color:var(--accent);border-color:#3f5b66}
-    .panel.collapsed{padding:6px 10px 4px}
-    .panel.collapsed .panel-toggle svg{transform:rotate(180deg)}
-    .panel.collapsed .legend,
-    .panel.collapsed .chartwrap,
-    .panel.collapsed .scrub,
-    .panel.collapsed .ticks,
-    .panel.collapsed .foot,
-    .panel.collapsed #routePanel,
-    .panel.collapsed .days{display:none}
-    .panel.collapsed .row{justify-content:flex-end;gap:8px}
-  }
-  @media (min-width:681px){
-    .panel{left:50%;right:auto;transform:translateX(-50%);width:min(1180px,calc(100% - 40px))}
-    .legend{gap:11px}
-    .legend button{font-size:11px;gap:5px}
-    .legend .n{min-width:22px;font-size:10px}
-    .legend .swatches i{width:4px;height:7px}
-  }
-  #tip{position:absolute;z-index:6;pointer-events:none;background:rgba(9,20,27,.95);border:1px solid #33505a;border-radius:6px;padding:9px 12px;font-size:11px;z-index:5;max-width:250px;box-shadow:0 8px 26px rgba(0,0,0,.4);display:none}
-  #tip .m{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7f9ba1;display:flex;align-items:center;gap:6px}
-  #tip .cd{width:6px;height:6px;border-radius:50%;display:inline-block}
-  #tip strong{display:block;margin-top:4px;font-weight:500;color:#e2efea}
-  #tip small{display:block;margin-top:3px;color:#7f9ba1;font-size:10px}
-
-  #loading{position:absolute;inset:0;z-index:10;background:rgba(7,13,20,.95);display:flex;align-items:center;justify-content:center;gap:14px;color:#9db3b8;font-size:13px;letter-spacing:.4px;transition:opacity .5s}
-  #loading.done{opacity:0;pointer-events:none}
-
-  dialog{border:1px solid #26414c;background:#0a161d;color:var(--text);border-radius:12px;max-width:560px;padding:24px 26px;font-size:13px;line-height:1.6}
-  dialog::backdrop{background:rgba(4,9,13,.66)}
-  dialog h2{margin:0 0 10px;font-size:16px;font-weight:600}
-  dialog p{margin:0 0 10px;color:#aec2c6}
-  dialog p:last-child{margin-bottom:0}
-  dialog a{color:var(--accent)}
-  dialog code{font-size:12px;color:#cfe3dc}
-  .close{position:absolute;right:14px;top:10px;background:none;border:0;color:#8aa2a8;font-size:18px}
-
-  @media (max-width:680px){
-    .clock{font-size:26px}
-    .meta .sub{display:none}
-    .row{flex-wrap:wrap;gap:8px}
-    .legend{gap:10px;width:100%}
-    .controls{width:100%;justify-content:space-between}
-    .controls .days{order:1}
-    .controls .clock{order:2}
-    .legend .n{min-width:20px}
-    .panel{padding:9px 10px 6px}
-    .chartwrap{height:54px}
-    .stats{gap:12px;font-size:10.5px}
-  }
-  @media (prefers-reduced-motion:reduce){ .panel,.vignette{transition:none} }
+  :root{--accent:#f5c26b}
 </style>
 </head>
 <body>
@@ -235,7 +30,7 @@
         <rect x="9.5" y="5" width="3" height="14" rx="1.4" fill="currentColor"/>
         <rect x="4" y="5" width="13" height="3" rx="1.4" fill="currentColor"/>
         <path d="M16 2.6 L22 6.5 L16 10.4 Z" fill="currentColor"/>
-      </svg> <span class="city-wrap" data-current="toronto"><button class="city-btn" id="cityBtn" aria-haspopup="menu" aria-expanded="false">Toronto<svg class="city-caret" viewBox="0 0 8 5" aria-hidden="true"><path d="M1 1l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><span class="city-menu" id="cityMenu" role="menu" aria-label="Choose a city" hidden><button type="button" role="menuitemradio" aria-checked="false" data-city="vancouver">Vancouver</button><button type="button" role="menuitemradio" aria-checked="true" data-city="toronto">Toronto</button><button type="button" role="menuitemradio" aria-checked="false" data-city="seattle">Seattle</button></span></span> in Motion</div>
+      </svg> <span class="city-wrap" id="cityWrap"></span> in Motion</div>
     <div class="hright">
       <button class="about-btn" id="aboutBtn">About</button>
     </div>
@@ -254,17 +49,7 @@
     </button>
     <div id="panelMain">
     <div class="row">
-      <div class="legend" id="legend">
-        <button data-mode="subway" aria-pressed="true" title="TTC Line 1, Line 2, Line 4"><span class="swatches"><i style="background:#f8c302"></i><i style="background:#16a753"></i><i style="background:#b32078"></i></span>Subway<span class="n" id="n-subway">0</span></button>
-        <button data-mode="streetcar" aria-pressed="true" title="TTC streetcars"><span class="dot" style="background:#da251d"></span>Streetcar<span class="n" id="n-streetcar">0</span></button>
-        <button data-mode="lrt" aria-pressed="true" title="Line 5, Line 6, ION"><span class="swatches"><i style="background:#f87005"></i><i style="background:#8a999a"></i><i style="background:#00b3b0"></i></span>LRT<span class="n" id="n-lrt">0</span></button>
-        <button data-mode="gorail" aria-pressed="true" title="GO Transit trains"><span class="swatches"><i style="background:#98002e"></i><i style="background:#00853e"></i><i style="background:#003767"></i><i style="background:#f57f25"></i></span>GO train<span class="n" id="n-gorail">0</span></button>
-        <button data-mode="gobus" aria-pressed="true" title="GO Transit buses"><span class="dot" style="background:#5aa93f"></span>GO bus<span class="n" id="n-gobus">0</span></button>
-        <button data-mode="localbus" aria-pressed="true" title="TTC, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Orillia, Mid-Pen, Niagara Region" aria-describedby="busTip"><span class="mode-tip two-col" role="tooltip" id="busTip"><span><i style="background:#5aa9e6"></i>TTC bus</span><span><i style="background:#2f6fd0"></i>MiWay</span><span><i style="background:#e07b39"></i>Brampton</span><span><i style="background:#8a4fb5"></i>YRT</span><span><i style="background:#12a5b0"></i>Durham RT</span><span><i style="background:#3f8f6b"></i>Oakville</span><span><i style="background:#c9a227"></i>Burlington</span><span><i style="background:#c2456b"></i>HSR</span><span><i style="background:#00838f"></i>GRT</span><span><i style="background:#8d6e63"></i>Guelph</span><span><i style="background:#546e7a"></i>Barrie</span><span><i style="background:#7fa650"></i>Milton</span><span><i style="background:#b06fd0"></i>Simcoe LINX</span><span><i style="background:#d0563a"></i>Orangeville</span><span><i style="background:#4f8fd0"></i>Lindsay</span><span><i style="background:#c26b3f"></i>Orillia</span><span><i style="background:#7b8f3a"></i>Mid-Pen</span><span><i style="background:#c04fa0"></i>Niagara Region</span></span><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
-        <button data-mode="brt" aria-pressed="true" title="Züm, Viva and PULSE rapid transit" aria-describedby="brtTip"><span class="mode-tip" role="tooltip" id="brtTip"><span><i style="background:#f0a574"></i>Brampton <em>Züm</em></span><span><i style="background:#4fc6ce"></i>Durham <em>PULSE</em></span><span><i style="background:#b07fd8"></i>YRT <em>Viva</em></span></span><span class="swatches"><i style="background:#f0a574"></i><i style="background:#4fc6ce"></i><i style="background:#b07fd8"></i></span>BRT<span class="n" id="n-brt">0</span></button>
-        <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#0075d2"></span>UP<span class="n" id="n-up">0</span></button>
-        <button data-mode="ferry" aria-pressed="true" title="Toronto Island Ferry"><span class="dot" style="background:#1f8a9e"></span>Ferry<span class="n" id="n-ferry">0</span></button>
-      </div>
+      <div class="legend" id="legend"></div>
       <div class="controls">
         <div class="days" id="days" role="group" aria-label="Service day">
           <button data-day="weekday" aria-pressed="true">Weekday</button>
@@ -360,6 +145,9 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261110r"></script>
+<script src="../_shared/version.js?v=0ba38d55a93d"></script>
+<script src="../_shared/cities.js?v=0ba38d55a93d"></script>
+<script src="city.js?v=0ba38d55a93d"></script>
+<script src="../_shared/motion.js?v=0ba38d55a93d"></script>
 </body>
 </html>

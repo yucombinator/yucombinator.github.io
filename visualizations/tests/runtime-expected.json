@@ -1,0 +1,102 @@
+{
+  "toronto-in-motion": {
+    "total": "79,370",
+    "started": "33,843",
+    "legend": {
+      "subway": 77,
+      "streetcar": 172,
+      "lrt": 31,
+      "gorail": 17,
+      "gobus": 119,
+      "localbus": 1961,
+      "brt": 99,
+      "up": 4,
+      "ferry": 1
+    },
+    "tipRows": {
+      "busTip": 18,
+      "brtTip": 3
+    },
+    "cityLabels": [
+      "Toronto",
+      "Vancouver",
+      "Seattle"
+    ],
+    "oss": true,
+    "legendOrder": [
+      "subway",
+      "streetcar",
+      "lrt",
+      "gorail",
+      "gobus",
+      "localbus",
+      "brt",
+      "up",
+      "ferry"
+    ],
+    "accent": "#f5c26b"
+  },
+  "vancouver-in-motion": {
+    "total": "28,885",
+    "started": "12,092",
+    "legend": {
+      "subway": 54,
+      "gorail": 0,
+      "localbus": 692,
+      "brt": 67,
+      "ferry": 41
+    },
+    "tipRows": {
+      "busTip": 6,
+      "ferryTip": 5
+    },
+    "cityLabels": [
+      "Toronto",
+      "Vancouver",
+      "Seattle"
+    ],
+    "oss": true,
+    "legendOrder": [
+      "subway",
+      "gorail",
+      "localbus",
+      "brt",
+      "ferry"
+    ],
+    "accent": "#6fe0a4"
+  },
+  "seattle-in-motion": {
+    "total": "22,206",
+    "started": "9,569",
+    "legend": {
+      "streetcar": 6,
+      "lrt": 37,
+      "gorail": 0,
+      "localbus": 718,
+      "brt": 110,
+      "up": 1,
+      "ferry": 22
+    },
+    "tipRows": {
+      "busTip": 7,
+      "brtTip": 4,
+      "ferryTip": 3
+    },
+    "cityLabels": [
+      "Toronto",
+      "Vancouver",
+      "Seattle"
+    ],
+    "oss": true,
+    "legendOrder": [
+      "streetcar",
+      "lrt",
+      "gorail",
+      "localbus",
+      "brt",
+      "up",
+      "ferry"
+    ],
+    "accent": "#6aa9ff"
+  }
+}
