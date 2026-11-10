@@ -288,7 +288,6 @@
     }
 
     if (state.liveOn && liveAnim && now < liveAnim.start + liveAnim.duration) {
-      computeLiveScreen(now);
       state.dirty = true;
     }
 
@@ -460,6 +459,10 @@
   }
 
   function draw() {
+    // Live positions are projected for this exact frame. Unlike scheduled
+    // arrows they must not be transformed by the in-flight affine estimate,
+    // or a zoom applies the scale twice.
+    if (state.liveOn) computeLiveScreen(performance.now());
     const { w, h } = view;
     octx.clearRect(0, 0, w, h);
     const ss = view.screenShapes;
@@ -705,8 +708,8 @@
         octx.globalAlpha = selected >= 0 ? 0.5 : 1;
         for (let k = 0; k < liveCount; k++) {
           if (liveScreen[k * 4 + 3] !== si) continue;
-          const x = liveScreen[k * 4] * aff.sx + aff.ox;
-          const y = liveScreen[k * 4 + 1] * aff.sy + aff.oy;
+          const x = liveScreen[k * 4];
+          const y = liveScreen[k * 4 + 1];
           arrowPath(octx, x, y, liveScreen[k * 4 + 2], len, wid);
         }
         octx.fill();
@@ -725,8 +728,7 @@
           for (let k = 0; k < liveCount; k++) {
             if (liveScreen[k * 4 + 3] !== si || liveRoutePtr[k] !== selected) continue;
             any = true;
-            arrowPath(octx, liveScreen[k * 4] * aff.sx + aff.ox,
-                      liveScreen[k * 4 + 1] * aff.sy + aff.oy,
+            arrowPath(octx, liveScreen[k * 4], liveScreen[k * 4 + 1],
                       liveScreen[k * 4 + 2], len, wid);
           }
           if (any) octx.fill();
