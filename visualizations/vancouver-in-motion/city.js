@@ -162,9 +162,7 @@ window.MOTION_CONFIG = {
   "storageKey": "van",
   "railModes": [
     "subway",
-    "lrt",
-    "gorail",
-    "up"
+    "gorail"
   ],
   "brandedModes": [
     "gorail"
@@ -177,6 +175,10 @@ window.MOTION_CONFIG = {
     {
       "match": "aquabus",
       "label": "Aquabus"
+    },
+    {
+      "match": "^",
+      "label": "Ferry"
     }
   ]
 };

@@ -203,7 +203,6 @@ window.MOTION_CONFIG = {
   ],
   "storageKey": "sea",
   "railModes": [
-    "subway",
     "lrt",
     "gorail",
     "up"

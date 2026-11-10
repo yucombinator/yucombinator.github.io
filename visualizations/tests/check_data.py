@@ -29,8 +29,12 @@ def compare(city, out):
     for name in ("data-saturday.json", "data-sunday.json"):
         if (out / name).read_bytes() != (city / name).read_bytes():
             return f"{name} differs"
-    for name in sorted(p.name for p in city.glob("stops-*.json")):
-        if (out / name).read_bytes() != (city / name).read_bytes():
+    names = {p.name for p in city.glob("stops-*.json")} | {p.name for p in out.glob("stops-*.json")}
+    for name in sorted(names):
+        a, b = out / name, city / name
+        if not a.exists() or not b.exists():
+            return f"{name} missing on one side"
+        if a.read_bytes() != b.read_bytes():
             return f"{name} differs"
     return None
 

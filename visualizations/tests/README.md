@@ -17,5 +17,13 @@
   await runRuntimeSmoke("http://localhost:8741/visualizations");
   ```
 
+  The smoke expectations use fixed 12:00 counts, so they go stale after a
+  nightly GTFS refresh; refresh `runtime-expected.json` with it. It is a
+  migration/UI check, not a deploy gate.
+
+CI: `.github/workflows/check-in-motion.yml` runs the config contract and stamp
+check on every visualizations change; `check-in-motion-parity.yml` rebuilds all
+cities weekly/manually because it needs the GTFS downloads.
+
 The pre-unification captures were used only during the migration and are kept
 in the branch history, not as test fixtures.

@@ -32,6 +32,8 @@ for city in CITIES:
 
 digest = hashlib.sha256()
 for path in ASSETS:
+    digest.update(str(path.relative_to(ROOT)).encode())
+    digest.update(b"\0")
     digest.update(path.read_bytes())
 VERSION = digest.hexdigest()[:12]
 

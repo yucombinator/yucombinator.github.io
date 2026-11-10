@@ -1,0 +1,25 @@
+name: Check In Motion data parity
+
+# Rebuilds every city with _shared/motion_build.py and compares the output
+# with the committed payloads. This is the only test that proves the shared
+# pipeline still reproduces the shipped data; it downloads GTFS feeds, so it
+# runs weekly/manually rather than on every push.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Rebuild and compare
+        run: python3 visualizations/tests/check_data.py

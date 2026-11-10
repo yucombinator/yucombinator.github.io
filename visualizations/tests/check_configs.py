@@ -4,6 +4,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 SHARED = ROOT / "_shared"
@@ -45,13 +46,32 @@ def main():
         b = cfg.get("inBounds")
         if not (isinstance(b, list) and len(b) == 4 and b[0] < b[2] and b[1] < b[3]):
             fail(f"{city.name}: invalid inBounds")
-        for key in ("busModes", "trainModes", "brandedModes"):
+        for key in ("busModes", "trainModes", "brandedModes", "railModes"):
             if set(cfg.get(key, [])) - cfg_modes:
                 fail(f"{city.name}: {key} has non-modes {set(cfg.get(key, [])) - cfg_modes}")
         if set(cfg.get("dwellSeconds", {})) - cfg_modes:
             fail(f"{city.name}: dwellSeconds has non-modes")
+        for k, v in cfg.get("dwellSeconds", {}).items():
+            if not isinstance(v, (int, float)) or v < 0:
+                fail(f"{city.name}: bad dwellSeconds[{k}]")
         if not cfg.get("storageKey"):
             fail(f"{city.name}: missing storageKey")
+        if cfg.get("slug") != city.name:
+            fail(f"{city.name}: slug {cfg.get('slug')} != folder")
+        if not cfg.get("timeZone"):
+            fail(f"{city.name}: missing timeZone")
+        else:
+            try:
+                ZoneInfo(cfg["timeZone"])
+            except Exception:
+                fail(f"{city.name}: invalid timeZone {cfg['timeZone']}")
+        tip_ids = [e.get("tipId") for e in cfg["legend"] if e.get("tip")]
+        if len(tip_ids) != len(set(tip_ids)):
+            fail(f"{city.name}: duplicate tipId")
+        cam = cfg.get("camera")
+        b = cfg.get("inBounds")
+        if cam and b and not (b[0] <= cam[0] <= b[2] and b[1] <= cam[1] <= b[3]):
+            fail(f"{city.name}: camera outside inBounds")
         legend_modes = [e["mode"] for e in cfg["legend"]]
         if cfg_modes - set(legend_modes):
             fail(f"{city.name}: modes without legend: {cfg_modes - set(legend_modes)}")
