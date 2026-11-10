@@ -257,6 +257,9 @@ window.MOTION_CONFIG = {
       "label": "Ferry"
     }
   ],
+  "liveUrls": [
+    "https://toronto-live.seattle-live.workers.dev/live.json"
+  ],
   "storageKey": "tim",
   "railModes": [
     "subway",

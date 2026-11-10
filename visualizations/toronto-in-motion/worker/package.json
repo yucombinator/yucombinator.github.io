@@ -1,0 +1,11 @@
+{
+  "name": "toronto-live",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "bun test"
+  },
+  "devDependencies": { "wrangler": "^4" }
+}

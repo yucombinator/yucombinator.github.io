@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script>(function(){try{var s=localStorage.getItem('motion-theme');document.documentElement.dataset.theme=(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}})();</script>
-<link rel="stylesheet" href="../_shared/motion.css?v=7cd19e788457">
+<link rel="stylesheet" href="../_shared/motion.css?v=d4d3775c0bbf">
 <style>
   :root{--accent:#f5c26b}
 </style>
@@ -58,6 +58,7 @@
           <button data-day="sunday" aria-pressed="false">Sun</button>
         </div>
         <div class="clock"><span id="clock">07:00</span><small id="zone">EST</small></div>
+        <button class="live" id="liveBtn" type="button" aria-pressed="false" hidden title="Show live vehicle positions"><span class="live-dot" aria-hidden="true"></span>Live</button>
         <div class="speeds" id="speed" role="group" aria-label="Playback">
           <button class="pp" data-play="toggle" aria-pressed="false" aria-label="Pause">
             <svg class="ic-pause" viewBox="0 0 9 10" aria-hidden="true"><rect x="1" y="0" width="2.4" height="10" rx="1"/><rect x="5.6" y="0" width="2.4" height="10" rx="1"/></svg>
@@ -81,6 +82,7 @@
         <span>On the road <b id="s-active">0</b></span>
         <span>Trips started <b id="s-started">0</b> / <b id="s-total">—</b></span>
         <span>Peak hour <b>17:00</b> · 1,557 vehicles</span>
+        <span id="liveNote" aria-live="polite"></span>
       </div>
       <span class="src-wrap">
         <span class="src-note" id="updated"></span>
@@ -109,7 +111,8 @@
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2 id="aboutTitle">Toronto in Motion</h2>
     <p>Every scheduled trip across the Greater Golden Horseshoe — TTC, GO, UP Express, 17 local agencies and the Island ferry — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
-    <p>This is the timetable, not live tracking. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>This is mostly the timetable. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>When the <b>Live</b> button is available, real vehicle positions from TTC, Brampton Transit, Durham Region Transit, MiWay, York Region Transit, Grand River Transit/ION, HSR, Guelph Transit, Burlington Transit and Barrie Transit replace the scheduled arrows for their routes. GO Transit, UP Express, Oakville Transit and the remaining agencies stay on the timetable; hovering those scheduled arrows shows <b>(scheduled)</b>.</p>
     <p>Data: the agencies' published GTFS feeds under their open data licences; the Island ferry uses the City's winter timetable. <button class="linkish" id="sourcesBtn">See the full list</button>. TTC lines use TTC colours; other agencies are coloured for legibility. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Open source: the code behind this series lives in the <a href="https://github.com/yucombinator/yucombinator.github.io/tree/main/visualizations" target="_blank" rel="noopener">visualizations folder on GitHub</a>.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
@@ -146,9 +149,9 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../_shared/version.js?v=7cd19e788457"></script>
-<script src="../_shared/cities.js?v=7cd19e788457"></script>
-<script src="city.js?v=7cd19e788457"></script>
-<script src="../_shared/motion.js?v=7cd19e788457"></script>
+<script src="../_shared/version.js?v=d4d3775c0bbf"></script>
+<script src="../_shared/cities.js?v=d4d3775c0bbf"></script>
+<script src="city.js?v=d4d3775c0bbf"></script>
+<script src="../_shared/motion.js?v=d4d3775c0bbf"></script>
 </body>
 </html>
