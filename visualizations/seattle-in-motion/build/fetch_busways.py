@@ -34,6 +34,7 @@ BUS_CORRIDORS = [
     ("Spring Street", "Downtown · Spring St"),
     ("Montlake Boulevard", "Montlake · bus lanes"),
     ("Bothell Way", "SR 522 · Bothell/Kenmore bus lanes"),
+    ("West Seattle Bridge", "West Seattle Bridge · eastbound bus lane"),
 ]
 
 QUERY_DEDICATED = f"""[out:json][timeout:180];
@@ -116,7 +117,7 @@ THIRD_CONNECTOR = [
     [47.603833,-122.332387], [47.603544,-122.332123], [47.603482,-122.332068],
 ]
 
-SOLID_GROUPS = {G_NAME, THIRD_NAME}
+SOLID_GROUPS = {G_NAME, THIRD_NAME, "West Seattle Bridge · eastbound bus lane"}
 QUERY_BAT = f"""[out:json][timeout:120];
 (
  way["name"~"Pacific Highway|Evergreen Way|Highway 99"]{BAT_BOUNDS};
