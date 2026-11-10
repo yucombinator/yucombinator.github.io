@@ -90,6 +90,19 @@
   .legend{display:flex;gap:16px;flex-wrap:wrap}
   .legend button{background:none;border:0;padding:2px 0;display:flex;align-items:center;gap:6px;color:#b9cccf;font-size:11.5px}
   .legend button[aria-pressed="false"]{opacity:.35}
+  .legend button{position:relative}
+  .mode-tip{position:absolute;left:0;bottom:calc(100% + 10px);z-index:12;min-width:192px;
+    padding:9px 12px;border:1px solid #263c49;border-radius:8px;background:rgba(7,16,22,.97);
+    box-shadow:0 12px 28px rgba(0,0,0,.5);color:var(--text);font-size:11px;line-height:1.55;
+    display:grid;gap:3px;opacity:0;transform:translateY(4px);pointer-events:none;
+    transition:opacity .12s ease,transform .12s ease;text-align:left;white-space:nowrap}
+  .legend button:hover .mode-tip,
+  .legend button:focus-visible .mode-tip{opacity:1;transform:none}
+  .mode-tip span{display:flex;align-items:center;gap:7px}
+  .mode-tip i{flex:0 0 auto;width:8px;height:8px;border-radius:2px}
+  .mode-tip em{font-style:normal;color:var(--muted)}
+  .mode-tip.two-col{grid-template-columns:1fr 1fr;column-gap:16px;min-width:336px}
+  @media (max-width:520px){.mode-tip.two-col{grid-template-columns:1fr;min-width:0}}
   .legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
   .legend .swatches{display:inline-flex;gap:2px}
   .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
@@ -247,8 +260,8 @@
         <button data-mode="lrt" aria-pressed="true" title="Line 5, Line 6, ION"><span class="swatches"><i style="background:#f87005"></i><i style="background:#8a999a"></i><i style="background:#00b3b0"></i></span>LRT<span class="n" id="n-lrt">0</span></button>
         <button data-mode="gorail" aria-pressed="true" title="GO Transit trains"><span class="swatches"><i style="background:#98002e"></i><i style="background:#00853e"></i><i style="background:#003767"></i><i style="background:#f57f25"></i></span>GO train<span class="n" id="n-gorail">0</span></button>
         <button data-mode="gobus" aria-pressed="true" title="GO Transit buses"><span class="dot" style="background:#5aa93f"></span>GO bus<span class="n" id="n-gobus">0</span></button>
-        <button data-mode="localbus" aria-pressed="true" title="MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Orillia, Mid-Pen, Niagara Region"><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
-        <button data-mode="brt" aria-pressed="true" title="Züm, Viva and PULSE rapid transit"><span class="swatches"><i style="background:#f0a574"></i><i style="background:#4fc6ce"></i><i style="background:#b07fd8"></i></span>BRT<span class="n" id="n-brt">0</span></button>
+        <button data-mode="localbus" aria-pressed="true" title="TTC, MiWay, Brampton, YRT, Durham, Oakville, Burlington, HSR, GRT, Guelph, Barrie, Milton, Simcoe County LINX, Orangeville, Lindsay, Orillia, Mid-Pen, Niagara Region" aria-describedby="busTip"><span class="mode-tip two-col" role="tooltip" id="busTip"><span><i style="background:#5aa9e6"></i>TTC bus</span><span><i style="background:#2f6fd0"></i>MiWay</span><span><i style="background:#e07b39"></i>Brampton</span><span><i style="background:#8a4fb5"></i>YRT</span><span><i style="background:#12a5b0"></i>Durham RT</span><span><i style="background:#3f8f6b"></i>Oakville</span><span><i style="background:#c9a227"></i>Burlington</span><span><i style="background:#c2456b"></i>HSR</span><span><i style="background:#00838f"></i>GRT</span><span><i style="background:#8d6e63"></i>Guelph</span><span><i style="background:#546e7a"></i>Barrie</span><span><i style="background:#7fa650"></i>Milton</span><span><i style="background:#b06fd0"></i>Simcoe LINX</span><span><i style="background:#d0563a"></i>Orangeville</span><span><i style="background:#4f8fd0"></i>Lindsay</span><span><i style="background:#c26b3f"></i>Orillia</span><span><i style="background:#7b8f3a"></i>Mid-Pen</span><span><i style="background:#c04fa0"></i>Niagara Region</span></span><span class="swatches"><i style="background:#2f6fd0"></i><i style="background:#e07b39"></i><i style="background:#8a4fb5"></i><i style="background:#12a5b0"></i></span>Local bus<span class="n" id="n-localbus">0</span></button>
+        <button data-mode="brt" aria-pressed="true" title="Züm, Viva and PULSE rapid transit" aria-describedby="brtTip"><span class="mode-tip" role="tooltip" id="brtTip"><span><i style="background:#f0a574"></i>Brampton <em>Züm</em></span><span><i style="background:#4fc6ce"></i>Durham <em>PULSE</em></span><span><i style="background:#b07fd8"></i>YRT <em>Viva</em></span></span><span class="swatches"><i style="background:#f0a574"></i><i style="background:#4fc6ce"></i><i style="background:#b07fd8"></i></span>BRT<span class="n" id="n-brt">0</span></button>
         <button data-mode="up" aria-pressed="true" title="UP Express"><span class="dot" style="background:#0075d2"></span>UP<span class="n" id="n-up">0</span></button>
         <button data-mode="ferry" aria-pressed="true" title="Toronto Island Ferry"><span class="dot" style="background:#1f8a9e"></span>Ferry<span class="n" id="n-ferry">0</span></button>
       </div>
@@ -347,6 +360,6 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=20261110q"></script>
+<script src="app.js?v=20261110r"></script>
 </body>
 </html>
