@@ -12,6 +12,8 @@ test('builds a live snapshot from keyless feeds', async () => {
     expect(row[0]).toBeLessThan(doc.routes.length);
     expect(Math.abs(row[1])).toBeLessThan(90);
     expect(Math.abs(row[2])).toBeLessThan(180);
+    expect(typeof row[5]).toBe('string');
+    expect(row[5].length).toBeGreaterThan(0);
   }
   for (const key of doc.routes) expect(key.startsWith('puget:')).toBe(true);
 });

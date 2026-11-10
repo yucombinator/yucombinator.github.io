@@ -105,8 +105,10 @@
   let live = null;                 // parsed live.json
   let liveScreen = null;           // Float32Array [x, y, angle, slot, size]
   let liveCount = 0;
+  let liveHeadings = null;         // canvas angle per live row
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
+  let routeShapeIdx = null;        // route pointer -> shape indexes
   // Live is opt-in per city: a city with liveUrls gets the toggle.
   const LIVE_ENABLED = Array.isArray(CFG.liveUrls) && CFG.liveUrls.length > 0;
   const LIVE_STALE_MS = 30 * 60 * 1000;
@@ -304,6 +306,82 @@
     requestAnimationFrame(frame);
   }
 
+  function routeShapeIndexes(routePtr) {
+    if (!routeShapeIdx) {
+      routeShapeIdx = new Map();
+      for (let si = 0; si < shapeRoute.length; si++) {
+        const r = shapeRoute[si];
+        if (r < 0) continue;
+        let list = routeShapeIdx.get(r);
+        if (!list) { list = []; routeShapeIdx.set(r, list); }
+        list.push(si);
+      }
+    }
+    return routeShapeIdx.get(routePtr);
+  }
+
+  // Feeds frequently omit position.bearing. Fall back to the direction of
+  // the nearest segment of the route's own shape before giving up on angle.
+  function shapeHeading(routePtr, lat, lon) {
+    if (routePtr == null || !shapeRoute || !shapes.length) return null;
+    const list = routeShapeIndexes(routePtr);
+    if (!list || !list.length) return null;
+    const { kx, ky, x0, y0 } = D.proj;
+    const qx = lon * kx - x0, qy = lat * ky - y0;
+    let best = Infinity, angle = null;
+    for (const si of list) {
+      const pts = shapes[si].pts;
+      for (let p = 1; p < pts.length; p++) {
+        const x1 = pts[p - 1][0], y1 = pts[p - 1][1];
+        const x2 = pts[p][0], y2 = pts[p][1];
+        const dx = x2 - x1, dy = y2 - y1;
+        const l2 = dx * dx + dy * dy;
+        if (!l2) continue;
+        const t = Math.max(0, Math.min(1, ((qx - x1) * dx + (qy - y1) * dy) / l2));
+        const ex = qx - (x1 + t * dx), ey = qy - (y1 + t * dy);
+        const d = ex * ex + ey * ey;
+        if (d < best) {
+          best = d;
+          angle = Math.atan2(dx, dy) - Math.PI / 2;
+        }
+      }
+    }
+    return angle;
+  }
+
+  function movementHeading(row, prev) {
+    if (!prev) return null;
+    const dt = (row[4] || 0) - (prev.ts || 0);
+    if (dt < 5000 || dt > 10 * 60 * 1000) return null;
+    const lat = row[1], lon = row[2];
+    const dlat = lat - prev.lat;
+    const dlon = (lon - prev.lon) * Math.cos(lat * Math.PI / 180);
+    const metres = Math.hypot(dlat, dlon) * 111320;
+    if (metres < 8) return null;
+    return Math.atan2(dlon, dlat) - Math.PI / 2;
+  }
+
+  function liveHeadingsFor(doc, prevDoc) {
+    const prev = new Map();
+    if (prevDoc) {
+      for (const row of prevDoc.v) {
+        if (row[5]) prev.set(row[5], { lat: row[1], lon: row[2], ts: row[4] });
+      }
+    }
+    const out = new Float32Array(doc.v.length);
+    for (let i = 0; i < doc.v.length; i++) {
+      const row = doc.v[i];
+      let angle = row[3] >= 0 ? row[3] * Math.PI / 180 - Math.PI / 2 : null;
+      if (angle === null && row[5]) angle = movementHeading(row, prev.get(row[5]));
+      if (angle === null) {
+        const ptr = routeIndexByKey.get(doc.routes[row[0]]);
+        angle = shapeHeading(ptr, row[1], row[2]);
+      }
+      out[i] = angle === null ? 0 : angle;
+    }
+    return out;
+  }
+
   function computeLiveScreen() {
     if (!live || !mapObj || !liveRoutes) return;
     const rows = live.v;
@@ -319,7 +397,9 @@
       const bearing = row[3];
       liveScreen[m * 4] = p.x;
       liveScreen[m * 4 + 1] = p.y;
-      liveScreen[m * 4 + 2] = bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0;
+      liveScreen[m * 4 + 2] = liveHeadings && !Number.isNaN(liveHeadings[i])
+        ? liveHeadings[i]
+        : (bearing >= 0 ? bearing * Math.PI / 180 - Math.PI / 2 : 0);
       liveScreen[m * 4 + 3] = slot;
       liveRoutePtr[m] = liveRoutes.has(live.routes[row[0]]) ? routeIndexByKey.get(live.routes[row[0]]) : -1;
       m++;
@@ -1224,10 +1304,12 @@
       } catch { /* one source down is fine */ }
     }));
     if (!doc) return;
+    const prevDoc = live;
     live = doc;
     liveRouteSet = new Set(doc.routes || []);
     liveRoutes = new Map();
     for (let r = 0; r < routeIds.length; r++) liveRoutes.set(routeIds[r], routeSlot[r]);
+    liveHeadings = liveHeadingsFor(doc, prevDoc);
     const age = Date.now() - doc.generated;
     const btn = $('liveBtn');
     if (btn) {
@@ -1631,6 +1713,7 @@
     D = await res.json();
 
     shapes = D.shapes.map((pts) => ({ pts }));
+    routeShapeIdx = null;
 
     routeIds = Object.keys(D.routes);
     const colorToSlot = new Map();

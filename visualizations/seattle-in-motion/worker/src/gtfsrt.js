@@ -54,10 +54,12 @@ function f32(buf) {
 
 function parseVehicle(buf) {
   let route = null, lat = null, lon = null, bearing = -1, ts = 0;
+  let id = '', trip = '';
   for (const [num, wt, v] of fields(buf)) {
     if (num === 1 && wt === 2) {
       for (const [tn, tw, tv] of fields(v)) {
-        if (tn === 5 && tw === 2) route = new TextDecoder().decode(tv);
+        if (tn === 1 && tw === 2) trip = new TextDecoder().decode(tv);
+        else if (tn === 5 && tw === 2) route = new TextDecoder().decode(tv);
       }
     } else if (num === 2 && wt === 2) {
       for (const [pn, pw, pv] of fields(v)) {
@@ -67,9 +69,14 @@ function parseVehicle(buf) {
       }
     } else if (num === 5 && wt === 0) {
       ts = v;
+    } else if (num === 8 && wt === 2) {
+      for (const [dn, dw, dv] of fields(v)) {
+        if (dn === 1 && dw === 2) id = new TextDecoder().decode(dv);
+        else if (dn === 2 && dw === 2 && !id) id = new TextDecoder().decode(dv);
+      }
     }
   }
-  return { route, lat, lon, bearing, ts };
+  return { route, lat, lon, bearing, ts, id: id || trip };
 }
 
 export function parseFeed(buf) {
@@ -118,6 +125,7 @@ export async function buildLive(now = Date.now()) {
         idx, Math.round(v.lat * 1e5) / 1e5, Math.round(v.lon * 1e5) / 1e5,
         v.bearing >= 0 ? Math.round(v.bearing * 10) / 10 : -1,
         v.ts ? v.ts * 1000 : 0,
+        v.id ? `${feed}:${v.id}` : '',
       ]);
       kept++;
     }
