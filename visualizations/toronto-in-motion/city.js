@@ -214,7 +214,7 @@ window.MOTION_CONFIG = {
         "#8a4fb5",
         "#12a5b0"
       ],
-      "label": "Local bus"
+      "label": "Bus"
     },
     {
       "mode": "brt",
