@@ -53,6 +53,23 @@ out tags geom;"""
 BAT_BOUNDS = "(47.782,-122.37,47.87,-122.25)"
 BAT_RANGES = [(47.7860, 47.8070), (47.8055, 47.8585)]
 BAT_NAME = "Swift Blue · SR 99 BAT lanes (156th–212th + Edmonds)"
+
+# OSM splits Madison St into short lane ways with gaps between 1st and 8th.
+# This centerline follows the street geometry so RapidRide G reads as one
+# continuous busway there; east of 8th keeps the individually tagged ways.
+G_NAME = "RapidRide G · Madison St"
+G_CONNECTOR = [
+    [47.604693,-122.336247], [47.604748,-122.336114], [47.604759,-122.336089], [47.604949,-122.335631],
+    [47.605101,-122.335266], [47.605157,-122.335131], [47.605189,-122.335058], [47.605214,-122.334998],
+    [47.605266,-122.334878], [47.605387,-122.334593], [47.605401,-122.33456], [47.605584,-122.334131],
+    [47.605629,-122.334026], [47.60567,-122.333927], [47.60603,-122.33305], [47.606061,-122.332975],
+    [47.606087,-122.332913], [47.606137,-122.332792], [47.606381,-122.332209], [47.606501,-122.331923],
+    [47.606544,-122.33182], [47.606594,-122.331701], [47.606782,-122.331254], [47.60683,-122.331139],
+    [47.60698,-122.330806], [47.607019,-122.330714], [47.607054,-122.330632], [47.607456,-122.329673],
+    [47.607487,-122.3296], [47.607541,-122.329485], [47.607728,-122.329031], [47.60774,-122.32888],
+    [47.607869,-122.328574], [47.607948,-122.328476],
+]
+
 QUERY_BAT = f"""[out:json][timeout:120];
 (
  way["name"~"Pacific Highway|Evergreen Way|Highway 99"]{BAT_BOUNDS};
@@ -213,6 +230,13 @@ def main():
             collect_bat(data.get("elements", []), groups, stats)
         else:
             collect(data.get("elements", []), groups, stats, label)
+
+    g_lines = groups.get(G_NAME)
+    if g_lines is not None:
+        groups[G_NAME] = [G_CONNECTOR] + [
+            line for line in g_lines if min(p[1] for p in line) > -122.3285
+        ]
+        stats[G_NAME] = len(groups[G_NAME])
 
     out = {"groups": [{"name": n, "lines": ls} for n, ls in sorted(groups.items())]}
     with open(OUT, "w", encoding="utf-8") as fh:
