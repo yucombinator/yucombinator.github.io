@@ -1991,6 +1991,14 @@
 
   function wire() {
     initTheme();
+    const legendFold = $('legendFold');
+    if (legendFold) {
+      const foldMq = matchMedia('(max-width: 1100px)');
+      legendFold.open = !foldMq.matches;
+      const syncFold = (e) => { legendFold.open = !e.matches; };
+      if (foldMq.addEventListener) foldMq.addEventListener('change', syncFold);
+      else if (foldMq.addListener) foldMq.addListener(syncFold);
+    }
     buildLegend();
     buildCityMenu();
 
