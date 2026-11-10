@@ -282,11 +282,9 @@
       if (!xy) continue;
       const path = () => {
         lctx.beginPath();
-        lctx.moveTo(xy[seg.i0 * 2] * aff.sx + aff.ox,
-                    xy[seg.i0 * 2 + 1] * aff.sy + aff.oy);
+        lctx.moveTo(xy[seg.i0 * 2], xy[seg.i0 * 2 + 1]);
         for (let p = seg.i0 + 1; p <= seg.i1; p++) {
-          lctx.lineTo(xy[p * 2] * aff.sx + aff.ox,
-                      xy[p * 2 + 1] * aff.sy + aff.oy);
+          lctx.lineTo(xy[p * 2], xy[p * 2 + 1]);
         }
       };
       lctx.lineWidth = Math.max(MODE_LINE_WIDTH[modeA] || 2.4,
