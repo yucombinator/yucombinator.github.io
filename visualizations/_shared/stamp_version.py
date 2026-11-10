@@ -23,6 +23,12 @@ CITIES = sorted(p for p in ROOT.iterdir()
 # bust, and version.js must not hash itself.
 ASSETS = [HERE / "motion.js", HERE / "motion.css", HERE / "cities.js"] \
     + [c / "city.js" for c in CITIES]
+# Data payloads use the same ?v= token, so nightly GTFS rebuilds must change it.
+for city in CITIES:
+    ASSETS += sorted(city.glob("data*.json"))
+    ASSETS += sorted(city.glob("stops-*.json"))
+    if (city / "busways.json").exists():
+        ASSETS.append(city / "busways.json")
 
 digest = hashlib.sha256()
 for path in ASSETS:
@@ -30,8 +36,11 @@ for path in ASSETS:
 VERSION = digest.hexdigest()[:12]
 
 CHECK = "--check" in sys.argv
+version_path = HERE / "version.js"
 if CHECK:
-    current = (HERE / "version.js").read_text()
+    if not version_path.exists():
+        sys.exit("not stamped (version.js missing)")
+    current = version_path.read_text()
     stamped = f"'{VERSION}'" in current
     stale = []
     for city in CITIES:

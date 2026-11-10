@@ -5,10 +5,7 @@
     --line:#1d303b;
     --text:#dce8e3;
     --muted:#7f95a0;
-    --accent:#f5c26b;
-    --subway:#f5c451;
-    --streetcar:#ef6f6c;
-    --bus:#5aa9e6;
+    --accent:#f5c26b; /* fallback; each city sets its own */
     --font:"Avenir Next","Helvetica Neue",Arial,sans-serif;
     color-scheme:dark;
   }

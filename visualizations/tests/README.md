@@ -6,9 +6,9 @@
   temp dir and compares `data.json`, both weekend files and every
   `stops-*.json` byte-for-byte (ignoring the `built` timestamp).
 - `runtime-smoke.js` — browser checks used during the migration: load, total and
-  per-mode counts at 12:00, legend order, tooltip rows, city menu labels,
-  accent, tooltip hover, BRT toggle, Saturday switch, and the hover-ring
-  stability test. Expected values: `runtime-expected.json`.
+  per-mode counts at 12:00 (playback paused first), legend order, tooltip rows,
+  city menu labels, accent, tooltip hover, BRT toggle, Saturday switch, and the
+  hover-ring stability test. Expected values: `runtime-expected.json`.
   Run it from an omp eval kernel:
 
   ```js
@@ -17,5 +17,5 @@
   await runRuntimeSmoke("http://localhost:8741/visualizations");
   ```
 
-`baseline-data.json` / `baseline-runtime.json` are the pre-unification capture;
-`runtime-results.json` is the last migration run.
+The pre-unification captures were used only during the migration and are kept
+in the branch history, not as test fixtures.

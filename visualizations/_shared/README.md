@@ -6,8 +6,8 @@ One engine and one build pipeline for every city page.
 _shared/
   motion.js        renderer, chart, scrubber, hover, tooltips, city switcher
   motion.css       shared layout/theme; accent comes from --accent
-  cities.js        registry used by the switcher and the /visualizations cards
-  version.js       generated asset version (stamp_version.py)
+  cities.js        registry used by the city switcher
+  version.js       generated asset+data version (stamp_version.py)
   motion_build.py  GTFS -> data.json pipeline (shared by every city)
   stamp_version.py content hash -> version.js + ?v= tags (run before deploy)
 toronto-in-motion/
@@ -31,8 +31,9 @@ tests/
    `(mode, hex)` or `None`, then `CFG` and `mb.run(CFG)`.
 3. Add a `data/` folder? No: run `python3 build/build_data.py` to write
    `data.json`, `data-saturday.json`, `data-sunday.json` and `stops-*.json`.
-4. Add the city to `_shared/cities.js` and the cards in `../index.html`.
-5. Run `python3 _shared/stamp_version.py` and the tests.
+4. Add the city to `_shared/cities.js` and the hand-written cards in `../index.html`.
+5. Run `python3 _shared/stamp_version.py` and the tests. `.nojekyll` at the repo
+   root keeps GitHub Pages from skipping `_shared/` (Jekyll ignores `_` dirs).
 
 ## Conventions
 
@@ -44,6 +45,8 @@ tests/
 - `viewInBounds`, camera, timezone, zone label and storage slug are config.
 - `motion_build.expandFrequencies` defaults to true; Toronto sets it false to
   preserve its long-standing schedule data.
+- `storageKey` keeps the legacy payload prefixes (tim/van/sea) so returning
+  visitors keep their saved camera and panel state.
 
 ## Tests
 

@@ -20,6 +20,9 @@ globalThis.runRuntimeSmoke = async function runRuntimeSmoke(base) {
       await sleep(1200);
 
       const got = await tab.evaluate(async () => {
+        const play = document.querySelector('#speed button[data-play]');
+        if (play.getAttribute('aria-pressed') === 'false') play.click();
+        await new Promise((r) => setTimeout(r, 250));
         const s = document.getElementById('scrub');
         s.value = 43200;
         s.dispatchEvent(new Event('input', { bubbles: true }));

@@ -37,6 +37,11 @@ jobs:
       - name: Rebuild the three service days
         run: python3 visualizations/toronto-in-motion/build/build_data.py
 
+      # Data payloads share the code hash for cache busting; refresh it so
+      # returning visitors do not keep yesterday's snapshot.
+      - name: Stamp the data version
+        run: python3 visualizations/_shared/stamp_version.py
+
       # Same idea as the advisory freshness check in the planner: a run that
       # quietly produced an empty or half-downloaded table must fail loudly and
       # leave the deployed data alone.
@@ -105,7 +110,9 @@ jobs:
           git add visualizations/toronto-in-motion/data.json \
                   visualizations/toronto-in-motion/data-saturday.json \
                   visualizations/toronto-in-motion/data-sunday.json \
-                  'visualizations/toronto-in-motion/stops-*.json' 
+                  'visualizations/toronto-in-motion/stops-*.json' \
+                  visualizations/_shared/version.js \
+                  visualizations/*/index.html 
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit"
           else

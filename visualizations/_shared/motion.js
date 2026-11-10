@@ -74,7 +74,9 @@
   let anchorA = null, anchorB = null;
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
-  const STORE = CFG.slug || 'motion';
+  const RAIL_MODES = new Set(CFG.railModes || ['subway', 'lrt', 'gorail', 'up']);
+  const BRANDED_MODES = new Set(CFG.brandedModes || CFG.trainModes || ['gorail', 'up']);
+  const STORE = CFG.storageKey || CFG.slug || 'motion';
   const VIEW_KEY = STORE + '-view';
   // A saved camera is only trusted inside the region the data covers. A map
   // that has not been positioned yet reports [0, 0] (null island), and saving
@@ -438,8 +440,7 @@
     }
 
     const selMode = selected >= 0 ? MODES[routeMode[selected]] : '';
-    const selIsRail = selMode === 'subway' || selMode === 'lrt'
-      || selMode === 'gorail' || selMode === 'up';
+    const selIsRail = RAIL_MODES.has(selMode);
 
     if (selected >= 0) {
       const col = slotColors[routeSlot[selected]];
@@ -613,7 +614,7 @@
         // rail station treatment: white discs with a dark edge on
         // a heavier line, bigger at the terminals, plus route-number badges
         const sr = 2.5 + zf * 1.2;
-        const branded = selMode === 'gorail' || selMode === 'up';
+        const branded = BRANDED_MODES.has(selMode);
         octx.fillStyle = '#ffffff';
         octx.strokeStyle = branded ? col : '#0d1319';
         octx.lineWidth = 1.6;
@@ -1060,9 +1061,10 @@
     const meta = D.routes[key] || {};
     $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
     let modeLabel = MODE_LABEL[meta.m] || meta.m;
-    if (meta.m === 'ferry') {
-      modeLabel = /seabus/i.test(meta.l || '') ? 'SeaBus'
-        : /aquabus/i.test((meta.l || '') + (meta.a || '')) ? 'Aquabus' : 'Ferry';
+    if (meta.m === 'ferry' && Array.isArray(CFG.ferryLabels)) {
+      const hay = (meta.l || '') + ' ' + (meta.a || '');
+      const rule = CFG.ferryLabels.find((r) => new RegExp(r.match, 'i').test(hay));
+      if (rule) modeLabel = rule.label;
     }
     const parts = [meta.a, modeLabel].filter(Boolean);
     $('rMeta').textContent = (parts.length === 2 && modeLabel.startsWith(meta.a))
@@ -1180,7 +1182,7 @@
 
   /* ---------- live mode ---------- */
 
-  // The map clock is Pacific schedule time, so a viewer in another zone
+  // The map clock is the city's schedule time, so a viewer in another zone
   // must not get the snapshot's local-to-them hour (or seek to it).
   function cityClock(ms) {
     const parts = new Intl.DateTimeFormat('en-GB', {
@@ -1385,7 +1387,7 @@
   function buildCityMenu() {
     const wrap = $('cityWrap');
     const cities = window.MOTION_CITIES || [];
-    const current = cities.find((c) => c.slug === STORE);
+    const current = cities.find((c) => c.slug === CFG.slug);
     if (!wrap || !current) return;
     wrap.dataset.current = current.slug;
     wrap.innerHTML = '';

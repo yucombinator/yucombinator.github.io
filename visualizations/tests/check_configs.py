@@ -39,7 +39,22 @@ def main():
         for m in cfg["modes"]:
             if not m.get("label") or not m.get("color") or not m.get("radius"):
                 fail(f"{city.name}: incomplete mode {m}")
+        if not (isinstance(cfg.get("camera"), list) and len(cfg["camera"]) == 3
+                and all(isinstance(x, (int, float)) for x in cfg["camera"])):
+            fail(f"{city.name}: invalid camera")
+        b = cfg.get("inBounds")
+        if not (isinstance(b, list) and len(b) == 4 and b[0] < b[2] and b[1] < b[3]):
+            fail(f"{city.name}: invalid inBounds")
+        for key in ("busModes", "trainModes", "brandedModes"):
+            if set(cfg.get(key, [])) - cfg_modes:
+                fail(f"{city.name}: {key} has non-modes {set(cfg.get(key, [])) - cfg_modes}")
+        if set(cfg.get("dwellSeconds", {})) - cfg_modes:
+            fail(f"{city.name}: dwellSeconds has non-modes")
+        if not cfg.get("storageKey"):
+            fail(f"{city.name}: missing storageKey")
         legend_modes = [e["mode"] for e in cfg["legend"]]
+        if cfg_modes - set(legend_modes):
+            fail(f"{city.name}: modes without legend: {cfg_modes - set(legend_modes)}")
         if len(legend_modes) != len(set(legend_modes)):
             fail(f"{city.name}: duplicate legend mode")
         for e in cfg["legend"]:
@@ -66,10 +81,14 @@ def main():
         if "app.js" in html:
             fail(f"{city.name}: still references per-city app.js")
 
-    engine = (SHARED / "motion.js").read_text()
-    for leak in ("America/", "Toronto", "Vancouver", "Seattle", "TTC", "TransLink"):
-        if leak in engine:
-            fail(f"motion.js leaks city constant: {leak}")
+    for name in ("motion.js", "motion.css", "motion_build.py"):
+        text = (SHARED / name).read_text()
+        for leak in ("America/", "Toronto", "Vancouver", "Seattle", "TTC",
+                     "TransLink", "SeaBus", "Aquabus", "Puget"):
+            if leak in text:
+                fail(f"{name} leaks city constant: {leak}")
+    if not (ROOT.parent / ".nojekyll").exists():
+        fail(".nojekyll missing at repo root (GitHub Pages skips _shared/)")
 
     print(f"{len(CITIES)} cities, {len(fails)} failures")
     return 1 if fails else 0

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Build every city with the shared pipeline and compare against committed data.
 
-Usage: python3 tests/check_data.py [--skip-build]
+Usage: python3 tests/check_data.py
 """
 import json
 import os
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 CITIES = sorted(p for p in ROOT.iterdir() if p.is_dir() and (p / "city.js").exists())
-SKIP = "--skip-build" in sys.argv
 fails = []
 
 
@@ -36,11 +37,14 @@ def compare(city, out):
 
 def main():
     for city in CITIES:
-        if SKIP:
-            print(f"skip build {city.name}")
-            continue
+        committed = json.loads((city / "data.json").read_text())
+        city_cfg = json.loads((city / "city.js").read_text()
+                              .split("=", 1)[1].strip().rstrip(";"))
+        built = datetime.fromisoformat(committed["built"])
+        ref = built.astimezone(ZoneInfo(city_cfg["timeZone"])).date().isoformat()
         with tempfile.TemporaryDirectory() as tmp:
-            env = dict(os.environ, MOTION_OUT=str(Path(tmp) / "data.json"))
+            env = dict(os.environ, MOTION_OUT=str(Path(tmp) / "data.json"),
+                       MOTION_REFERENCE_DATE=ref)
             proc = subprocess.run(
                 [sys.executable, "build/build_data.py"], cwd=city, env=env,
                 capture_output=True, text=True)

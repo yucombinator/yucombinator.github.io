@@ -1,26 +1,19 @@
 #!/usr/bin/env python3
-"""Build animation data for "Seattle in Motion" from the Puget Sound
-consolidated GTFS feed.
+"""Shared In Motion build pipeline: GTFS feeds -> city data.json.
 
-Output: ../data.json — routes, simplified shapes, one record per weekday trip,
-and an activity histogram per mode. Coordinates are integer metres in a single
-shared equirectangular projection.
+A city build supplies feeds, a classifier, timezone/projection and optional
+extras; everything else (service days, frequencies, stops payloads, shape
+simplification, dwell profiles, histograms) lives here.
 """
 import csv
-import html as htmlmod
 import json
 import math
 import os
-import re
 import sys
 import urllib.request
 import zipfile
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE = os.path.join(HERE, "gtfs")
-OUT = os.path.abspath(os.path.join(HERE, "..", "data.json"))
 
 # Three service days, picked at build time: the most recent Wednesday (a plain
 # weekday) plus the most recent Saturday and Sunday, so the run shows how
@@ -30,15 +23,11 @@ MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
                "August", "September", "October", "November", "December"]
 
 
-WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July",
-               "August", "September", "October", "November", "December"]
-
-
 def make_day_specs(cfg):
     """The three service days, picked in the city's local timezone."""
     tz = ZoneInfo(cfg["timeZone"])
-    today = datetime.now(tz).date()
+    ref = cfg.get("referenceDate") or os.environ.get("MOTION_REFERENCE_DATE")
+    today = date.fromisoformat(ref) if ref else datetime.now(tz).date()
     zone_label = cfg.get("zoneLabel", "PT")
 
     def one(key, weekday_index):
@@ -85,6 +74,9 @@ def feed_dir(feed, cache):
         return path
     if feed.get("approx_writer"):
         feed["approx_writer"](path, feed)
+        if not (os.path.exists(marker)
+                and os.path.exists(os.path.join(path, "routes.txt"))):
+            raise RuntimeError(f"{feed['id']}: approx_writer produced no feed")
         return path
     os.makedirs(path, exist_ok=True)
     zip_path = os.path.join(cache, feed["id"] + ".zip")
@@ -113,27 +105,6 @@ def secs(hhmmss):
     h, m, s = hhmmss.strip().split(":")
     return int(h) * 3600 + int(m) * 60 + int(s)
 
-
-
-# --- False Creek Ferries: approximated from published docks ---------------
-FCF_DOCKS = {
-    "SB": (49.27664, -123.13708, "Sunset Beach"),
-    "MM": (49.27793, -123.14469, "Maritime Museum"),
-    "GI": (49.27195, -123.13395, "Granville Island"),
-    "DL": (49.27049, -123.12521, "David Lam Park"),
-    "YT": (49.27172, -123.11795, "Yaletown"),
-    "SP": (49.27102, -123.11553, "Spyglass Place"),
-    "PN": (49.27422, -123.10980, "Plaza of Nations"),
-    "OV": (49.27135, -123.10790, "Olympic Village"),
-    "OVL": (49.27247, -123.10568, "The Village"),
-}
-# route id, label, stop order, run seconds, headway seconds
-FCF_ROUTES = [
-    ("FCF1", "Sunset Beach - Granville Island", ["SB", "GI"], 180, 300),
-    ("FCF2", "Maritime Museum - Granville Island", ["MM", "GI"], 240, 900),
-    ("FCF3", "Village - Granville Island",
-     ["OVL", "OV", "PN", "SP", "YT", "DL", "GI"], 1500, 480),
-]
 
 
 def hhmmss(sec):
@@ -261,7 +232,6 @@ def dp(points, tol):
 
 
 def run(cfg):
-    global CACHE, FEEDS, DAY_SPECS, MODES, RAIL_MODES, LAT0, KX, KY
     CACHE = cfg["cache"]
     FEEDS = cfg["feeds"]
     MODES = tuple(cfg["modes"])
@@ -388,12 +358,6 @@ def run(cfg):
                 if tid in rep_seq:
                     rep_seq[tid].append((int(row["stop_sequence"]), row["stop_id"]))
 
-        # which shapes each route uses, for projecting its stops onto them
-        route_shapes = {}
-        for t in local_trips.values():
-            if t["shape"]:
-                route_shapes.setdefault(t["route"], set()).add(t["shape"])
-
         stop_meta = {}
         sp = os.path.join(path, "stops.txt")
         if os.path.exists(sp):
@@ -442,8 +406,7 @@ def run(cfg):
             hist = day_hist[spec["key"]]
             kept = 0
             def emit(tid, t, start, end):
-                # GTFS keeps overnight service on an extended clock (the TTC feed
-                # runs to 30:00). Clamping at 24:00 used to delete every trip that
+                # GTFS keeps overnight service on an extended clock. Clamping at 24:00 used to delete every trip that
                 # starts after midnight, which emptied 00:00-05:00 on the map.
                 t0 = max(0, start)
                 t1 = max(t0 + 30, min(2 * 86_400, end))
@@ -461,7 +424,7 @@ def run(cfg):
                     continue
                 if t["t0"] is None or not t["shape"]:
                     continue
-                if tid in freqs:
+                if cfg.get("expandFrequencies", True) and tid in freqs:
                     # headway service: one arrow per departure, same template stops
                     dur = t["t1"] - t["t0"]
                     for start, end, headway in freqs[tid]:

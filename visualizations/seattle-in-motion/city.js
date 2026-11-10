@@ -3,7 +3,7 @@ window.MOTION_CONFIG = {
   "slug": "seattle-in-motion",
   "accent": "#6aa9ff",
   "timeZone": "America/Los_Angeles",
-  "zoneLabel": "PST",
+  "zoneLabel": "PT",
   "camera": [
     -122.335,
     47.606,
@@ -60,15 +60,13 @@ window.MOTION_CONFIG = {
     }
   ],
   "busModes": [
-    "localbus",
-    "gobus"
+    "localbus"
   ],
   "trainModes": [
     "gorail",
     "up"
   ],
   "dwellSeconds": {
-    "subway": 20.0,
     "lrt": 20.0,
     "gorail": 45.0,
     "up": 30.0,
@@ -202,5 +200,16 @@ window.MOTION_CONFIG = {
       "dot": "#79d6a5",
       "label": "Ferry"
     }
+  ],
+  "storageKey": "sea",
+  "railModes": [
+    "subway",
+    "lrt",
+    "gorail",
+    "up"
+  ],
+  "brandedModes": [
+    "gorail",
+    "up"
   ]
 };

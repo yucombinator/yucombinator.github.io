@@ -3,7 +3,7 @@ window.MOTION_CONFIG = {
   "slug": "vancouver-in-motion",
   "accent": "#6fe0a4",
   "timeZone": "America/Vancouver",
-  "zoneLabel": "PST",
+  "zoneLabel": "PT",
   "camera": [
     -123.1,
     49.27,
@@ -48,18 +48,14 @@ window.MOTION_CONFIG = {
     }
   ],
   "busModes": [
-    "localbus",
-    "gobus"
+    "localbus"
   ],
   "trainModes": [
-    "gorail",
-    "up"
+    "gorail"
   ],
   "dwellSeconds": {
     "subway": 20.0,
-    "lrt": 20.0,
     "gorail": 45.0,
-    "up": 30.0,
     "ferry": 120.0
   },
   "legend": [
@@ -161,6 +157,26 @@ window.MOTION_CONFIG = {
       ],
       "dot": "#746661",
       "label": "Ferry"
+    }
+  ],
+  "storageKey": "van",
+  "railModes": [
+    "subway",
+    "lrt",
+    "gorail",
+    "up"
+  ],
+  "brandedModes": [
+    "gorail"
+  ],
+  "ferryLabels": [
+    {
+      "match": "seabus",
+      "label": "SeaBus"
+    },
+    {
+      "match": "aquabus",
+      "label": "Aquabus"
     }
   ]
 };

@@ -256,5 +256,16 @@ window.MOTION_CONFIG = {
       "dot": "#1f8a9e",
       "label": "Ferry"
     }
+  ],
+  "storageKey": "tim",
+  "railModes": [
+    "subway",
+    "lrt",
+    "gorail",
+    "up"
+  ],
+  "brandedModes": [
+    "gorail",
+    "up"
   ]
 };
