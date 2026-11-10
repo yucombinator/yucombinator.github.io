@@ -108,6 +108,7 @@
   let liveHeadings = null;         // canvas angle per live row
   let liveAnim = null;             // previous positions for smooth interpolation
   let liveLoading = false;
+  let liveTimer = 0;               // polls only while live mode is on
   let liveRoutes = null;           // "feed:route" -> palette slot
   let liveRouteSet = new Set();
   let routeShapeIdx = null;        // route pointer -> shape indexes
@@ -1359,7 +1360,7 @@
           if (!doc || got.generated > doc.generated) doc = got;
         } catch { /* one source down is fine */ }
       }));
-      if (!doc) return;
+      if (!doc) return null;
       const prevDoc = live;
       const isNew = !prevDoc || doc.generated > prevDoc.generated;
       if (isNew) {
@@ -1370,16 +1371,14 @@
         liveHeadings = liveHeadingsFor(doc, prevDoc);
         liveAnim = prevDoc ? makeLiveAnim(prevDoc) : null;
       }
-      const age = Date.now() - live.generated;
+      const stale = Date.now() - live.generated > LIVE_STALE_MS;
       const btn = $('liveBtn');
       if (btn) {
-        const stale = age > LIVE_STALE_MS;
-        btn.hidden = stale;
-        btn.disabled = stale;
-        btn.title = stale ? 'Live snapshot expired' : 'Live vehicle positions';
+        btn.hidden = false;
+        btn.title = stale ? 'Live snapshot expired — click to refresh' : 'Live vehicle positions';
       }
       if (state.liveOn) {
-        if (btn && btn.disabled) setLive(false);
+        if (stale) setLive(false);
         else {
           if (isNew) {
             const c = cityClock(live.generated);
@@ -1390,8 +1389,43 @@
         }
       }
       state.dirty = true;
+      return live;
     } finally {
       liveLoading = false;
+    }
+  }
+
+  function stopLiveTimer() {
+    if (liveTimer) {
+      clearTimeout(liveTimer);
+      liveTimer = 0;
+    }
+  }
+
+  function scheduleLiveRefresh() {
+    stopLiveTimer();
+    if (!LIVE_ENABLED || !state.liveOn) return;
+    liveTimer = setTimeout(async () => {
+      liveTimer = 0;
+      if (!state.liveOn) return;
+      await loadLive();
+      if (state.liveOn) scheduleLiveRefresh();
+    }, 60000);
+  }
+
+  async function toggleLive() {
+    if (state.liveOn) {
+      setLive(false);
+      return;
+    }
+    if (!LIVE_ENABLED) return;
+    const btn = $('liveBtn');
+    if (btn) btn.disabled = true;
+    try {
+      await loadLive();
+      if (!state.liveOn && live && Date.now() - live.generated <= LIVE_STALE_MS) setLive(true);
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -1408,8 +1442,9 @@
   }
 
   function setLive(on) {
-    if (on && !live) return;
+    if (on && (!live || Date.now() - live.generated > LIVE_STALE_MS)) return;
     state.liveOn = on;
+    stopLiveTimer();
     setLiveControlsDisabled(on);
     if (on) {
       if (!liveAnim) liveAnim = initialLiveAnim(live);
@@ -1417,6 +1452,7 @@
       const c = cityClock(live.generated);
       seek(c.h * 3600 + c.m * 60 + c.s);
       computeLiveScreen();
+      scheduleLiveRefresh();
     }
     const btn = $('liveBtn');
     if (btn) btn.setAttribute('aria-pressed', String(on));
@@ -1721,7 +1757,10 @@
     });
 
     const liveBtn = $('liveBtn');
-    if (liveBtn) liveBtn.addEventListener('click', () => setLive(!state.liveOn));
+    if (liveBtn) {
+      if (LIVE_ENABLED) liveBtn.hidden = false;
+      liveBtn.addEventListener('click', toggleLive);
+    }
 
     const dlg = $('about');
     $('aboutBtn').addEventListener('click', () => dlg.showModal());
@@ -1848,10 +1887,8 @@
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
     loadCorridors();
-    if (LIVE_ENABLED) {
-      loadLive();
-      setInterval(loadLive, 60000);
-    }
+    // No worker request until the viewer enters live mode; setLive() starts
+    // the one-minute refresh timer and setLive(false) stops it.
     resize();
     setPlaying(state.playing);
     seek(state.t);
