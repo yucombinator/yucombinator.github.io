@@ -377,6 +377,25 @@
     return { prev, start: performance.now(), duration: LIVE_INTERP_MS };
   }
 
+  // The first snapshot has no history to interpolate from. Dead-reckon a
+  // short backward position so arrows start moving immediately; the next
+  // real snapshot replaces this estimate.
+  function initialLiveAnim(doc) {
+    const prev = new Map();
+    if (!liveHeadings) return null;
+    const back = 250;
+    for (let i = 0; i < doc.v.length; i++) {
+      const row = doc.v[i];
+      if (!row[5]) continue;
+      const angle = Number.isFinite(liveHeadings[i]) ? liveHeadings[i] : 0;
+      const lat = row[1] + Math.sin(angle) * back / 111320;
+      const lon = row[2] - Math.cos(angle) * back
+        / (111320 * Math.cos(row[1] * Math.PI / 180));
+      prev.set(row[5], [row[0], lat, lon, row[3], row[4], row[5]]);
+    }
+    return { prev, start: performance.now(), duration: LIVE_INTERP_MS };
+  }
+
   function liveHeadingsFor(doc, prevDoc) {
     const prev = new Map();
     if (prevDoc) {
@@ -1391,6 +1410,7 @@
     state.liveOn = on;
     setLiveControlsDisabled(on);
     if (on) {
+      if (!liveAnim) liveAnim = initialLiveAnim(live);
       setPlaying(false);
       const c = cityClock(live.generated);
       seek(c.h * 3600 + c.m * 60 + c.s);
