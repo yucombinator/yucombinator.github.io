@@ -188,6 +188,7 @@
   let anchorA = null, anchorB = null;
   let exactTimer = 0;
   let last = 0, lastDraw = 0, lastMoveAt = 0;
+  let frameTicks = 0, drawTicks = 0;
   const RAIL_MODES = new Set(CFG.railModes || ['subway', 'lrt', 'gorail', 'up']);
   const BRANDED_MODES = new Set(CFG.brandedModes || CFG.trainModes || ['gorail', 'up']);
   const STORE = CFG.storageKey || CFG.slug || 'motion';
@@ -575,6 +576,7 @@
   /* ---------- frame ---------- */
 
   function frame(now) {
+    frameTicks++;
     const dt = Math.min(0.1, (now - last) / 1000 || 0);
     last = now;
 
@@ -592,7 +594,10 @@
 
     if (state.dirty) {
       const busy = state.playing && now - lastMoveAt > 250;
-      if (!busy || now - lastDraw >= 32) { draw(); state.dirty = false; lastDraw = now; }
+      if (follow || !busy || now - lastDraw >= 32) {
+        draw();
+        state.dirty = false; lastDraw = now;
+      }
     }
 
     if (chartW && state.t !== lastCursorT) {
@@ -1098,6 +1103,7 @@
   }
 
   function draw() {
+    drawTicks++;
     // Live positions are projected for this exact frame. Unlike scheduled
     // arrows they must not be transformed by the in-flight affine estimate,
     // or a zoom applies the scale twice.
@@ -2719,6 +2725,8 @@
         },
         stop() { stopFollow(); },
         active() { return !!follow; },
+        stats() { return { frames: frameTicks, draws: drawTicks, now: performance.now() }; },
+        reset() { frameTicks = 0; drawTicks = 0; },
       };
     }
     mapObj.on('style.load', () => {

@@ -55,6 +55,7 @@ async function waitForHook() {
 
 function sample(win, seconds) {
   return new Promise((resolve) => {
+    if (win.__motionFpsTest) win.__motionFpsTest.reset();
     const times = [];
     let start = 0;
     function tick(t) {
@@ -64,9 +65,12 @@ function sample(win, seconds) {
       else {
         const elapsed = (t - start) / 1000;
         const fps = (times.length - 1) / elapsed;
+        const stats = win.__motionFpsTest ? win.__motionFpsTest.stats() : null;
+        const drawFps = stats ? stats.draws / elapsed : null;
+        const engineFps = stats ? stats.frames / elapsed : null;
         const deltas = times.slice(1).map((v, i) => v - times[i]).sort((a, b) => a - b);
         const pct = (p) => deltas[Math.min(deltas.length - 1, Math.floor(deltas.length * p))] || 0;
-        resolve({ fps, frames: times.length - 1, seconds: elapsed, p50ms: pct(.5), p95ms: pct(.95), maxMs: deltas[deltas.length - 1] || 0 });
+        resolve({ fps: drawFps == null ? fps : drawFps, rafFps: fps, engineFps, draws: stats?.draws, frames: times.length - 1, seconds: elapsed, p50ms: pct(.5), p95ms: pct(.95), maxMs: deltas[deltas.length - 1] || 0 });
       }
     }
     requestAnimationFrame(tick);
@@ -89,7 +93,7 @@ run.addEventListener('click', async () => {
     status.textContent = 'following · sampling…';
     await sleep(400);
     const result = await sample(win, Number(document.getElementById('secs').value) || 6);
-    out.textContent = `${result.fps.toFixed(1)} FPS · ${result.frames} frames · p95 ${result.p95ms.toFixed(1)} ms`;
+    out.textContent = `${result.fps.toFixed(1)} draw FPS · RAF ${result.rafFps.toFixed(1)} · ${result.draws} draws · p95 ${result.p95ms.toFixed(1)} ms`;
     status.textContent = 'done';
     window.__fpsResult = { city: city.value, zoom: Number(document.getElementById('zoom').value), ...result };
     console.log(window.__fpsResult);
