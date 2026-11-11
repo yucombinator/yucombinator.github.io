@@ -43,6 +43,7 @@
       corridorLine: 'rgba(35,55,65,.38)',
       arrowOutline: '#f4f8f8',
       futureCasing: 'rgba(30,50,60,.45)',
+      futureLine: '#547f90',
       rim: 'rgba(20,35,42,.32)',
       stationFill: '#ffffff',
       stationStroke: '#1b333d',
@@ -58,6 +59,7 @@
       corridorLine: 'rgba(232,242,238,.55)',
       arrowOutline: '#0a141b',
       futureCasing: 'rgba(5,12,18,.55)',
+      futureLine: '#a9c7d6',
       rim: 'rgba(255,255,255,.30)',
       stationFill: '#ffffff',
       stationStroke: '#0d1319',
@@ -879,7 +881,7 @@
         octx.stroke();
       };
       drawGhost(4.8, CANVAS.futureCasing, 0.72);
-      drawGhost(2.5, project.color || '#9fb6c4', 0.95);
+      drawGhost(2.5, CANVAS.futureLine, 0.95);
       futureHits.push({ xy, project });
 
       const travel = Math.max(300, (project.travelMin || 30) * 60);
@@ -887,7 +889,7 @@
       const count = Math.max(1, Math.min(6, Math.ceil(travel / headway)));
       const phase = (state.t % travel) / travel;
       octx.setLineDash([]);
-      octx.fillStyle = project.color || '#9fb6c4';
+      octx.fillStyle = CANVAS.futureLine;
       for (const reverse of [false, true]) {
         for (let i = 0; i < count; i++) {
           let f = (phase + (i * headway) / travel) % 1;
@@ -2051,7 +2053,7 @@
       btn.title = 'Under-construction projects — ghost layer with inferred frequencies';
       const glyph = document.createElement('span');
       glyph.className = 'dot';
-      glyph.style.background = 'linear-gradient(90deg,#9fb6c4,#d6e4ea)';
+      glyph.style.background = 'linear-gradient(90deg,#8fb3c4,#c4dce6)';
       btn.appendChild(glyph);
       btn.appendChild(document.createTextNode('Future'));
       box.appendChild(btn);
@@ -2197,7 +2199,7 @@
           const status = project.status || 'under construction';
           const opening = project.opening || 'TBD';
           const when = /^TBD/i.test(opening) ? esc(opening) : `target ${esc(opening)}`;
-          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(project.color || '#9fb6c4')}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · inferred ~${project.headwayMin || '—'} min</small>`;
+          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(CANVAS.futureLine)}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · inferred ~${project.headwayMin || '—'} min</small>`;
           tip.style.display = 'block';
           const tw = tip.offsetWidth, th = tip.offsetHeight;
           tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
