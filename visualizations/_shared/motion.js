@@ -481,7 +481,11 @@
     }
     const i = Math.max(1, lo);
     const span = times[i] - times[i - 1] || 1;
-    return pos[i - 1] + (pos[i] - pos[i - 1]) * ((u - times[i - 1]) / span);
+    const k = Math.max(0, Math.min(1, (u - times[i - 1]) / span));
+    // Ease out of the previous stop and into the next one instead of snapping
+    // to the segment's average speed at the platform edge.
+    const eased = k * k * (3 - 2 * k);
+    return pos[i - 1] + (pos[i] - pos[i - 1]) * eased;
   }
 
   function tripSegmentSpeed(tripIdx, at) {
