@@ -2214,7 +2214,7 @@
         glyph.className = 'dot';
         glyph.style.background = item.dot;
       } else {
-        glyph.className = 'swatches';
+        glyph.className = 'swatches' + (item.round ? ' round' : '');
         for (const c of item.swatches || []) {
           const i = document.createElement('i');
           i.style.background = c;

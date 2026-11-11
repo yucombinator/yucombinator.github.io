@@ -89,6 +89,7 @@
   .legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
   .legend .swatches{display:inline-flex;gap:2px}
   .legend .swatches i{width:5px;height:8px;border-radius:1.5px;display:block}
+  .legend .swatches.round i{width:8px;height:8px;border-radius:50%}
   .legend .n{font-variant-numeric:tabular-nums;color:#8fa6ab;font-size:10.5px;min-width:26px;text-align:right}
   .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
   .controls .clock{font-size:21px;font-weight:400;letter-spacing:-.3px;color:var(--accent);order:1}

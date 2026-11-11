@@ -116,6 +116,7 @@ window.MOTION_CONFIG = {
     {
       "mode": "gorail",
       "title": "GO Transit trains",
+      "round": true,
       "swatches": [
         "#98002e",
         "#00853e",
