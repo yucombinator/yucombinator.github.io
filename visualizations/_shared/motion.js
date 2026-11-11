@@ -1272,8 +1272,11 @@
       // greedily and skipped when they would collide, so dense streetcar
       // stops stay readable. A dark halo keeps them legible over the map.
       const zl = mapObj ? mapObj.getZoom() : fitZoom;
-      if (zl >= 13) {
-        octx.font = '10px system-ui, sans-serif';
+      // Rail stations stay useful when zoomed out; streetcar stops are too
+      // dense to label until the map is closer.
+      const labelZoom = selIsRail ? 11.2 : 13;
+      if (zl >= labelZoom) {
+        octx.font = `${zl < 12.5 ? 9 : 10}px system-ui, sans-serif`;
         octx.textBaseline = 'middle';
         octx.lineJoin = 'round';
         octx.lineWidth = 3;
