@@ -983,12 +983,17 @@
           const pr = tripProfile[i];
           if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
         }
+        // Short-turn trips share the route shape with full-length trips. Keep
+        // their arrows on the portion between their actual first and last stops.
+        const s0 = curDay.tripStart ? curDay.tripStart[i] : 0;
+        const s1 = curDay.tripEnd ? curDay.tripEnd[i] : 1;
+        frac = s0 + (s1 - s0) * frac;
         const [bx, by, dx, dy] = pointAtScreen(shape, frac);
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
         if (activeCount >= px.length) continue;
         px[activeCount] = X; py[activeCount] = Y;
-        pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx);
+        pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx) + (s1 < s0 ? Math.PI : 0);
         pTrip[activeCount] = i;
         const slot = slotOfTrip[i];
         if (slotCounts && slot < slotCounts.length) {
@@ -1455,6 +1460,8 @@
     const slots = new Uint8Array(n);
     const starts = new Int32Array(n);
     const profiles = new Int16Array(n);
+    const tripStart = dd.tripStart ? Float32Array.from(dd.tripStart) : null;
+    const tripEnd = dd.tripEnd ? Float32Array.from(dd.tripEnd) : null;
     const profSrc = dd.prof;
     if (profSrc) for (let i = 0; i < n; i++) profiles[i] = profSrc[i];
     else profiles.fill(-1);
@@ -1477,7 +1484,7 @@
       trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
       hourBuckets: buckets, startTimes: starts.slice().sort(),
       hist: dd.hist, startsBins, sun: dd.sun,
-      tripProfile: profiles, maxDur,
+      tripProfile: profiles, tripStart, tripEnd, maxDur,
     };
   }
 

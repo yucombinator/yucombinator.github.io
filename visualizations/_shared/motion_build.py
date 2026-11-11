@@ -264,6 +264,7 @@ def run(cfg):
     dwell_raw = {}       # (feed, shape_id, stops) -> [(lat, lon), ...]
     trip_pattern = {}    # (feed, trip_id) -> dwell_raw key
     day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
+    trip_meta = {}        # (feed, trip) -> (shape, first_lat, first_lon, last_lat, last_lon)
     day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
     shape_ids = set()
 
@@ -321,6 +322,10 @@ def run(cfg):
                 "service": sid,
                 "t0": None,
                 "t1": None,
+                "first_stop": None,
+                "last_stop": None,
+                "first_seq": None,
+                "last_seq": None,
             }
             svc_counts[sid] = svc_counts.get(sid, 0) + 1
 
@@ -342,6 +347,14 @@ def run(cfg):
                     t["t0"] = dep
                 if t["t1"] is None or arr > t["t1"]:
                     t["t1"] = arr
+                try:
+                    seq = int(row["stop_sequence"])
+                except (KeyError, ValueError):
+                    seq = 0
+                if t["first_stop"] is None or seq < t["first_seq"]:
+                    t["first_stop"], t["first_seq"] = row.get("stop_id"), seq
+                if t["last_stop"] is None or seq > t["last_seq"]:
+                    t["last_stop"], t["last_seq"] = row.get("stop_id"), seq
                 stop_counts[tid] = stop_counts.get(tid, 0) + 1
 
         # GTFS frequencies: the trip times are a template, not a single run.
@@ -382,6 +395,11 @@ def run(cfg):
                     float(row["stop_lat"]), float(row["stop_lon"]),
                     row.get("stop_name") or "",
                 )
+        for tid, t in local_trips.items():
+            a = stop_meta.get(t.get("first_stop") or "")
+            b = stop_meta.get(t.get("last_stop") or "")
+            if a and b and t.get("shape"):
+                trip_meta[(feed["id"], tid)] = (t["shape"], a[0], a[1], b[0], b[1])
 
         # stops payload: a per-feed stop table plus a stop-index list per route
         feed_stops = {}
@@ -523,6 +541,26 @@ def run(cfg):
     shape_keys = sorted(projected)
     shape_index = {k: i for i, k in enumerate(shape_keys)}
 
+    # Short-turn trips reuse their route's full shape. Without trimming, the
+    # animation starts them at the shape's endpoint and runs them over the
+    # whole line, which is how a Spring District -> Redmond trip appeared to
+    # fly from Lynnwood. Record the first/last stop fraction along the shape.
+    trip_offsets = {}
+    for (fid, tid), (shape_id, lat1, lon1, lat2, lon2) in trip_meta.items():
+        pts = projected.get((fid, shape_id))
+        if not pts or len(pts) < 2:
+            continue
+        cum = [0.0]
+        for i in range(1, len(pts)):
+            cum.append(cum[-1] + math.hypot(pts[i][0] - pts[i - 1][0],
+                                            pts[i][1] - pts[i - 1][1]))
+        total = cum[-1]
+        if total <= 0:
+            continue
+        a = nearest_frac(pts, cum, total, lon1 * KX, lat1 * KY)
+        b = nearest_frac(pts, cum, total, lon2 * KX, lat2 * KY)
+        trip_offsets[(fid, tid)] = (round(a, 4), round(b, 4))
+
     dwell_out = []
     profile_index = {}
     for key in sorted(dwell_raw):
@@ -555,19 +593,26 @@ def run(cfg):
     days_out = {}
     for spec in DAY_SPECS:
         key = spec["key"]
-        trips_list, prof_list = [], []
+        trips_list, prof_list, start_list, end_list = [], [], [], []
+        has_offsets = False
         for fid, sid, t0, t1, rk, tid in day_trips[key]:
             if (fid, sid) not in shape_index:
                 continue
             trips_list.append([shape_index[(fid, sid)], t0, t1, route_index[rk]])
             prof_list.append(profile_index.get(trip_pattern.get((fid, tid)), -1)
                              if tid is not None else -1)
+            a, b = trip_offsets.get((fid, tid), (0.0, 1.0))
+            start_list.append(a)
+            end_list.append(b)
+            if a > 0.0001 or b < 0.9999:
+                has_offsets = True
         days_out[key] = {
             "label": spec["label"],
             "date": spec["iso"],
             "tz": spec["tz"],
             "sun": sun_times(spec["date"], cfg["sun"][0], cfg["sun"][1], cfg["timeZone"]),
             "trips": trips_list,
+            **({"tripStart": start_list, "tripEnd": end_list} if has_offsets else {}),
             "prof": prof_list,
             "hist": {
                 m: [round(v / 600.0, 1) for v in arr]
