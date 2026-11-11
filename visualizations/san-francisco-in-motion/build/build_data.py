@@ -222,7 +222,7 @@ def classify(feed, route_id, route_type, route_color="", agency="", route_name="
         return ("lrt", color or fallback)
     if route_type == 5:
         return ("streetcar", color or fallback)
-    return ("regionalbus", color or fallback)
+    return ("localbus", color or fallback)
 
 
 
@@ -234,7 +234,7 @@ CFG = {
     "zoneLabel": "PT",
     "lat0": 37.77,
     "sun": (37.7749, -122.4194),
-    "modes": ["subway", "lrt", "streetcar", "localbus", "regionalbus", "gorail", "ferry"],
+    "modes": ["subway", "lrt", "streetcar", "localbus", "gorail", "ferry"],
     "railModes": ["subway", "lrt", "streetcar", "gorail", "ferry"],
     "feeds": [f for f in FEEDS if f["url"]],
     "classify": classify,
