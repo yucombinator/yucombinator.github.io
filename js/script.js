@@ -207,17 +207,17 @@ new Vue({
         date:"March 2016"
     }, {
         name: "BeerNow",
-        description: "Ruby webapp to find the cheapest beer in Ontario, as measured by ABV",
+        description: "Every pack at your Beer Store, ranked by millilitres of pure alcohol per dollar",
         url:{
             name:"Webapp",
-            url: "http://beernow.ca/"
+            url: "/beernow/"
         },
         source_url:{
           name:"Source",
           url: "https://github.com/icechen1/beerhunter"
         },
         type: "web",
-        tech: "Ruby on Rails",
+        tech: "Static site + Cloudflare Workers",
         date:"July 2015"
     },{
         name: "Swipler",

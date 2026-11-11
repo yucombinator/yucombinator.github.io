@@ -1,0 +1,11 @@
+name = "beernow"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+# Same-origin API for the static app in ../index.html. The route is handled
+# before the GitHub Pages origin, so /beernow/api/* never reaches Pages.
+routes = [
+  { pattern = "yuchenhou.com/beernow/api/*", zone_name = "yuchenhou.com" },
+  { pattern = "www.yuchenhou.com/beernow/api/*", zone_name = "yuchenhou.com" }
+]

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BeerNow — most alcohol per dollar at The Beer Store</title>
+<meta name="description" content="Rank every pack at your local Beer Store by millilitres of pure alcohol per dollar.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <nav aria-label="Breadcrumb">
+    <a href="/">yuchenhou.com</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">BeerNow</span>
+  </nav>
+</header>
+
+<main>
+  <div class="lede">
+    <h1>BeerNow</h1>
+    <p>Beer is expensive. Pick your store and see every pack ranked by how much pure alcohol it buys per dollar.</p>
+  </div>
+
+  <section class="picker" aria-labelledby="picker-label">
+    <form role="search" novalidate>
+      <label id="picker-label" for="store-input">Your store</label>
+      <div class="combo">
+        <input
+          id="store-input"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="City, address, or postal code"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="store-list"
+          aria-describedby="picker-hint">
+        <ul id="store-list" role="listbox" aria-label="Matching stores" hidden></ul>
+      </div>
+      <p id="picker-hint" class="hint">Start typing a city, street, or postal code.</p>
+    </form>
+  </section>
+
+  <p id="status" class="status" role="status">Loading stores…</p>
+
+  <section id="results" hidden aria-labelledby="store-name">
+    <header class="store-head">
+      <h2 id="store-name"></h2>
+      <p id="store-address" class="store-address"></p>
+      <p id="store-meta" class="meta"></p>
+    </header>
+
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">Beers at this store, ranked by alcohol per dollar</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="col-rank">#</th>
+            <th scope="col">Beer</th>
+            <th scope="col" class="num">ABV</th>
+            <th scope="col" class="num col-pack">Pack</th>
+            <th scope="col" class="num">Price</th>
+            <th scope="col" class="num">Alcohol per $</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <p class="actions">
+      <button id="more" type="button" hidden>Show more</button>
+    </p>
+
+    <details class="about">
+      <summary>How the ranking works</summary>
+      <p>
+        Every listing is scored as <b>pack size × volume × ABV ÷ price</b>, then
+        shown as millilitres of pure alcohol per dollar. Sale prices are used when
+        they are lower; deposit and HST are excluded.
+      </p>
+      <p>
+        Data comes from The Beer Store's public store and product listings, proxied
+        through a Cloudflare Worker. Prices change; check the shelf tag.
+      </p>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <p>
+    <a href="/">yuchenhou.com</a> ·
+    Data from <a href="https://www.thebeerstore.ca/" rel="noopener">The Beer Store</a> ·
+    Originally a Rails app from 2015
+  </p>
+</footer>
+
+<script>
+  // Local development: point the page at `wrangler dev`, e.g.
+  // /beernow/?api=http://127.0.0.1:8787/beernow/api
+  window.BEERNOW_API = new URL(location.href).searchParams.get("api") || "/beernow/api";
+</script>
+</body>
+</html>
