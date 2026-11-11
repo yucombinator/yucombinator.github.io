@@ -59,7 +59,7 @@ window.MOTION_CONFIG = {
     {
       "mode": "regionalbus",
       "title": "Regional buses",
-      "swatches": ["#fd7e14", "#2f9e44", "#7b61ff", "#e8590c", "#f59f00", "#20c997", "#845ef7", "#e64980", "#12b886", "#4dabf7", "#f06595", "#15aabf"],
+      "dot": "#fd7e14",
       "label": "Regional buses"
     },
     {
