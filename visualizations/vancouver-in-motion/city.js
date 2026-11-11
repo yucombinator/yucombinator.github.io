@@ -53,6 +53,7 @@ window.MOTION_CONFIG = {
   "trainModes": [
     "gorail"
   ],
+  "speedUnit": "km/h",
   "dwellSeconds": {
     "subway": 20.0,
     "gorail": 45.0,

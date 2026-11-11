@@ -79,6 +79,7 @@ window.MOTION_CONFIG = {
     "gorail",
     "up"
   ],
+  "speedUnit": "km/h",
   "dwellSeconds": {
     "subway": 20.0,
     "lrt": 20.0,

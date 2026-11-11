@@ -210,7 +210,7 @@
   let corridors = null;            // dedicated busways / RapidTO lanes
   let activeRoutes = new Set();    // routes running now, or within the grace window
   const LINE_GRACE = 15 * 60;      // seconds of schedule time
-  let curDay = null, curHist = null, curStarts = null, curSun = null;
+  let curDay = null, curDayData = null, curHist = null, curStarts = null, curSun = null;
   let tripProfile = null, dayMaxDur = 0;
   let routeSlot = null, routeMode = null;
   const seenRailShape = new Set();
@@ -454,6 +454,7 @@
   // dwell has to be modelled. Use the mode-specific estimate at every zoom:
   // dwell changes vehicle speed even when station labels are hidden.
   const DWELL_SECONDS = CFG.dwellSeconds || {};
+  const SPEED_UNIT = CFG.speedUnit || 'mph';
   let dwellProfiles = null;
   let timeProfiles = null;
 
@@ -480,6 +481,29 @@
     const i = Math.max(1, lo);
     const span = times[i] - times[i - 1] || 1;
     return pos[i - 1] + (pos[i] - pos[i - 1]) * ((u - times[i - 1]) / span);
+  }
+
+  function tripSegmentSpeed(tripIdx, at) {
+    if (!curDay || !timeProfiles || !curDayData.tripTimeProfile) return null;
+    const tp = curDayData.tripTimeProfile[tripIdx];
+    if (tp < 0) return null;
+    const prof = timeProfiles[tp];
+    if (!prof || !prof[0] || prof[0].length < 2) return null;
+    const t0 = trips[tripIdx * 4 + 1], t1 = trips[tripIdx * 4 + 2];
+    if (t1 <= t0) return null;
+    const u = Math.max(0, Math.min(1, (at - t0) / (t1 - t0)));
+    const pos = prof[0], times = prof[1];
+    let i = 1;
+    while (i < times.length - 1 && times[i] < u) i++;
+    const dt = times[i] - times[i - 1];
+    if (dt <= 0) return { value: 0, dwell: true };
+    const shapeIdx = trips[tripIdx * 4];
+    const cum = ensureShapeCum()[shapeIdx];
+    const shapeLen = cum && cum.length ? cum[cum.length - 1] : 0;
+    const metres = Math.abs(pos[i] - pos[i - 1]) * shapeLen;
+    if (metres < 0.5) return { value: 0, dwell: true };
+    const mps = metres / (dt * (t1 - t0));
+    return { value: SPEED_UNIT === 'km/h' ? mps * 3.6 : mps * 2.236936, dwell: false };
   }
 
   function dwellFrac(profileIdx, u, dur, mode) {
@@ -1001,7 +1025,7 @@
         if (!shape || shape.len === 0) continue;
         let frac = (tt - t0) / (t1 - t0);
         let reverse = false;
-        const tpidx = curDay.tripTimeProfile ? curDay.tripTimeProfile[i] : -1;
+        const tpidx = curDayData.tripTimeProfile ? curDayData.tripTimeProfile[i] : -1;
         if (tpidx >= 0 && timeProfiles) {
           // Exact GTFS stop-to-stop schedule profile.
           const next = timeProfileFrac(tpidx, frac);
@@ -1016,8 +1040,8 @@
             if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
           }
           // Short-turn trips share the route shape with full-length trips.
-          const s0 = curDay.tripStart ? curDay.tripStart[i] : 0;
-          const s1 = curDay.tripEnd ? curDay.tripEnd[i] : 1;
+          const s0 = curDayData.tripStart ? curDayData.tripStart[i] : 0;
+          const s1 = curDayData.tripEnd ? curDayData.tripEnd[i] : 1;
           frac = s0 + (s1 - s0) * frac;
           reverse = s1 < s0;
         }
@@ -1545,6 +1569,7 @@
     if (!dayCache[key]) return;
     const d = dayCache[key];
     curDay = key;
+    curDayData = d;
     trips = d.trips; tripCount = d.n;
     modeOfTrip = d.modeOfTrip; slotOfTrip = d.slotOfTrip;
     hourBuckets = d.hourBuckets; startTimes = d.startTimes;
@@ -2305,7 +2330,11 @@
       const route = D.routes[routeIds[trips[ti * 4 + 3]]];
       const mode = MODES[modeOfTrip[ti]];
       const scheduled = state.liveOn && !liveRouteSet.has(routeIds[trips[ti * 4 + 3]]);
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
+      const speed = tripSegmentSpeed(ti, state.t);
+      const speedText = speed
+        ? speed.dwell ? ' · dwell' : ` · ~${Math.round(speed.value)} ${SPEED_UNIT}`
+        : '';
+      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';

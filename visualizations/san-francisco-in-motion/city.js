@@ -20,6 +20,7 @@ window.MOTION_CONFIG = {
   "railModes": ["subway", "lrt", "streetcar", "gorail", "ferry"],
   "brandedModes": [],
   "interlineModes": ["subway", "lrt"],
+  "speedUnit": "mph",
   "dwellSeconds": {
     "subway": 20.0,
     "lrt": 20.0,
