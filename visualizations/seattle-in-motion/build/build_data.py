@@ -16,6 +16,11 @@ FEEDS = [
         "url": "https://gtfs.sound.obaweb.org/prod/gtfs_puget_sound_consolidated.zip",
         "kind": "puget", "color": "2f6db3", "multi_agency": True,
     },
+    {
+        "id": "muckleshoot", "agency": "Muckleshoot Tribal Transit",
+        "url": "https://data.trilliumtransit.com/gtfs/muckleshoot-wa-us/muckleshoot-wa-us.zip",
+        "kind": "bus", "color": "c26b3f",
+    },
 ]
 
 
