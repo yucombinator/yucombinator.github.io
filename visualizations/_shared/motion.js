@@ -492,7 +492,11 @@
     const names = prof[2] || null;
     const t0 = trips[tripIdx * 4 + 1], t1 = trips[tripIdx * 4 + 2];
     if (t1 <= t0) return null;
-    const u = Math.max(0, Math.min(1, (at - t0) / (t1 - t0)));
+    // Late-night trips cross the 24:00 clock. The map uses t + DAY for those;
+    // the tooltip must do the same or it reports the first segment all night.
+    let when = at;
+    if (when < t0 && when + DAY <= t1) when += DAY;
+    const u = Math.max(0, Math.min(1, (when - t0) / (t1 - t0)));
     const pos = prof[0], times = prof[1];
     let i = 1;
     while (i < times.length - 1 && times[i] < u) i++;
