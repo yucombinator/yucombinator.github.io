@@ -430,7 +430,7 @@
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
     const zLine = mapObj ? mapObj.getZoom() : fitZoom;
-    const showIdle = zLine >= 13.5;
+    const showIdle = zLine >= 13.5 && !follow;
     // Bus routes are noise at region zoom: drop them below z10.4, then ease
     // them back in (quadratically, so the packed-shape overlap stays light)
     // until they are fully drawn at z12.4.

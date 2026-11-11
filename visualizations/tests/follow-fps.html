@@ -20,6 +20,7 @@
     <option value="san-francisco-in-motion">San Francisco</option>
   </select>
   <label><input id="secs" type="number" min="2" max="30" value="6" style="width:54px"> s</label>
+  <label>zoom <input id="zoom" type="number" min="8" max="15" value="14" style="width:54px"></label>
   <button id="run">Start follow + measure</button>
   <button id="stop" disabled>Stop</button>
   <small id="status">ready</small>
@@ -83,12 +84,14 @@ run.addEventListener('click', async () => {
       if (!started) await sleep(100);
     }
     if (!started) throw new Error('no scheduled vehicle available to follow');
+    const zoom = Number(document.getElementById('zoom').value);
+    if (win.__timMap && Number.isFinite(zoom)) win.__timMap.jumpTo({ zoom });
     status.textContent = 'following · sampling…';
     await sleep(400);
     const result = await sample(win, Number(document.getElementById('secs').value) || 6);
     out.textContent = `${result.fps.toFixed(1)} FPS · ${result.frames} frames · p95 ${result.p95ms.toFixed(1)} ms`;
     status.textContent = 'done';
-    window.__fpsResult = { city: city.value, ...result };
+    window.__fpsResult = { city: city.value, zoom: Number(document.getElementById('zoom').value), ...result };
     console.log(window.__fpsResult);
   } catch (err) {
     status.textContent = String(err.message || err);
