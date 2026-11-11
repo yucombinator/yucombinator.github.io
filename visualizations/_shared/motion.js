@@ -451,8 +451,8 @@
   }
 
   // GTFS in this region publishes arrival == departure at every stop, so the
-  // dwell has to be modelled. Modest, mode-specific stops only, and only once
-  // the map is close enough for them to read (zoom >= 12).
+  // dwell has to be modelled. Use the mode-specific estimate at every zoom:
+  // dwell changes vehicle speed even when station labels are hidden.
   const DWELL_SECONDS = CFG.dwellSeconds || {};
   let dwellProfiles = null;
 
@@ -979,7 +979,7 @@
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
         let frac = (tt - t0) / (t1 - t0);
-        if (dwellProfiles && z >= 12 && tripProfile) {
+        if (dwellProfiles && tripProfile) {
           const pr = tripProfile[i];
           if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
         }
