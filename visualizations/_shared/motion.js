@@ -1017,7 +1017,7 @@
       stopFollow();
       return;
     }
-    follow = { kind, ...value };
+    follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, tipHtml: '' };
     state.hoverTrip = null;
     if (value.route != null) {
       selectRoute(value.route, true);
@@ -1050,25 +1050,37 @@
   function updateFollow() {
     if (!follow || !mapObj) return;
     const pos = followScreenPos();
-    if (!pos) { stopFollow(); return; }
+    if (!pos) return;
     const tip = $('tip');
+    let html;
     if (follow.kind === 'scheduled') {
-      tip.innerHTML = scheduledTipHTML(follow.trip);
+      html = scheduledTipHTML(follow.trip);
     } else {
       const k = live.v.findIndex((row) => row[5] === follow.id);
       if (k < 0) { stopFollow(); return; }
-      tip.innerHTML = liveTipHTML(k);
+      html = liveTipHTML(k);
+    }
+    if (html !== follow.tipHtml) {
+      tip.innerHTML = html;
+      follow.tipHtml = html;
     }
     tip.style.display = 'block';
     const tw = tip.offsetWidth, th = tip.offsetHeight;
     tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, pos[0] + 16)) + 'px';
     tip.style.top = Math.max(8, pos[1] - th - 16) + 'px';
+    const now = performance.now();
     const ll = mapObj.unproject([pos[0], pos[1]]);
-    mapObj.setCenter(ll);
-    // Continuous programmatic panning fires move events but never a moveend,
-    // so force the next frame to reproject the shape culling bounds.
-    needsProjection = true;
-    state.dirty = true;
+    follow.lastLon = ll.lng; follow.lastLat = ll.lat;
+    // Throttle camera jumps and the expensive whole-network reprojection.
+    if (now - follow.lastCam > 80) {
+      mapObj.setCenter(ll);
+      follow.lastCam = now;
+    }
+    if (now - follow.lastProj > 200) {
+      needsProjection = true;
+      follow.lastProj = now;
+      state.dirty = true;
+    }
   }
 
   function draw() {
@@ -2640,7 +2652,7 @@
       pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
       antialias: false,
     });
-    mapObj.on('dragstart', () => stopFollow());
+    mapObj.on('dragstart', () => { if (follow) stopFollow(); });
     mapObj.on('load', () => {
       mapObj.touchZoomRotate.disableRotation();
       const F = D.fit;
