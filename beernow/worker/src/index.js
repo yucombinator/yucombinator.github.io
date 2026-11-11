@@ -60,8 +60,11 @@ export default {
       if (path === '/stores' || path === '/stores/') {
         const limit = clampLimit(url.searchParams.get('limit'), 400, 400);
         const data = await getStores(url.origin);
-        const headers = data.stale ? { 'x-stale': '1', 'cache-control': 'public, max-age=60' } : {};
-        return json({ ...data, count: data.stores.length, stores: data.stores.slice(0, limit) }, 200, headers);
+        return json(
+          { ...data, count: data.stores.length, stores: data.stores.slice(0, limit) },
+          200,
+          cacheHeaders(data.stale),
+        );
       }
 
       if (path === '/health') {
@@ -77,14 +80,17 @@ export default {
         if (!store) return json({ error: `unknown store ${storeId}` }, 404);
 
         const data = await getRankedBeers(url.origin, storeId);
-        const headers = data.stale ? { 'x-stale': '1', 'cache-control': 'public, max-age=60' } : {};
-        return json({
-          store,
-          generated: data.generated,
-          stale: Boolean(data.stale),
-          total: data.beers.length,
-          beers: data.beers.slice(0, limit),
-        }, 200, headers);
+        return json(
+          {
+            store,
+            generated: data.generated,
+            stale: Boolean(data.stale),
+            total: data.beers.length,
+            beers: data.beers.slice(0, limit),
+          },
+          200,
+          cacheHeaders(data.stale),
+        );
       }
 
       return json({ error: 'not found' }, 404);
@@ -107,6 +113,10 @@ function clampLimit(raw, max, fallback) {
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.min(Math.floor(n), max);
+}
+
+function cacheHeaders(stale) {
+  return { 'cache-control': 'public, max-age=60', ...(stale ? { 'x-stale': '1' } : {}) };
 }
 
 function json(body, status = 200, extra = {}) {
