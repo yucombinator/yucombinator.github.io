@@ -49,7 +49,7 @@ export function searchStores(stores, query) {
     if (city.startsWith(q) || name.startsWith(q)) rank = 0;
     else if (postal.startsWith(compact)) rank = 1;
     else if (address.startsWith(q)) rank = 2;
-    else if (city.includes(q) || address.includes(q) || name.includes(q) || postal.includes(compact)) rank = 3;
+    else if (city.includes(q) || address.includes(q) || name.includes(q)) rank = 3;
     if (rank < 0) continue;
 
     hits.push({ store, rank });
@@ -96,7 +96,7 @@ function renderMatches() {
     list.append(item);
   });
 
-  const open = state.matches.length > 0;
+  const open = state.query.trim().length > 0;
   list.hidden = !open;
   els.input.setAttribute("aria-expanded", String(open));
   if (state.active >= 0) {
@@ -176,12 +176,6 @@ function renderRows() {
     const sub = document.createElement("span");
     sub.className = "beer-sub";
     sub.append(beer.label);
-    if (beer.format) {
-      const format = document.createElement("span");
-      format.className = "badge";
-      format.textContent = beer.format;
-      sub.append(format);
-    }
     if (beer.onSale) {
       const sale = document.createElement("span");
       sale.className = "badge sale";
@@ -335,9 +329,16 @@ els.more.addEventListener("click", () => {
   renderRows();
 });
 
+function syncInputToHash() {
+  const store = state.stores.find((candidate) => candidate.id === storeIdFromHash());
+  if (store) els.input.value = `${titleCase(store.city)} — ${store.address}`;
+}
+
 window.addEventListener("hashchange", () => {
-  const id = Number(/^#s=(\d+)$/.exec(location.hash)?.[1]);
-  if (id) loadStore(id);
+  const id = storeIdFromHash();
+  if (!id) return;
+  syncInputToHash();
+  loadStore(id);
 });
 
 function storeIdFromHash() {
