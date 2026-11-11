@@ -30,6 +30,7 @@ window.MOTION_CONFIG = {
     "ferry": 60.0
   },
   "storageKey": "sf",
+  "liveUrls": ["https://sf-live.seattle-live.workers.dev/live.json"],
   "legend": [
     {
       "mode": "subway",
