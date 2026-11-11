@@ -159,6 +159,7 @@
     }
   }
   let shapes = [];            // { pts: [[x,y]] in local metres }
+  let shapeBounds = null;     // per-shape lon/lat bbox for viewport culling
   let routeIds = [];          // pointer -> route_id
   let railShapes = [];        // [{shapeIdx, color, mode}] background lines
   let slotColors = [];        // palette of dot colours (one per line / mode)
@@ -242,7 +243,17 @@
   function projectPieces() {
     if (!D || !mapObj) return;
     const out = new Array(shapes.length);
+    const world = mapObj.getBounds ? mapObj.getBounds() : null;
+    const pad = 0.12;
     for (let si = 0; si < shapes.length; si++) {
+      if (world && shapeBounds) {
+        const b = shapeBounds[si];
+        if (b && (b.east < world.getWest() - pad || b.west > world.getEast() + pad
+            || b.north < world.getSouth() - pad || b.south > world.getNorth() + pad)) {
+          out[si] = null;
+          continue;
+        }
+      }
       const pts = shapes[si].pts;
       const n = pts.length;
       const xy = new Float32Array(n * 2);
@@ -2576,6 +2587,17 @@
     D = await res.json();
 
     shapes = D.shapes.map((pts) => ({ pts }));
+    shapeBounds = shapes.map((shape) => {
+      let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
+      for (const [x, y] of shape.pts) {
+        const [lon, lat] = lngLatOf(x, y);
+        if (lon < west) west = lon;
+        if (lon > east) east = lon;
+        if (lat < south) south = lat;
+        if (lat > north) north = lat;
+      }
+      return { west, east, south, north };
+    });
     routeShapeIdx = null;
     shapeCum = null;
     interlineSegments = null;
