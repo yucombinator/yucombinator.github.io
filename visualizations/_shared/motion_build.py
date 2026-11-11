@@ -265,6 +265,8 @@ def run(cfg):
     trip_pattern = {}    # (feed, trip_id) -> dwell_raw key
     day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
     trip_meta = {}        # (feed, trip) -> (shape, first_lat, first_lon, last_lat, last_lon)
+    trip_times = {}       # (feed, trip) -> [(seq, stop_id, arrival, departure)]
+    stop_meta_all = {}    # (feed, stop) -> (lat, lon)
     day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
     shape_ids = set()
 
@@ -355,6 +357,8 @@ def run(cfg):
                     t["first_stop"], t["first_seq"] = row.get("stop_id"), seq
                 if t["last_stop"] is None or seq > t["last_seq"]:
                     t["last_stop"], t["last_seq"] = row.get("stop_id"), seq
+                trip_times.setdefault((feed["id"], tid), []).append(
+                    (seq, row.get("stop_id"), arr, dep))
                 stop_counts[tid] = stop_counts.get(tid, 0) + 1
 
         # GTFS frequencies: the trip times are a template, not a single run.
@@ -395,6 +399,8 @@ def run(cfg):
                     float(row["stop_lat"]), float(row["stop_lon"]),
                     row.get("stop_name") or "",
                 )
+        for sid, meta in stop_meta.items():
+            stop_meta_all[(feed["id"], sid)] = (meta[0], meta[1])
         for tid, t in local_trips.items():
             a = stop_meta.get(t.get("first_stop") or "")
             b = stop_meta.get(t.get("last_stop") or "")
@@ -561,6 +567,62 @@ def run(cfg):
         b = nearest_frac(pts, cum, total, lon2 * KX, lat2 * KY)
         trip_offsets[(fid, tid)] = (round(a, 4), round(b, 4))
 
+    # Actual stop-to-stop schedules, normalized per trip and deduplicated by
+    # shape/stop pattern. This replaces the end-to-end + assumed-dwell model
+    # whenever a complete stop_times profile exists.
+    time_profiles = []
+    time_profile_index = {}
+    trip_time_profile = {}
+    for (fid, tid), rows in trip_times.items():
+        meta = trip_meta.get((fid, tid))
+        if not meta or len(rows) < 2:
+            continue
+        shape_id = meta[0]
+        pts = projected.get((fid, shape_id))
+        if not pts or len(pts) < 2:
+            continue
+        rows = sorted(rows, key=lambda r: r[0])
+        first_dep = rows[0][3]
+        last_arr = rows[-1][2]
+        if first_dep is None or last_arr is None or last_arr <= first_dep:
+            continue
+        total = last_arr - first_dep
+        cum = [0.0]
+        for i in range(1, len(pts)):
+            cum.append(cum[-1] + math.hypot(pts[i][0] - pts[i - 1][0],
+                                            pts[i][1] - pts[i - 1][1]))
+        shape_total = cum[-1]
+        if shape_total <= 0:
+            continue
+        pos, times = [], []
+        for i, (seq, sid, arr, dep) in enumerate(rows):
+            sm = stop_meta_all.get((fid, sid))
+            if sm is None or arr is None or dep is None:
+                pos, times = [], []
+                break
+            p = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY)
+            af = max(0.0, min(1.0, (arr - first_dep) / total))
+            df = max(0.0, min(1.0, (dep - first_dep) / total))
+            if i == 0:
+                pos.append(round(p, 4)); times.append(0.0)
+            else:
+                pos.append(round(p, 4)); times.append(round(af, 5))
+            if i < len(rows) - 1 and df > af + 0.00001:
+                pos.append(round(p, 4)); times.append(round(df, 5))
+        if len(pos) < 2:
+            continue
+        # Normalize the final arrival to exactly 1 and keep times monotonic.
+        times[-1] = 1.0
+        if any(times[i] < times[i - 1] for i in range(1, len(times))):
+            continue
+        sig = (shape_id, tuple(r[1] for r in rows))
+        idx = time_profile_index.get(sig)
+        if idx is None:
+            idx = len(time_profiles)
+            time_profile_index[sig] = idx
+            time_profiles.append([pos, times])
+        trip_time_profile[(fid, tid)] = idx
+
     dwell_out = []
     profile_index = {}
     for key in sorted(dwell_raw):
@@ -594,7 +656,9 @@ def run(cfg):
     for spec in DAY_SPECS:
         key = spec["key"]
         trips_list, prof_list, start_list, end_list = [], [], [], []
+        time_prof_list = []
         has_offsets = False
+        has_time_profiles = False
         for fid, sid, t0, t1, rk, tid in day_trips[key]:
             if (fid, sid) not in shape_index:
                 continue
@@ -604,6 +668,10 @@ def run(cfg):
             a, b = trip_offsets.get((fid, tid), (0.0, 1.0))
             start_list.append(a)
             end_list.append(b)
+            tp = trip_time_profile.get((fid, tid), -1)
+            time_prof_list.append(tp)
+            if tp >= 0:
+                has_time_profiles = True
             if a > 0.0001 or b < 0.9999:
                 has_offsets = True
         days_out[key] = {
@@ -613,6 +681,7 @@ def run(cfg):
             "sun": sun_times(spec["date"], cfg["sun"][0], cfg["sun"][1], cfg["timeZone"]),
             "trips": trips_list,
             **({"tripStart": start_list, "tripEnd": end_list} if has_offsets else {}),
+            **({"tripTimeProfile": time_prof_list} if has_time_profiles else {}),
             "prof": prof_list,
             "hist": {
                 m: [round(v / 600.0, 1) for v in arr]
@@ -647,6 +716,7 @@ def run(cfg):
                   + " (" + ", ".join(spec["label"] for spec in DAY_SPECS) + ")",
         "fit": [pct(allxs, 0.002), pct(allys, 0.002), pct(allxs, 0.998), pct(allys, 0.998)],
         "proj": {"lat0": LAT0, "kx": KX, "ky": KY, "x0": minx, "y0": miny},
+        **({"timeProfiles": time_profiles} if time_profiles else {}),
         "routes": route_out,
         "shapes": shapes,
         "dwell": dwell_out,

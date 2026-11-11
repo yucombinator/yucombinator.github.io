@@ -455,10 +455,31 @@
   // dwell changes vehicle speed even when station labels are hidden.
   const DWELL_SECONDS = CFG.dwellSeconds || {};
   let dwellProfiles = null;
+  let timeProfiles = null;
 
   function initDwell() {
     if (!Array.isArray(D.dwell)) return;
     dwellProfiles = D.dwell.map((fracs) => Float32Array.from(fracs));
+  }
+
+  function initTimeProfiles() {
+    timeProfiles = Array.isArray(D.timeProfiles) ? D.timeProfiles : null;
+  }
+
+  function timeProfileFrac(idx, u) {
+    const prof = timeProfiles && timeProfiles[idx];
+    if (!prof || !prof[0] || prof[0].length < 2) return null;
+    const pos = prof[0], times = prof[1];
+    if (u <= times[0]) return pos[0];
+    if (u >= times[times.length - 1]) return pos[pos.length - 1];
+    let lo = 1, hi = times.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (times[mid] < u) lo = mid + 1; else hi = mid;
+    }
+    const i = Math.max(1, lo);
+    const span = times[i] - times[i - 1] || 1;
+    return pos[i - 1] + (pos[i] - pos[i - 1]) * ((u - times[i - 1]) / span);
   }
 
   function dwellFrac(profileIdx, u, dur, mode) {
@@ -979,21 +1000,33 @@
         const shape = ss[trips[i * 4]];
         if (!shape || shape.len === 0) continue;
         let frac = (tt - t0) / (t1 - t0);
-        if (dwellProfiles && tripProfile) {
-          const pr = tripProfile[i];
-          if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
+        let reverse = false;
+        const tpidx = curDay.tripTimeProfile ? curDay.tripTimeProfile[i] : -1;
+        if (tpidx >= 0 && timeProfiles) {
+          // Exact GTFS stop-to-stop schedule profile.
+          const next = timeProfileFrac(tpidx, frac);
+          if (next !== null) {
+            const p = timeProfiles[tpidx][0];
+            reverse = p[p.length - 1] < p[0];
+            frac = next;
+          }
+        } else {
+          if (dwellProfiles && tripProfile) {
+            const pr = tripProfile[i];
+            if (pr >= 0) frac = dwellFrac(pr, frac, t1 - t0, MODES[mode]);
+          }
+          // Short-turn trips share the route shape with full-length trips.
+          const s0 = curDay.tripStart ? curDay.tripStart[i] : 0;
+          const s1 = curDay.tripEnd ? curDay.tripEnd[i] : 1;
+          frac = s0 + (s1 - s0) * frac;
+          reverse = s1 < s0;
         }
-        // Short-turn trips share the route shape with full-length trips. Keep
-        // their arrows on the portion between their actual first and last stops.
-        const s0 = curDay.tripStart ? curDay.tripStart[i] : 0;
-        const s1 = curDay.tripEnd ? curDay.tripEnd[i] : 1;
-        frac = s0 + (s1 - s0) * frac;
         const [bx, by, dx, dy] = pointAtScreen(shape, frac);
         const X = bx * aff.sx + aff.ox, Y = by * aff.sy + aff.oy;
         if (X < -10 || Y < -10 || X > w + 10 || Y > h + 10) continue;
         if (activeCount >= px.length) continue;
         px[activeCount] = X; py[activeCount] = Y;
-        pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx) + (s1 < s0 ? Math.PI : 0);
+        pAng[activeCount] = Math.atan2(dy * aff.sy, dx * aff.sx) + (reverse ? Math.PI : 0);
         pTrip[activeCount] = i;
         const slot = slotOfTrip[i];
         if (slotCounts && slot < slotCounts.length) {
@@ -1465,6 +1498,7 @@
     const profiles = new Int16Array(n);
     const tripStart = dd.tripStart ? Float32Array.from(dd.tripStart) : null;
     const tripEnd = dd.tripEnd ? Float32Array.from(dd.tripEnd) : null;
+    const tripTimeProfile = dd.tripTimeProfile ? Int16Array.from(dd.tripTimeProfile) : null;
     const profSrc = dd.prof;
     if (profSrc) for (let i = 0; i < n; i++) profiles[i] = profSrc[i];
     else profiles.fill(-1);
@@ -1487,7 +1521,7 @@
       trips: tripsArr, n, modeOfTrip: modes, slotOfTrip: slots,
       hourBuckets: buckets, startTimes: starts.slice().sort(),
       hist: dd.hist, startsBins, sun: dd.sun,
-      tripProfile: profiles, tripStart, tripEnd, maxDur,
+      tripProfile: profiles, tripStart, tripEnd, tripTimeProfile, maxDur,
     };
   }
 
@@ -2421,11 +2455,17 @@
     }
 
     initDwell();
+    initTimeProfiles();
     dayCache = {};
     for (const key of D.order) {
       if (D.days[key]) dayCache[key] = prepareDay(key, D.days[key]);
     }
-    activateDay(D.order[0]);
+    // Start at the viewer's wall-clock time and service day, not the city's
+    // timezone. The clock is a local time-of-day view of the schedule.
+    const now = new Date();
+    state.t = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    const localDay = now.getDay() === 0 ? 'sunday' : now.getDay() === 6 ? 'saturday' : 'weekday';
+    activateDay(D.order.includes(localDay) ? localDay : D.order[0]);
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
