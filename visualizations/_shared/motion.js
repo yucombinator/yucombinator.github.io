@@ -1745,15 +1745,9 @@
   function pickAt(clientX, clientY) {
     const r = overlay.getBoundingClientRect();
     const mx = clientX - r.left, my = clientY - r.top;
-    let best = -1, bestD = 13;
-    for (let k = 0; k < activeCount; k++) {
-      const d = Math.hypot(px[k] - mx, py[k] - my);
-      if (d < bestD) { bestD = d; best = k; }
-    }
-    if (best >= 0) { selectRoute(trips[pTrip[best] * 4 + 3]); return; }
+    const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
 
     if (state.liveOn && liveScreen && liveCount) {
-      const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
       let lb = -1, ld = 15;
       for (let k = 0; k < liveCount; k++) {
         const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
@@ -1762,7 +1756,13 @@
       if (lb >= 0 && liveRoutePtr[lb] >= 0) { selectRoute(liveRoutePtr[lb]); return; }
     }
 
-    const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
+    let best = -1, bestD = 13;
+    for (let k = 0; k < activeCount; k++) {
+      const d = Math.hypot(px[k] - mx, py[k] - my);
+      if (d < bestD) { bestD = d; best = k; }
+    }
+    if (best >= 0) { selectRoute(trips[pTrip[best] * 4 + 3]); return; }
+
     let hit = -1, hitD = 7;
     for (let i = 0; i < view.screenShapes.length; i++) {
       const route = shapeRoute[i];
@@ -2190,6 +2190,30 @@
         if (d < bestD) { bestD = d; best = k; }
       }
       const tip = $('tip');
+
+      if (state.liveOn && liveScreen && liveCount) {
+        const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
+        let lb = -1, ld = 15;
+        for (let k = 0; k < liveCount; k++) {
+          const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
+          if (d < ld) { ld = d; lb = k; }
+        }
+        if (lb >= 0 && liveRoutePtr[lb] >= 0) {
+          const ptr = liveRoutePtr[lb];
+          const route = D.routes[routeIds[ptr]];
+          const mode = MODES[routeMode[ptr]];
+          const row = live.v[lb];
+          const updated = row[4] ? cityClock(row[4]).hm : '';
+          state.hoverTrip = null;
+          state.dirty = true;
+          tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[liveScreen[lb * 4 + 3]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>Live vehicle${row[5] ? ' ' + esc(row[5]) : ''}${updated ? ' · updated ' + updated : ''}</small>`;
+          tip.style.display = 'block';
+          const tw = tip.offsetWidth, th = tip.offsetHeight;
+          tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
+          tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
+          return;
+        }
+      }
 
       if (best < 0 && futureOn) {
         const project = futureAt(mx, my);
