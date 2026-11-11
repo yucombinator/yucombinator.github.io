@@ -969,6 +969,21 @@
     return null;
   }
 
+  function scheduledTipHTML(ti) {
+    const route = D.routes[routeIds[trips[ti * 4 + 3]]];
+    const mode = MODES[modeOfTrip[ti]];
+    const scheduled = state.liveOn && !liveRouteSet.has(routeIds[trips[ti * 4 + 3]]);
+    const speed = tripSegmentSpeed(ti, state.t);
+    const speedText = speed
+      ? speed.dwell
+        ? ` · ${speed.stop ? 'at ' + esc(speed.stop) : 'at stop'}`
+        : speed.from && speed.to
+          ? ` · traveling between ${esc(speed.from)} to ${esc(speed.to)} · ~${Math.round(speed.value)} ${SPEED_UNIT}`
+          : ` · ~${Math.round(speed.value)} ${SPEED_UNIT}`
+      : '';
+    return `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
+  }
+
   function draw() {
     // Live positions are projected for this exact frame. Unlike scheduled
     // arrows they must not be transformed by the in-flight affine estimate,
@@ -1364,6 +1379,11 @@
           octx.fillText(label, x, y);
         }
       }
+    }
+
+    if (state.hoverTrip != null) {
+      const tip = $('tip');
+      if (tip && tip.style.display !== 'none') tip.innerHTML = scheduledTipHTML(state.hoverTrip);
     }
 
     const sig = routeSigCount * 1000003 + routeSigSum;
@@ -2333,18 +2353,7 @@
       state.dirty = true;
       if (best < 0) { tip.style.display = 'none'; return; }
       const ti = pTrip[best];
-      const route = D.routes[routeIds[trips[ti * 4 + 3]]];
-      const mode = MODES[modeOfTrip[ti]];
-      const scheduled = state.liveOn && !liveRouteSet.has(routeIds[trips[ti * 4 + 3]]);
-      const speed = tripSegmentSpeed(ti, state.t);
-      const speedText = speed
-        ? speed.dwell
-          ? ` · ${speed.stop ? 'at ' + esc(speed.stop) : 'at stop'}`
-          : speed.from && speed.to
-            ? ` · traveling between ${esc(speed.from)} to ${esc(speed.to)} · ~${Math.round(speed.value)} ${SPEED_UNIT}`
-            : ` · ~${Math.round(speed.value)} ${SPEED_UNIT}`
-        : '';
-      tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
+      tip.innerHTML = scheduledTipHTML(ti);
       tip.style.display = 'block';
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
