@@ -194,9 +194,13 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * r * math.asin(math.sqrt(a))
 
 
-def nearest_frac(xy, cum, total, px, py):
-    """Fraction along a polyline of the closest point to (px, py)."""
-    best, bf = float("inf"), 0.0
+def nearest_frac(xy, cum, total, px, py, lo=0.0, hi=1.0):
+    """Fraction along a polyline of the closest point to (px, py).
+
+    A loop route can pass the same stop twice; callers can restrict the
+    search to a monotonic interval along the trip.
+    """
+    best, bf = float("inf"), None
     for i in range(1, len(xy)):
         ax, ay = xy[i - 1]
         bx, by = xy[i]
@@ -205,10 +209,15 @@ def nearest_frac(xy, cum, total, px, py):
         t = ((px - ax) * dx + (py - ay) * dy) / l2
         t = max(0.0, min(1.0, t))
         qx, qy = ax + t * dx, ay + t * dy
+        f = (cum[i - 1] + t * (cum[i] - cum[i - 1])) / total
+        if f < lo or f > hi:
+            continue
         d2 = (px - qx) ** 2 + (py - qy) ** 2
         if d2 < best:
             best = d2
-            bf = (cum[i - 1] + t * (cum[i] - cum[i - 1])) / total
+            bf = f
+    if bf is None:
+        return nearest_frac(xy, cum, total, px, py)  # no candidate in range
     return bf
 
 
@@ -610,12 +619,26 @@ def run(cfg):
         if shape_total <= 0:
             continue
         pos, times, names = [], [], []
+        prev_pos = None
+        forward = True
         for i, (seq, sid, arr, dep) in enumerate(rows):
             sm = stop_meta_all.get((fid, sid))
             if sm is None or arr is None or dep is None:
                 pos, times, names = [], [], []
                 break
-            p = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY)
+            raw = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY)
+            if prev_pos is None:
+                p = raw
+            elif prev_pos is not None and i == 1:
+                forward = raw >= prev_pos
+                p = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY,
+                                 lo=prev_pos if forward else 0.0,
+                                 hi=1.0 if forward else prev_pos)
+            else:
+                p = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY,
+                                 lo=prev_pos if forward else 0.0,
+                                 hi=1.0 if forward else prev_pos)
+            prev_pos = p
             af = max(0.0, min(1.0, (arr - first_dep) / total))
             df = max(0.0, min(1.0, (dep - first_dep) / total))
             if i == 0:
@@ -628,6 +651,17 @@ def run(cfg):
             continue
         times[-1] = 1.0
         if any(times[i] < times[i - 1] for i in range(1, len(times))):
+            continue
+        # A loop shape can make a stop's nearest point jump to the far side of
+        # the loop. Reject the profile rather than animating at 100+ mph.
+        bad_speed = False
+        for j in range(len(times) - 1):
+            dt = (times[j + 1] - times[j]) * total
+            dist = abs(pos[j + 1] - pos[j]) * shape_total
+            if dt > 0 and dist / dt > 35.0:  # 35 m/s ~= 78 mph
+                bad_speed = True
+                break
+        if bad_speed:
             continue
         profile_by_pattern[key] = len(time_profiles)
         time_profiles.append([pos, times, names])
