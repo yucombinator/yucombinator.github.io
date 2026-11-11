@@ -1,6 +1,6 @@
 import { buildLive } from './gtfsrt.js';
 
-const CACHE_KEY = 'https://sf-live.internal/live-v2.json';
+const CACHE_KEY = 'https://sf-live.internal/live-v3.json';
 const CACHE_REQUEST = new Request(CACHE_KEY);
 const MAX_AGE_MS = 60_000;
 const CORS = {
