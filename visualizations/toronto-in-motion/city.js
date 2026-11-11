@@ -270,7 +270,7 @@ window.MOTION_CONFIG = {
       "opening": "2031 target",
       "headwayMin": 3,
       "travelMin": 35,
-      "color": "#c4b7d8",
+      "color": "#b06cff",
       "shape": [[-79.418,43.636],[-79.404,43.641],[-79.396,43.645],[-79.387,43.650],[-79.379,43.653],[-79.369,43.656],[-79.360,43.658],[-79.350,43.661],[-79.344,43.668],[-79.339,43.700],[-79.339,43.719]]
     },
     {
@@ -282,7 +282,7 @@ window.MOTION_CONFIG = {
       "opening": "2030 target",
       "headwayMin": 5,
       "travelMin": 15,
-      "color": "#b9c8d8",
+      "color": "#5c8dff",
       "shape": [[-79.263,43.732],[-79.263,43.750],[-79.257,43.773],[-79.257,43.776]]
     },
     {
@@ -294,7 +294,7 @@ window.MOTION_CONFIG = {
       "opening": "2031 target",
       "headwayMin": 4,
       "travelMin": 25,
-      "color": "#c8b9d8",
+      "color": "#d65cc8",
       "shape": [[-79.486,43.688],[-79.500,43.686],[-79.530,43.680],[-79.560,43.670],[-79.586,43.657]]
     },
     {
@@ -306,7 +306,7 @@ window.MOTION_CONFIG = {
       "opening": "2032 target",
       "headwayMin": 4,
       "travelMin": 20,
-      "color": "#b6c9d8",
+      "color": "#4cc9f0",
       "shape": [[-79.415,43.780],[-79.415,43.786],[-79.415,43.800],[-79.400,43.820],[-79.382,43.842]]
     },
     {
@@ -318,7 +318,7 @@ window.MOTION_CONFIG = {
       "opening": "2030 target",
       "headwayMin": 5,
       "travelMin": 25,
-      "color": "#c8c3a8",
+      "color": "#e0a33a",
       "shape": [[-79.919,43.262],[-79.900,43.260],[-79.870,43.255],[-79.830,43.243],[-79.799,43.238]]
     },
     {
@@ -330,8 +330,32 @@ window.MOTION_CONFIG = {
       "opening": "2028 target",
       "headwayMin": 8,
       "travelMin": 35,
-      "color": "#d8c0a8",
+      "color": "#ff7a59",
       "shape": [[-79.257,43.773],[-79.200,43.800],[-79.130,43.820],[-79.086,43.835],[-79.020,43.850]]
+    },
+    {
+      "id": "hurontario-line-10",
+      "name": "Hurontario–Main Line 10 LRT",
+      "mode": "lrt",
+      "modeLabel": "LRT",
+      "status": "under construction",
+      "opening": "TBD (delayed)",
+      "headwayMin": 5,
+      "travelMin": 40,
+      "color": "#ff6b9a",
+      "shape": [[-79.586,43.555],[-79.600,43.570],[-79.640,43.590],[-79.690,43.620],[-79.720,43.650],[-79.750,43.690],[-79.760,43.715]]
+    },
+    {
+      "id": "waterfront-east-lrt",
+      "name": "Waterfront East LRT",
+      "mode": "lrt",
+      "modeLabel": "LRT",
+      "status": "in design",
+      "opening": "TBD",
+      "headwayMin": 5,
+      "travelMin": 15,
+      "color": "#5cc9c0",
+      "shape": [[-79.380,43.645],[-79.374,43.643],[-79.360,43.643],[-79.350,43.645],[-79.340,43.648],[-79.330,43.655]]
     }
   ],
   "storageKey": "tim",

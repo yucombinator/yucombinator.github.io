@@ -216,11 +216,11 @@ window.MOTION_CONFIG = {
       "mode": "brt",
       "modeLabel": "BRT",
       "status": "under construction",
-      "opening": "2029 target",
+      "opening": "2028 target",
       "headwayMin": 10,
       "travelMin": 45,
-      "color": "#c8b8a0",
-      "shape": [[-122.31,47.816],[-122.25,47.780],[-122.20,47.730],[-122.19,47.670],[-122.20,47.615]]
+      "color": "#ffb347",
+      "shape": [[-122.201,47.615],[-122.207,47.580],[-122.218,47.540],[-122.220,47.500],[-122.240,47.475],[-122.280,47.465],[-122.330,47.470]]
     },
     {
       "id": "stride-s2",
@@ -228,11 +228,23 @@ window.MOTION_CONFIG = {
       "mode": "brt",
       "modeLabel": "BRT",
       "status": "under construction",
-      "opening": "2029 target",
+      "opening": "2028 target",
       "headwayMin": 10,
-      "travelMin": 40,
-      "color": "#d2c2aa",
-      "shape": [[-122.34,47.470],[-122.28,47.480],[-122.22,47.530],[-122.20,47.615]]
+      "travelMin": 45,
+      "color": "#ff8a5c",
+      "shape": [[-122.310,47.816],[-122.290,47.800],[-122.250,47.780],[-122.200,47.750],[-122.190,47.700],[-122.190,47.660],[-122.200,47.615]]
+    },
+    {
+      "id": "stride-s3",
+      "name": "Stride S3",
+      "mode": "brt",
+      "modeLabel": "BRT",
+      "status": "under construction",
+      "opening": "2028 target",
+      "headwayMin": 10,
+      "travelMin": 30,
+      "color": "#ffd166",
+      "shape": [[-122.330,47.750],[-122.300,47.750],[-122.250,47.760],[-122.200,47.760]]
     },
     {
       "id": "rapidride-j",
@@ -243,8 +255,44 @@ window.MOTION_CONFIG = {
       "opening": "2027 target",
       "headwayMin": 8,
       "travelMin": 25,
-      "color": "#d6b8a0",
+      "color": "#ff5d8f",
       "shape": [[-122.332,47.606],[-122.328,47.620],[-122.325,47.640],[-122.313,47.661]]
+    },
+    {
+      "id": "west-seattle-link",
+      "name": "West Seattle Link Extension",
+      "mode": "train",
+      "modeLabel": "Link light rail",
+      "status": "in design",
+      "opening": "2032 target",
+      "headwayMin": 5,
+      "travelMin": 15,
+      "color": "#7b8cff",
+      "shape": [[-122.328,47.598],[-122.333,47.583],[-122.345,47.565],[-122.360,47.558],[-122.387,47.561]]
+    },
+    {
+      "id": "ballard-link",
+      "name": "Ballard Link Extension",
+      "mode": "train",
+      "modeLabel": "Link light rail",
+      "status": "in design",
+      "opening": "2039 target",
+      "headwayMin": 5,
+      "travelMin": 20,
+      "color": "#c06ad6",
+      "shape": [[-122.332,47.606],[-122.340,47.620],[-122.360,47.635],[-122.380,47.655],[-122.386,47.668]]
+    },
+    {
+      "id": "everett-link",
+      "name": "Everett Link Extension",
+      "mode": "train",
+      "modeLabel": "Link light rail",
+      "status": "in design",
+      "opening": "2036 target",
+      "headwayMin": 6,
+      "travelMin": 30,
+      "color": "#4cc9f0",
+      "shape": [[-122.310,47.816],[-122.290,47.860],[-122.250,47.910],[-122.220,47.950],[-122.200,47.977]]
     },
     {
       "id": "tacoma-dome-link",
@@ -255,8 +303,8 @@ window.MOTION_CONFIG = {
       "opening": "2030 target",
       "headwayMin": 6,
       "travelMin": 20,
-      "color": "#b6c5d4",
-      "shape": [[-122.31,47.317],[-122.36,47.280],[-122.42,47.240]]
+      "color": "#ff8a5c",
+      "shape": [[-122.304393,47.313895],[-122.299748,47.311440],[-122.300084,47.310606],[-122.306428,47.292427],[-122.309707,47.282410],[-122.316971,47.271615],[-122.327158,47.261351],[-122.334680,47.246365]]
     }
   ],
   "storageKey": "sea",

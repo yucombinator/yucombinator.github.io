@@ -42,6 +42,7 @@
       corridorBand: 'rgba(35,55,65,.10)',
       corridorLine: 'rgba(35,55,65,.38)',
       arrowOutline: '#f4f8f8',
+      futureCasing: 'rgba(30,50,60,.45)',
       rim: 'rgba(20,35,42,.32)',
       stationFill: '#ffffff',
       stationStroke: '#1b333d',
@@ -56,6 +57,7 @@
       corridorBand: 'rgba(232,242,238,.16)',
       corridorLine: 'rgba(232,242,238,.55)',
       arrowOutline: '#0a141b',
+      futureCasing: 'rgba(5,12,18,.55)',
       rim: 'rgba(255,255,255,.30)',
       stationFill: '#ffffff',
       stationStroke: '#0d1319',
@@ -866,14 +868,18 @@
         return [p.x, p.y];
       });
       if (xy.length < 2) continue;
-      octx.strokeStyle = project.color || '#9fb6c4';
-      octx.lineWidth = 1.7;
-      octx.globalAlpha = 0.5;
-      octx.setLineDash([5, 5]);
-      octx.beginPath();
-      octx.moveTo(xy[0][0], xy[0][1]);
-      for (let i = 1; i < xy.length; i++) octx.lineTo(xy[i][0], xy[i][1]);
-      octx.stroke();
+      const drawGhost = (width, color, alpha) => {
+        octx.strokeStyle = color;
+        octx.lineWidth = width;
+        octx.globalAlpha = alpha;
+        octx.setLineDash([7, 5]);
+        octx.beginPath();
+        octx.moveTo(xy[0][0], xy[0][1]);
+        for (let i = 1; i < xy.length; i++) octx.lineTo(xy[i][0], xy[i][1]);
+        octx.stroke();
+      };
+      drawGhost(4.8, CANVAS.futureCasing, 0.72);
+      drawGhost(2.5, project.color || '#9fb6c4', 0.95);
       futureHits.push({ xy, project });
 
       const travel = Math.max(300, (project.travelMin || 30) * 60);
@@ -887,9 +893,9 @@
           let f = (phase + (i * headway) / travel) % 1;
           if (reverse) f = 1 - f;
           const pt = futurePoint(xy, f);
-          octx.globalAlpha = 0.8;
+          octx.globalAlpha = 0.96;
           octx.beginPath();
-          arrowPath(octx, pt.x, pt.y, reverse ? pt.ang + Math.PI : pt.ang, 8, 3);
+          arrowPath(octx, pt.x, pt.y, reverse ? pt.ang + Math.PI : pt.ang, 10, 3.8);
           octx.fill();
           futureHits.push({ x: pt.x, y: pt.y, project });
         }
@@ -2188,7 +2194,10 @@
         if (project) {
           state.hoverTrip = null;
           state.dirty = true;
-          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(project.color || '#9fb6c4')}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>Under construction · target ${esc(project.opening || 'TBD')} · inferred ~${project.headwayMin || '—'} min</small>`;
+          const status = project.status || 'under construction';
+          const opening = project.opening || 'TBD';
+          const when = /^TBD/i.test(opening) ? esc(opening) : `target ${esc(opening)}`;
+          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(project.color || '#9fb6c4')}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · inferred ~${project.headwayMin || '—'} min</small>`;
           tip.style.display = 'block';
           const tw = tip.offsetWidth, th = tip.offsetHeight;
           tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
