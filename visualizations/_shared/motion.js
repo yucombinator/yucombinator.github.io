@@ -2722,6 +2722,12 @@
           return true;
         },
         stop() { stopFollow(); },
+        renderAt(t) {
+          setPlaying(false);
+          seek(t);
+          draw();
+          updateUI();
+        },
         active() { return !!follow; },
         stats() { return { frames: frameTicks, draws: drawTicks, now: performance.now() }; },
         reset() { frameTicks = 0; drawTicks = 0; },
