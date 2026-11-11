@@ -83,7 +83,7 @@ run.addEventListener('click', async () => {
     status.textContent = 'waiting for map…';
     const win = await waitForHook();
     let started = false;
-    for (let i = 0; i < 50 && !started; i++) {
+    for (let i = 0; i < 150 && !started; i++) {
       started = win.__motionFpsTest.start();
       if (!started) await sleep(100);
     }

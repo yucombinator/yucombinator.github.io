@@ -1091,10 +1091,8 @@
     const ll = mapObj.unproject([pos[0], pos[1]]);
     follow.lastLon = ll.lng; follow.lastLat = ll.lat;
     // Throttle camera jumps and the expensive whole-network reprojection.
-    if (now - follow.lastCam > 120) {
-      mapObj.setCenter(ll);
-      follow.lastCam = now;
-    }
+    mapObj.setCenter(ll);
+    follow.lastCam = now;
     if (now - follow.lastProj > 500) {
       needsProjection = true;
       follow.lastProj = now;

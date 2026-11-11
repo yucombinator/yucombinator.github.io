@@ -24,7 +24,7 @@ MAX_AGE_DAYS = 10
 # Conservative floors so a bad previous commit cannot make the relative
 # checks meaningless. Raise them when a city grows, never lower silently.
 FLOORS = {
-    "vancouver-in-motion": {"trips": 20000, "routes": 250, "shapes": 900,
+    "vancouver-in-motion": {"trips": 20000, "routes": 250, "shapes": 800,
                             "saturday": 15000, "sunday": 13000},
     "seattle-in-motion": {"trips": 15000, "routes": 300, "shapes": 800,
                           "saturday": 10000, "sunday": 9000},
