@@ -2709,6 +2709,18 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
+    if (new URLSearchParams(location.search).has('fpsTest')) {
+      window.__motionFpsTest = {
+        start() {
+          if (!activeCount) return false;
+          const k = 0;
+          startFollow('scheduled', { trip: pTrip[k], route: trips[pTrip[k] * 4 + 3] });
+          return true;
+        },
+        stop() { stopFollow(); },
+        active() { return !!follow; },
+      };
+    }
     mapObj.on('style.load', () => {
       if (!D) return;
       projectPieces();

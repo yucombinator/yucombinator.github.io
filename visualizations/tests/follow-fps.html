@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>In Motion · Follow FPS harness</title>
+<style>
+  html,body{margin:0;height:100%;background:#08131a;color:#d7e6e8;font:13px system-ui,sans-serif;overflow:hidden}
+  #bar{position:fixed;z-index:9;top:12px;left:12px;right:12px;display:flex;gap:8px;align-items:center;background:#0c1c25;border:1px solid #2a4550;border-radius:8px;padding:8px 10px;box-shadow:0 8px 30px #0008}
+  select,button{background:#102630;color:#d7e6e8;border:1px solid #34515c;border-radius:5px;padding:5px 8px;font:inherit}
+  button{cursor:pointer}button:disabled{opacity:.45;cursor:wait}
+  #out{margin-left:auto;font-variant-numeric:tabular-nums;color:#f5c26b}
+  iframe{position:absolute;inset:52px 0 0;width:100%;height:calc(100% - 52px);border:0}
+  small{color:#8da6ac}
+</style>
+<div id="bar">
+  <strong>Follow FPS</strong>
+  <select id="city">
+    <option value="toronto-in-motion">Toronto</option>
+    <option value="seattle-in-motion">Seattle</option>
+    <option value="vancouver-in-motion">Vancouver</option>
+    <option value="san-francisco-in-motion">San Francisco</option>
+  </select>
+  <label><input id="secs" type="number" min="2" max="30" value="6" style="width:54px"> s</label>
+  <button id="run">Start follow + measure</button>
+  <button id="stop" disabled>Stop</button>
+  <small id="status">ready</small>
+  <span id="out"></span>
+</div>
+<iframe id="cityFrame"></iframe>
+<script>
+const frame = document.getElementById('cityFrame');
+const city = document.getElementById('city');
+const run = document.getElementById('run');
+const stop = document.getElementById('stop');
+const out = document.getElementById('out');
+const status = document.getElementById('status');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function load() {
+  frame.src = `../${city.value}/?fpsTest=1`;
+  out.textContent = '';
+  status.textContent = 'loading city…';
+}
+city.addEventListener('change', load);
+load();
+
+async function waitForHook() {
+  for (let i = 0; i < 120; i++) {
+    const w = frame.contentWindow;
+    if (w && w.__motionFpsTest) return w;
+    await sleep(100);
+  }
+  throw new Error('timed out waiting for __motionFpsTest');
+}
+
+function sample(win, seconds) {
+  return new Promise((resolve) => {
+    const times = [];
+    let start = 0;
+    function tick(t) {
+      if (!start) start = t;
+      times.push(t);
+      if (t - start < seconds * 1000) requestAnimationFrame(tick);
+      else {
+        const elapsed = (t - start) / 1000;
+        const fps = (times.length - 1) / elapsed;
+        const deltas = times.slice(1).map((v, i) => v - times[i]).sort((a, b) => a - b);
+        const pct = (p) => deltas[Math.min(deltas.length - 1, Math.floor(deltas.length * p))] || 0;
+        resolve({ fps, frames: times.length - 1, seconds: elapsed, p50ms: pct(.5), p95ms: pct(.95), maxMs: deltas[deltas.length - 1] || 0 });
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+run.addEventListener('click', async () => {
+  run.disabled = true; stop.disabled = false;
+  try {
+    status.textContent = 'waiting for map…';
+    const win = await waitForHook();
+    let started = false;
+    for (let i = 0; i < 50 && !started; i++) {
+      started = win.__motionFpsTest.start();
+      if (!started) await sleep(100);
+    }
+    if (!started) throw new Error('no scheduled vehicle available to follow');
+    status.textContent = 'following · sampling…';
+    await sleep(400);
+    const result = await sample(win, Number(document.getElementById('secs').value) || 6);
+    out.textContent = `${result.fps.toFixed(1)} FPS · ${result.frames} frames · p95 ${result.p95ms.toFixed(1)} ms`;
+    status.textContent = 'done';
+    window.__fpsResult = { city: city.value, ...result };
+    console.log(window.__fpsResult);
+  } catch (err) {
+    status.textContent = String(err.message || err);
+    window.__fpsResult = { city: city.value, error: String(err.message || err) };
+  } finally {
+    run.disabled = false; stop.disabled = true;
+  }
+});
+stop.addEventListener('click', () => {
+  const w = frame.contentWindow;
+  if (w && w.__motionFpsTest) w.__motionFpsTest.stop();
+  status.textContent = 'stopped';
+  stop.disabled = true;
+});
+</script>
+</html>
