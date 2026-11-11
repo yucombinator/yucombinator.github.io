@@ -1004,6 +1004,18 @@ window.MOTION_CONFIG = {
           43.655
         ]
       ]
+    },
+    {
+      "id": "ion-stage-2",
+      "name": "ION Stage 2",
+      "mode": "lrt",
+      "modeLabel": "LRT",
+      "status": "in design",
+      "opening": "TBD",
+      "headwayMin": 8,
+      "travelMin": 30,
+      "color": "#7b8cff",
+      "shape": [[-80.444,43.421],[-80.410,43.400],[-80.380,43.390],[-80.350,43.370],[-80.312,43.358]]
     }
   ],
   "storageKey": "tim",
