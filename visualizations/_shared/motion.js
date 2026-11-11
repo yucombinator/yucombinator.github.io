@@ -1057,6 +1057,10 @@
     tip.style.top = Math.max(8, pos[1] - th - 16) + 'px';
     const ll = mapObj.unproject([pos[0], pos[1]]);
     mapObj.setCenter(ll);
+    // Continuous programmatic panning fires move events but never a moveend,
+    // so force the next frame to reproject the shape culling bounds.
+    needsProjection = true;
+    state.dirty = true;
   }
 
   function draw() {
