@@ -202,6 +202,8 @@ def classify(feed, route_id, route_type, route_color="", agency="", route_name="
     color = (route_color or "").strip().lstrip("#").lower()
     kind = feed.get("kind", "bus")
     fallback = feed.get("color", "2f6db3")
+    if feed["id"] == "actransit" and (route_short == "1T" or "Tempo" in route_name):
+        return ("brt", color or "e4572e")
     if feed["id"] == "sfmta":
         if route_id == "F":
             return ("streetcar", color or "b49a36")
@@ -234,7 +236,7 @@ CFG = {
     "zoneLabel": "PT",
     "lat0": 37.77,
     "sun": (37.7749, -122.4194),
-    "modes": ["subway", "lrt", "streetcar", "localbus", "gorail", "ferry"],
+    "modes": ["subway", "lrt", "streetcar", "localbus", "brt", "gorail", "ferry"],
     "railModes": ["subway", "lrt", "streetcar", "gorail", "ferry"],
     "feeds": [f for f in FEEDS if f["url"]],
     "classify": classify,

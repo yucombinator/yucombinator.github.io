@@ -11,10 +11,11 @@ window.MOTION_CONFIG = {
     { "key": "lrt", "label": "Light rail", "color": "#d7263d", "radius": 2.3 },
     { "key": "streetcar", "label": "Streetcar", "color": "#f28e2b", "radius": 2.0 },
     { "key": "localbus", "label": "Bus", "color": "#2f6db3", "radius": 1.35 },
+    { "key": "brt", "label": "BRT", "color": "#e4572e", "radius": 1.7 },
     { "key": "gorail", "label": "Regional rail", "color": "#e31837", "radius": 2.5 },
     { "key": "ferry", "label": "Ferry", "color": "#0ea5e9", "radius": 2.2 }
   ],
-  "busModes": ["localbus"],
+  "busModes": ["localbus", "brt"],
   "trainModes": ["subway", "lrt", "gorail"],
   "railModes": ["subway", "lrt", "streetcar", "gorail", "ferry"],
   "brandedModes": [],
@@ -24,6 +25,7 @@ window.MOTION_CONFIG = {
     "lrt": 20.0,
     "streetcar": 20.0,
     "localbus": 20.0,
+    "brt": 20.0,
     "gorail": 45.0,
     "ferry": 60.0
   },
@@ -47,6 +49,12 @@ window.MOTION_CONFIG = {
       "title": "Streetcar and cable car",
       "dot": "#f28e2b",
       "label": "Streetcar"
+    },
+    {
+      "mode": "brt",
+      "title": "Tempo BRT",
+      "dot": "#e4572e",
+      "label": "Tempo BRT"
     },
     {
       "mode": "localbus",
