@@ -2332,7 +2332,7 @@
       const scheduled = state.liveOn && !liveRouteSet.has(routeIds[trips[ti * 4 + 3]]);
       const speed = tripSegmentSpeed(ti, state.t);
       const speedText = speed
-        ? speed.dwell ? ' · dwell' : ` · ~${Math.round(speed.value)} ${SPEED_UNIT}`
+        ? speed.dwell ? ' · at stop' : ` · segment ~${Math.round(speed.value)} ${SPEED_UNIT}`
         : '';
       tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
       tip.style.display = 'block';
