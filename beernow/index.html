@@ -7,8 +7,8 @@
 <meta name="description" content="Rank every pack at your local Beer Store by millilitres of pure alcohol per dollar.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/app.css?v=2026-11-11b">
-<script type="module" src="js/app.js?v=2026-11-11b"></script>
+<link rel="stylesheet" href="css/app.css?v=2026-11-11c">
+<script type="module" src="js/app.js?v=2026-11-11c"></script>
 </head>
 <body>
 <div class="bubbles" id="bubbles" aria-hidden="true"></div>
@@ -103,9 +103,10 @@
 </footer>
 
 <script>
-  // Local development: point the page at `wrangler dev`, e.g.
-  // /beernow/?api=http://127.0.0.1:8787/beernow/api
-  window.BEERNOW_API = new URL(location.href).searchParams.get("api") || "/beernow/api";
+  // Override the API base, e.g. ?api=http://127.0.0.1:8799/beernow/api while
+  // running `wrangler dev`. Without it, js/api.js picks the deployed Worker.
+  const apiParam = new URL(location.href).searchParams.get("api");
+  if (apiParam) window.BEERNOW_API = apiParam;
 </script>
 </body>
 </html>

@@ -1,7 +1,13 @@
 // Thin client for the BeerNow Worker. Same origin in production; override with
 // ?api=… when running `wrangler dev` locally.
 
-const BASE = String(window.BEERNOW_API || "/beernow/api").replace(/\/+$/, "");
+// Same-origin when served from the live path (yuchenhou.com/beernow/); the
+// absolute Worker URL otherwise, so a plain checkout still works.
+const explicitBase = window.BEERNOW_API;
+const defaultBase = location.pathname.startsWith("/beernow/")
+  ? "/beernow/api"
+  : "https://yuchenhou.com/beernow/api";
+const BASE = String(explicitBase || defaultBase).replace(/\/+$/, "");
 
 async function getJson(path, signal) {
   const response = await fetch(`${BASE}${path}`, {
