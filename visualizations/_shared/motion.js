@@ -1017,7 +1017,7 @@
       stopFollow();
       return;
     }
-    follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, tipHtml: '' };
+    follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, lastTip: 0, tipHtml: '' };
     state.hoverTrip = null;
     if (value.route != null) {
       selectRoute(value.route, true);
@@ -1052,31 +1052,34 @@
     const pos = followScreenPos();
     if (!pos) return;
     const tip = $('tip');
-    let html;
-    if (follow.kind === 'scheduled') {
-      html = scheduledTipHTML(follow.trip);
-    } else {
-      const k = live.v.findIndex((row) => row[5] === follow.id);
-      if (k < 0) { stopFollow(); return; }
-      html = liveTipHTML(k);
-    }
-    if (html !== follow.tipHtml) {
-      tip.innerHTML = html;
-      follow.tipHtml = html;
+    const now = performance.now();
+    if (now - follow.lastTip > 250) {
+      let html;
+      if (follow.kind === 'scheduled') {
+        html = scheduledTipHTML(follow.trip);
+      } else {
+        const k = live.v.findIndex((row) => row[5] === follow.id);
+        if (k < 0) { stopFollow(); return; }
+        html = liveTipHTML(k);
+      }
+      if (html !== follow.tipHtml) {
+        tip.innerHTML = html;
+        follow.tipHtml = html;
+      }
+      follow.lastTip = now;
     }
     tip.style.display = 'block';
     const tw = tip.offsetWidth, th = tip.offsetHeight;
     tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, pos[0] + 16)) + 'px';
     tip.style.top = Math.max(8, pos[1] - th - 16) + 'px';
-    const now = performance.now();
     const ll = mapObj.unproject([pos[0], pos[1]]);
     follow.lastLon = ll.lng; follow.lastLat = ll.lat;
     // Throttle camera jumps and the expensive whole-network reprojection.
-    if (now - follow.lastCam > 80) {
+    if (now - follow.lastCam > 120) {
       mapObj.setCenter(ll);
       follow.lastCam = now;
     }
-    if (now - follow.lastProj > 200) {
+    if (now - follow.lastProj > 500) {
       needsProjection = true;
       follow.lastProj = now;
       state.dirty = true;
