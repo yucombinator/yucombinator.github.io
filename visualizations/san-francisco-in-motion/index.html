@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script>(function(){try{var s=localStorage.getItem('motion-theme');document.documentElement.dataset.theme=(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}})();</script>
-<link rel="stylesheet" href="../_shared/motion.css?v=f7577a649ae4">
+<link rel="stylesheet" href="../_shared/motion.css?v=866e22b7c76c">
 <style>
   :root{--accent:#f2c94c}
 </style>
@@ -88,7 +88,7 @@
       <span class="src-wrap">
         <span class="src-note" id="updated"></span>
         <span class="src-sep">·</span>
-        <button class="src linkish" type="button" data-sources>Data: Muni, BART and Caltrain GTFS</button>
+        <button class="src linkish" type="button" data-sources>Data: Bay Area GTFS</button>
         <span class="src-sep">·</span>
         <a class="src" href="https://openfreemap.org/" target="_blank" rel="noopener">Basemap © OpenFreeMap / OpenStreetMap</a>
         <span class="src-sep">·</span>
@@ -111,9 +111,10 @@
   <dialog id="about" aria-labelledby="aboutTitle">
     <button class="close" id="closeAbout" aria-label="Close">×</button>
     <h2 id="aboutTitle">San Francisco in Motion</h2>
-    <p>Every scheduled trip across San Francisco and the Bay Area — Muni buses, Muni Metro, the historic streetcars and cable cars, BART and Caltrain — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>Every scheduled trip across the Bay Area and Santa Cruz coast — Muni, BART (including eBART), Caltrain, AC Transit, VTA, SamTrans, Santa Cruz METRO, Golden Gate Transit, SMART, county buses, bridge shuttles and the bay ferries — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>Use the <b>Future</b> toggle in the legend to show planned and under-construction extensions as dashed ghost lines with approximate headways.</p>
     <p>This is mostly the timetable. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
-    <p>Data: Muni, BART and Caltrain GTFS feeds, used under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. Muni, BART and Caltrain routes use their published line colours where available; local buses are blue. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Data: GTFS feeds from Bay Area transit agencies, used under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. Rail lines use their published colours; regional buses are coloured by operator; ferries use distinct colours. Basemap © OpenFreeMap / OpenStreetMap.</p>
     <p>Open source: the code behind this series lives in the <a href="https://github.com/yucombinator/yucombinator.github.io/tree/main/visualizations" target="_blank" rel="noopener">visualizations folder on GitHub</a>.</p>
     <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
   </dialog>
@@ -122,18 +123,52 @@
     <button class="close" id="closeSources" aria-label="Close">×</button>
     <h2 id="sourcesTitle">Data sources</h2>
     <ul class="srclist">
+      <li>511 SF Bay Open Data — data provided by 511.org for regional feeds</li>
+      <li>Santa Cruz Metropolitan Transit District — Santa Cruz METRO</li>
+      <li>City of Santa Cruz — Santa Cruz Cruzer shuttle</li>
       <li>San Francisco Municipal Transportation Agency — Muni buses, Muni Metro, streetcars and cable cars</li>
       <li>Bay Area Rapid Transit — BART</li>
       <li>Peninsula Corridor Joint Powers Board — Caltrain</li>
+      <li>Alameda-Contra Costa Transit District — AC Transit</li>
+      <li>Santa Clara Valley Transportation Authority — VTA</li>
+      <li>San Mateo County Transit District — SamTrans</li>
+      <li>Golden Gate Bridge, Highway and Transportation District — Golden Gate Transit and Ferry</li>
+      <li>San Francisco Bay Ferry</li>
+      <li>Sonoma-Marin Area Rail Transit — SMART</li>
+      <li>Central Contra Costa Transit Authority — County Connection</li>
+      <li>Union City Transit</li>
+      <li>Western Contra Costa Transit Authority — WestCAT</li>
+      <li>Solano County Transit — SolTrans</li>
+      <li>Napa Valley Transportation Authority — VINE</li>
+      <li>Petaluma Transit</li>
+      <li>Fairfield and Suisun Transit</li>
+      <li>Rio Vista Delta Breeze</li>
+      <li>Sonoma County Transit</li>
+      <li>Santa Rosa CityBus</li>
+      <li>Marin Transit</li>
+      <li>Mission Bay Transportation Management Association</li>
+      <li>Tideline Water Taxi</li>
+      <li>Emery Go-Round</li>
+      <li>Mountain View MVgo</li>
+      <li>Capitol Corridor Joint Powers Authority</li>
+      <li>Altamont Corridor Express — ACE</li>
+      <li>Dumbarton Express</li>
+      <li>Tri Delta Transit</li>
+      <li>San Leandro LINKS</li>
+      <li>South San Francisco Shuttle</li>
+      <li>Vacaville City Coach</li>
+      <li>Livermore Amador Valley Transit Authority — Wheels</li>
+      <li>Commute.org shuttles</li>
+      <li>Stanford Marguerite Shuttle</li>
     </ul>
-    <p class="srclist-note">Muni, BART and Caltrain GTFS feeds are used under the operators' open data licences.</p>
+    <p class="srclist-note">GTFS feeds are used under the operators' open data licences.</p>
   </dialog>
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../_shared/version.js?v=f7577a649ae4"></script>
-<script src="../_shared/cities.js?v=f7577a649ae4"></script>
-<script src="city.js?v=f7577a649ae4"></script>
-<script src="../_shared/motion.js?v=f7577a649ae4"></script>
+<script src="../_shared/version.js?v=866e22b7c76c"></script>
+<script src="../_shared/cities.js?v=866e22b7c76c"></script>
+<script src="city.js?v=866e22b7c76c"></script>
+<script src="../_shared/motion.js?v=866e22b7c76c"></script>
 </body>
 </html>

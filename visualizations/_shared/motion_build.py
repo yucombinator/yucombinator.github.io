@@ -9,6 +9,7 @@ import csv
 import json
 import math
 import os
+import shutil
 import sys
 import urllib.request
 import zipfile
@@ -70,7 +71,7 @@ def feed_dir(feed, cache):
     """Download and unzip a feed if not cached; synthetic feeds may supply a writer."""
     path = os.path.join(cache, feed["id"])
     marker = os.path.join(path, ".ok")
-    if os.path.exists(marker):
+    if os.path.exists(marker) and os.path.exists(os.path.join(path, "routes.txt")):
         return path
     if feed.get("approx_writer"):
         feed["approx_writer"](path, feed)
@@ -92,6 +93,14 @@ def feed_dir(feed, cache):
     except zipfile.BadZipFile:
         print(f"  ! {feed['id']} did not return a zip", file=sys.stderr)
         return None
+    # Some agencies ship the GTFS files inside a dated top-level folder.
+    if not os.path.exists(os.path.join(path, "routes.txt")):
+        for entry in os.listdir(path):
+            child = os.path.join(path, entry)
+            if os.path.isdir(child) and os.path.exists(os.path.join(child, "routes.txt")):
+                for name in os.listdir(child):
+                    shutil.move(os.path.join(child, name), os.path.join(path, name))
+                break
     open(marker, "w").close()
     return path
 
@@ -102,7 +111,12 @@ def read_csv(path, name):
 
 
 def secs(hhmmss):
-    h, m, s = hhmmss.strip().split(":")
+    if not hhmmss or not hhmmss.strip():
+        return None
+    try:
+        h, m, s = hhmmss.strip().split(":")
+    except ValueError:
+        return None
     return int(h) * 3600 + int(m) * 60 + int(s)
 
 
@@ -322,6 +336,8 @@ def run(cfg):
                     continue
                 arr = secs(row["arrival_time"])
                 dep = secs(row["departure_time"])
+                if arr is None or dep is None:
+                    continue
                 if t["t0"] is None or dep < t["t0"]:
                     t["t0"] = dep
                 if t["t1"] is None or arr > t["t1"]:
