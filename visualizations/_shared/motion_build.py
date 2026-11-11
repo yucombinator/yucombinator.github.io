@@ -400,7 +400,7 @@ def run(cfg):
                     row.get("stop_name") or "",
                 )
         for sid, meta in stop_meta.items():
-            stop_meta_all[(feed["id"], sid)] = (meta[0], meta[1])
+            stop_meta_all[(feed["id"], sid)] = (meta[0], meta[1], meta[2])
         for tid, t in local_trips.items():
             a = stop_meta.get(t.get("first_stop") or "")
             b = stop_meta.get(t.get("last_stop") or "")
@@ -567,25 +567,40 @@ def run(cfg):
         b = nearest_frac(pts, cum, total, lon2 * KX, lat2 * KY)
         trip_offsets[(fid, tid)] = (round(a, 4), round(b, 4))
 
-    # Actual stop-to-stop schedules, normalized per trip and deduplicated by
-    # shape/stop pattern. This replaces the end-to-end + assumed-dwell model
-    # whenever a complete stop_times profile exists.
-    time_profiles = []
-    time_profile_index = {}
-    trip_time_profile = {}
+    # Actual stop-to-stop schedules. Choose the trip closest to the median
+    # duration for each shape/stop pattern, so an early slow trip does not set
+    # the speed for every train on that pattern.
+    pattern_candidates = {}
+    sorted_rows = {}
     for (fid, tid), rows in trip_times.items():
         meta = trip_meta.get((fid, tid))
         if not meta or len(rows) < 2:
             continue
-        shape_id = meta[0]
-        pts = projected.get((fid, shape_id))
-        if not pts or len(pts) < 2:
-            continue
         rows = sorted(rows, key=lambda r: r[0])
-        first_dep = rows[0][3]
-        last_arr = rows[-1][2]
+        first_dep, last_arr = rows[0][3], rows[-1][2]
         if first_dep is None or last_arr is None or last_arr <= first_dep:
             continue
+        key = (meta[0], tuple(r[1] for r in rows))
+        pattern_candidates.setdefault(key, []).append((last_arr - first_dep, fid, tid))
+        sorted_rows[(fid, tid)] = rows
+
+    selected = {}
+    for key, vals in pattern_candidates.items():
+        vals.sort()
+        median = vals[len(vals) // 2][0]
+        selected[key] = min(vals, key=lambda v: abs(v[0] - median))
+
+    time_profiles = []
+    profile_by_pattern = {}
+    for key, (_, fid, tid) in selected.items():
+        rows = sorted_rows.get((fid, tid))
+        meta = trip_meta.get((fid, tid))
+        if not rows or not meta:
+            continue
+        pts = projected.get((fid, meta[0]))
+        if not pts or len(pts) < 2:
+            continue
+        first_dep, last_arr = rows[0][3], rows[-1][2]
         total = last_arr - first_dep
         cum = [0.0]
         for i in range(1, len(pts)):
@@ -594,34 +609,37 @@ def run(cfg):
         shape_total = cum[-1]
         if shape_total <= 0:
             continue
-        pos, times = [], []
+        pos, times, names = [], [], []
         for i, (seq, sid, arr, dep) in enumerate(rows):
             sm = stop_meta_all.get((fid, sid))
             if sm is None or arr is None or dep is None:
-                pos, times = [], []
+                pos, times, names = [], [], []
                 break
             p = nearest_frac(pts, cum, shape_total, sm[1] * KX, sm[0] * KY)
             af = max(0.0, min(1.0, (arr - first_dep) / total))
             df = max(0.0, min(1.0, (dep - first_dep) / total))
             if i == 0:
-                pos.append(round(p, 4)); times.append(0.0)
+                pos.append(round(p, 4)); times.append(0.0); names.append(sm[2])
             else:
-                pos.append(round(p, 4)); times.append(round(af, 5))
+                pos.append(round(p, 4)); times.append(round(af, 5)); names.append(sm[2])
             if i < len(rows) - 1 and df > af + 0.00001:
-                pos.append(round(p, 4)); times.append(round(df, 5))
+                pos.append(round(p, 4)); times.append(round(df, 5)); names.append(sm[2])
         if len(pos) < 2:
             continue
-        # Normalize the final arrival to exactly 1 and keep times monotonic.
         times[-1] = 1.0
         if any(times[i] < times[i - 1] for i in range(1, len(times))):
             continue
-        sig = (shape_id, tuple(r[1] for r in rows))
-        idx = time_profile_index.get(sig)
-        if idx is None:
-            idx = len(time_profiles)
-            time_profile_index[sig] = idx
-            time_profiles.append([pos, times])
-        trip_time_profile[(fid, tid)] = idx
+        profile_by_pattern[key] = len(time_profiles)
+        time_profiles.append([pos, times, names])
+
+    trip_time_profile = {}
+    for (fid, tid), rows in sorted_rows.items():
+        meta = trip_meta.get((fid, tid))
+        if not meta:
+            continue
+        key = (meta[0], tuple(r[1] for r in rows))
+        if key in profile_by_pattern:
+            trip_time_profile[(fid, tid)] = profile_by_pattern[key]
 
     dwell_out = []
     profile_index = {}

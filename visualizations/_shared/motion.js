@@ -489,6 +489,7 @@
     if (tp < 0) return null;
     const prof = timeProfiles[tp];
     if (!prof || !prof[0] || prof[0].length < 2) return null;
+    const names = prof[2] || null;
     const t0 = trips[tripIdx * 4 + 1], t1 = trips[tripIdx * 4 + 2];
     if (t1 <= t0) return null;
     const u = Math.max(0, Math.min(1, (at - t0) / (t1 - t0)));
@@ -496,14 +497,19 @@
     let i = 1;
     while (i < times.length - 1 && times[i] < u) i++;
     const dt = times[i] - times[i - 1];
-    if (dt <= 0) return { value: 0, dwell: true };
+    if (dt <= 0) return { value: 0, dwell: true, stop: names && names[i] };
     const shapeIdx = trips[tripIdx * 4];
     const cum = ensureShapeCum()[shapeIdx];
     const shapeLen = cum && cum.length ? cum[cum.length - 1] : 0;
     const metres = Math.abs(pos[i] - pos[i - 1]) * shapeLen;
-    if (metres < 0.5) return { value: 0, dwell: true };
+    if (metres < 0.5) return { value: 0, dwell: true, stop: names && names[i] };
     const mps = metres / (dt * (t1 - t0));
-    return { value: SPEED_UNIT === 'km/h' ? mps * 3.6 : mps * 2.236936, dwell: false };
+    return {
+      value: SPEED_UNIT === 'km/h' ? mps * 3.6 : mps * 2.236936,
+      dwell: false,
+      from: names && names[i - 1],
+      to: names && names[i],
+    };
   }
 
   function dwellFrac(profileIdx, u, dur, mode) {
@@ -2332,7 +2338,11 @@
       const scheduled = state.liveOn && !liveRouteSet.has(routeIds[trips[ti * 4 + 3]]);
       const speed = tripSegmentSpeed(ti, state.t);
       const speedText = speed
-        ? speed.dwell ? ' · at stop' : ` · segment ~${Math.round(speed.value)} ${SPEED_UNIT}`
+        ? speed.dwell
+          ? ` · ${speed.stop ? 'at ' + esc(speed.stop) : 'at stop'}`
+          : speed.from && speed.to
+            ? ` · traveling between ${esc(speed.from)} to ${esc(speed.to)} · ~${Math.round(speed.value)} ${SPEED_UNIT}`
+            : ` · ~${Math.round(speed.value)} ${SPEED_UNIT}`
         : '';
       tip.innerHTML = `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
       tip.style.display = 'block';
