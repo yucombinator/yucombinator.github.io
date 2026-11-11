@@ -156,7 +156,7 @@ export async function buildLive(env = {}, now = Date.now()) {
         idx, Math.round(v.lat * 1e5) / 1e5, Math.round(v.lon * 1e5) / 1e5,
         v.bearing >= 0 ? Math.round(v.bearing * 10) / 10 : -1,
         v.ts ? v.ts * 1000 : 0,
-        v.id ? `${feed}:${v.id}` : '',
+        v.id ? `${feed === 'rg' ? '511' : feed}:${v.id}` : '',
       ]);
       kept++;
     }
