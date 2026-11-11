@@ -260,6 +260,80 @@ window.MOTION_CONFIG = {
   "liveUrls": [
     "https://toronto-live.seattle-live.workers.dev/live.json"
   ],
+  "future": [
+    {
+      "id": "ontario-line",
+      "name": "Ontario Line",
+      "mode": "train",
+      "modeLabel": "Subway",
+      "status": "under construction",
+      "opening": "2031 target",
+      "headwayMin": 3,
+      "travelMin": 35,
+      "color": "#c4b7d8",
+      "shape": [[-79.418,43.636],[-79.404,43.641],[-79.396,43.645],[-79.387,43.650],[-79.379,43.653],[-79.369,43.656],[-79.360,43.658],[-79.350,43.661],[-79.344,43.668],[-79.339,43.700],[-79.339,43.719]]
+    },
+    {
+      "id": "scarborough-extension",
+      "name": "Scarborough Subway Extension",
+      "mode": "train",
+      "modeLabel": "Subway",
+      "status": "under construction",
+      "opening": "2030 target",
+      "headwayMin": 5,
+      "travelMin": 15,
+      "color": "#b9c8d8",
+      "shape": [[-79.263,43.732],[-79.263,43.750],[-79.257,43.773],[-79.257,43.776]]
+    },
+    {
+      "id": "eglinton-west",
+      "name": "Eglinton Crosstown West Extension",
+      "mode": "lrt",
+      "modeLabel": "LRT",
+      "status": "under construction",
+      "opening": "2031 target",
+      "headwayMin": 4,
+      "travelMin": 25,
+      "color": "#c8b9d8",
+      "shape": [[-79.486,43.688],[-79.500,43.686],[-79.530,43.680],[-79.560,43.670],[-79.586,43.657]]
+    },
+    {
+      "id": "yonge-north",
+      "name": "Yonge North Subway Extension",
+      "mode": "train",
+      "modeLabel": "Subway",
+      "status": "under construction",
+      "opening": "2032 target",
+      "headwayMin": 4,
+      "travelMin": 20,
+      "color": "#b6c9d8",
+      "shape": [[-79.415,43.780],[-79.415,43.786],[-79.415,43.800],[-79.400,43.820],[-79.382,43.842]]
+    },
+    {
+      "id": "hamilton-lrt",
+      "name": "Hamilton LRT",
+      "mode": "lrt",
+      "modeLabel": "LRT",
+      "status": "under construction",
+      "opening": "2030 target",
+      "headwayMin": 5,
+      "travelMin": 25,
+      "color": "#c8c3a8",
+      "shape": [[-79.919,43.262],[-79.900,43.260],[-79.870,43.255],[-79.830,43.243],[-79.799,43.238]]
+    },
+    {
+      "id": "durham-scarborough-brt",
+      "name": "Durham–Scarborough Bus Rapid Transit",
+      "mode": "brt",
+      "modeLabel": "BRT",
+      "status": "under construction",
+      "opening": "2028 target",
+      "headwayMin": 8,
+      "travelMin": 35,
+      "color": "#d8c0a8",
+      "shape": [[-79.257,43.773],[-79.200,43.800],[-79.130,43.820],[-79.086,43.835],[-79.020,43.850]]
+    }
+  ],
   "storageKey": "tim",
   "railModes": [
     "subway",

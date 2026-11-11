@@ -26,6 +26,9 @@
   };
   document.documentElement.style.setProperty('--accent', ACCENT);
   const DAY = 86400;
+  const FUTURE = Array.isArray(CFG.future) ? CFG.future : [];
+  let futureOn = false;
+  let futureHits = [];
   const MAP_STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
   const MAP_STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/positron';
   const THEME_KEY = 'motion-theme';
@@ -826,6 +829,87 @@
     liveCount = m;
   }
 
+  function futurePoint(xy, f) {
+    let total = 0;
+    const lens = [];
+    for (let i = 1; i < xy.length; i++) {
+      const l = Math.hypot(xy[i][0] - xy[i - 1][0], xy[i][1] - xy[i - 1][1]);
+      lens.push(l);
+      total += l;
+    }
+    if (!total) return { x: xy[0][0], y: xy[0][1], ang: 0 };
+    let d = Math.max(0, Math.min(1, f)) * total;
+    for (let i = 1; i < xy.length; i++) {
+      const l = lens[i - 1];
+      if (d <= l || i === xy.length - 1) {
+        const k = l ? d / l : 0;
+        return {
+          x: xy[i - 1][0] + (xy[i][0] - xy[i - 1][0]) * k,
+          y: xy[i - 1][1] + (xy[i][1] - xy[i - 1][1]) * k,
+          ang: Math.atan2(xy[i][1] - xy[i - 1][1], xy[i][0] - xy[i - 1][0]),
+        };
+      }
+      d -= l;
+    }
+    return { x: xy[0][0], y: xy[0][1], ang: 0 };
+  }
+
+  function drawFuture() {
+    futureHits = [];
+    if (!futureOn || !FUTURE.length || !mapObj) return;
+    octx.save();
+    octx.lineCap = 'round';
+    octx.lineJoin = 'round';
+    for (const project of FUTURE) {
+      const xy = (project.shape || []).map(([lon, lat]) => {
+        const p = mapObj.project([lon, lat]);
+        return [p.x, p.y];
+      });
+      if (xy.length < 2) continue;
+      octx.strokeStyle = project.color || '#9fb6c4';
+      octx.lineWidth = 1.7;
+      octx.globalAlpha = 0.5;
+      octx.setLineDash([5, 5]);
+      octx.beginPath();
+      octx.moveTo(xy[0][0], xy[0][1]);
+      for (let i = 1; i < xy.length; i++) octx.lineTo(xy[i][0], xy[i][1]);
+      octx.stroke();
+      futureHits.push({ xy, project });
+
+      const travel = Math.max(300, (project.travelMin || 30) * 60);
+      const headway = Math.max(120, (project.headwayMin || 10) * 60);
+      const count = Math.max(1, Math.min(6, Math.ceil(travel / headway)));
+      const phase = (state.t % travel) / travel;
+      octx.setLineDash([]);
+      octx.fillStyle = project.color || '#9fb6c4';
+      for (const reverse of [false, true]) {
+        for (let i = 0; i < count; i++) {
+          let f = (phase + (i * headway) / travel) % 1;
+          if (reverse) f = 1 - f;
+          const pt = futurePoint(xy, f);
+          octx.globalAlpha = 0.8;
+          octx.beginPath();
+          arrowPath(octx, pt.x, pt.y, reverse ? pt.ang + Math.PI : pt.ang, 8, 3);
+          octx.fill();
+          futureHits.push({ x: pt.x, y: pt.y, project });
+        }
+      }
+    }
+    octx.restore();
+  }
+
+  function futureAt(mx, my) {
+    for (const hit of futureHits) {
+      if (hit.x == null) continue;
+      if (Math.hypot(hit.x - mx, hit.y - my) < 18) return hit.project;
+    }
+    for (const hit of futureHits) {
+      if (!hit.xy) continue;
+      if (distToPolyline(hit.xy, mx, my) < 7) return hit.project;
+    }
+    return null;
+  }
+
   function draw() {
     // Live positions are projected for this exact frame. Unlike scheduled
     // arrows they must not be transformed by the in-flight affine estimate,
@@ -1104,6 +1188,8 @@
       }
       octx.globalAlpha = 1;
     }
+
+    drawFuture();
 
     if (selected >= 0 && selStops) {
       const col = slotColors[routeSlot[selected]];
@@ -1952,6 +2038,18 @@
       btn.appendChild(n);
       box.appendChild(btn);
     }
+    if (FUTURE.length) {
+      const btn = document.createElement('button');
+      btn.dataset.future = '1';
+      btn.setAttribute('aria-pressed', String(futureOn));
+      btn.title = 'Under-construction projects — ghost layer with inferred frequencies';
+      const glyph = document.createElement('span');
+      glyph.className = 'dot';
+      glyph.style.background = 'linear-gradient(90deg,#9fb6c4,#d6e4ea)';
+      btn.appendChild(glyph);
+      btn.appendChild(document.createTextNode('Future'));
+      box.appendChild(btn);
+    }
   }
 
   function buildCityMenu() {
@@ -2058,6 +2156,13 @@
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
 
     $('legend').addEventListener('click', (e) => {
+      const futureBtn = e.target.closest('button[data-future]');
+      if (futureBtn) {
+        futureOn = !futureOn;
+        futureBtn.setAttribute('aria-pressed', String(futureOn));
+        state.dirty = true;
+        return;
+      }
       const btn = e.target.closest('button[data-mode]');
       if (!btn) return;
       const m = btn.dataset.mode;
@@ -2077,6 +2182,20 @@
         if (d < bestD) { bestD = d; best = k; }
       }
       const tip = $('tip');
+
+      if (best < 0 && futureOn) {
+        const project = futureAt(mx, my);
+        if (project) {
+          state.hoverTrip = null;
+          state.dirty = true;
+          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(project.color || '#9fb6c4')}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>Under construction · target ${esc(project.opening || 'TBD')} · inferred ~${project.headwayMin || '—'} min</small>`;
+          tip.style.display = 'block';
+          const tw = tip.offsetWidth, th = tip.offsetHeight;
+          tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
+          tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
+          return;
+        }
+      }
 
       if (best < 0 && corridors) {
         const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;

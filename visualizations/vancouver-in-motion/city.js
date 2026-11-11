@@ -159,6 +159,32 @@ window.MOTION_CONFIG = {
       "label": "Ferry"
     }
   ],
+  "future": [
+    {
+      "id": "broadway-subway",
+      "name": "Broadway Subway",
+      "mode": "lrt",
+      "modeLabel": "SkyTrain extension",
+      "status": "under construction",
+      "opening": "2027 target",
+      "headwayMin": 3,
+      "travelMin": 15,
+      "color": "#b8cbd8",
+      "shape": [[-123.0786,49.2656],[-123.091,49.2653],[-123.1005,49.263],[-123.114,49.263],[-123.128,49.263],[-123.153,49.263]]
+    },
+    {
+      "id": "surrey-langley",
+      "name": "Surrey Langley SkyTrain",
+      "mode": "train",
+      "modeLabel": "SkyTrain extension",
+      "status": "under construction",
+      "opening": "2029 target",
+      "headwayMin": 6,
+      "travelMin": 35,
+      "color": "#aec8bd",
+      "shape": [[-122.8449,49.1053],[-122.800,49.104],[-122.750,49.104],[-122.700,49.104],[-122.660,49.104]]
+    }
+  ],
   "storageKey": "van",
   "railModes": [
     "subway",

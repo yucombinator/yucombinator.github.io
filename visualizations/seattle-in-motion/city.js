@@ -209,6 +209,56 @@ window.MOTION_CONFIG = {
   "liveUrls": [
     "https://seattle-live.seattle-live.workers.dev/live.json"
   ],
+  "future": [
+    {
+      "id": "stride-s1",
+      "name": "Stride S1",
+      "mode": "brt",
+      "modeLabel": "BRT",
+      "status": "under construction",
+      "opening": "2029 target",
+      "headwayMin": 10,
+      "travelMin": 45,
+      "color": "#c8b8a0",
+      "shape": [[-122.31,47.816],[-122.25,47.780],[-122.20,47.730],[-122.19,47.670],[-122.20,47.615]]
+    },
+    {
+      "id": "stride-s2",
+      "name": "Stride S2",
+      "mode": "brt",
+      "modeLabel": "BRT",
+      "status": "under construction",
+      "opening": "2029 target",
+      "headwayMin": 10,
+      "travelMin": 40,
+      "color": "#d2c2aa",
+      "shape": [[-122.34,47.470],[-122.28,47.480],[-122.22,47.530],[-122.20,47.615]]
+    },
+    {
+      "id": "rapidride-j",
+      "name": "RapidRide J Line",
+      "mode": "brt",
+      "modeLabel": "BRT",
+      "status": "under construction",
+      "opening": "2027 target",
+      "headwayMin": 8,
+      "travelMin": 25,
+      "color": "#d6b8a0",
+      "shape": [[-122.332,47.606],[-122.328,47.620],[-122.325,47.640],[-122.313,47.661]]
+    },
+    {
+      "id": "tacoma-dome-link",
+      "name": "Tacoma Dome Link Extension",
+      "mode": "train",
+      "modeLabel": "Link light rail",
+      "status": "under construction",
+      "opening": "2030 target",
+      "headwayMin": 6,
+      "travelMin": 20,
+      "color": "#b6c5d4",
+      "shape": [[-122.31,47.317],[-122.36,47.280],[-122.42,47.240]]
+    }
+  ],
   "storageKey": "sea",
   "railModes": [
     "lrt",
