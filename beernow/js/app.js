@@ -359,4 +359,28 @@ async function start() {
   }
 }
 
+function startBubbles() {
+  const layer = document.querySelector("#bubbles");
+  if (!layer || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const count = Math.round(Math.min(30, Math.max(14, window.innerWidth / 48)));
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < count; index += 1) {
+    const size = 6 + Math.random() * 16;
+    const bubble = document.createElement("span");
+    bubble.className = "bubble";
+    bubble.style.left = `${(Math.random() * 100).toFixed(1)}%`;
+    bubble.style.setProperty("--size", `${size.toFixed(0)}px`);
+    bubble.style.setProperty("--drift", `${(Math.random() * 120 - 60).toFixed(0)}px`);
+    bubble.style.setProperty("--duration", `${(10 + Math.random() * 12).toFixed(1)}s`);
+    bubble.style.setProperty("--delay", `${(-Math.random() * 24).toFixed(1)}s`);
+    bubble.style.setProperty("--opacity", (0.3 + Math.random() * 0.32).toFixed(2));
+    fragment.append(bubble);
+  }
+
+  layer.append(fragment);
+}
+
+startBubbles();
 start();

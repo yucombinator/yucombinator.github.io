@@ -20,7 +20,9 @@ browser ──GET /beernow/ ──────────────► GitHub
 ```
 
 The page is plain HTML, CSS, and ES modules — no build step, no framework. The
-Worker keeps the static page same-origin and hides the upstream shapes.
+Worker keeps the static page same-origin and hides the upstream shapes. The
+rising bubbles from the 2015 page are back as a fixed, click-through CSS layer;
+they are not created when `prefers-reduced-motion: reduce` is set.
 
 ### API
 
@@ -78,7 +80,7 @@ itself is served dynamically.
 
 ## Layout
 
-    index.html        page shell
+    index.html        page shell (also the rising-bubble background layer)
     css/app.css       theme (light/dark), table, combobox
     js/api.js         Worker client
     js/app.js         store search, hash routing, rendering
