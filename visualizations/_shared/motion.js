@@ -82,6 +82,7 @@
   const chartLine = $('chartline');
   const lineCtx = chartLine.getContext('2d');
 
+  let follow = null;              // { kind: 'scheduled'|'live', trip?, id? }
   const state = {
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -988,6 +989,76 @@
     return `<div class="m"><span class="cd" style="background:${slotColors[slotOfTrip[ti]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>trip ${fmt(trips[ti * 4 + 1])}–${fmt(trips[ti * 4 + 2])}${speedText}${scheduled ? ' · <span class="sched">(scheduled)</span>' : ''}</small>`;
   }
 
+  function liveTipHTML(lb) {
+    const ptr = liveRoutePtr[lb];
+    if (ptr < 0) return '';
+    const route = D.routes[routeIds[ptr]];
+    const mode = MODES[routeMode[ptr]];
+    const row = live.v[lb];
+    const updated = row[4] ? cityClock(row[4]).hm : '';
+    return `<div class="m"><span class="cd" style="background:${slotColors[liveScreen[lb * 4 + 3]]}"></span>${esc(route.a || '')} · ${MODE_LABEL[mode] || mode}${route.s ? ' · ' + esc(route.s) : ''}</div><strong>${esc(route.l)}</strong><small>Live vehicle${row[5] ? ' ' + esc(row[5]) : ''}${updated ? ' · updated ' + updated : ''}</small>`;
+  }
+
+  function stopFollow() {
+    if (!follow) return;
+    follow = null;
+    state.hoverTrip = null;
+    const tip = $('tip');
+    if (tip) tip.style.display = 'none';
+    state.dirty = true;
+  }
+
+  function startFollow(kind, value) {
+    if (follow && follow.kind === kind && follow.trip === value.trip && follow.id === value.id) {
+      stopFollow();
+      return;
+    }
+    follow = { kind, ...value };
+    state.hoverTrip = null;
+    selected = -1;
+    selStops = null;
+    $('panelMain').hidden = false;
+    $('routePanel').hidden = true;
+    state.dirty = true;
+  }
+
+  function followScreenPos() {
+    if (!follow) return null;
+    if (follow.kind === 'scheduled') {
+      for (let k = 0; k < activeCount; k++) {
+        if (pTrip[k] === follow.trip) return [px[k], py[k]];
+      }
+    } else if (follow.kind === 'live' && liveScreen && liveCount) {
+      for (let k = 0; k < liveCount; k++) {
+        if (live.v[k][5] === follow.id) {
+          return [liveScreen[k * 4] * aff.sx + aff.ox,
+                  liveScreen[k * 4 + 1] * aff.sy + aff.oy];
+        }
+      }
+    }
+    return null;
+  }
+
+  function updateFollow() {
+    if (!follow || !mapObj) return;
+    const pos = followScreenPos();
+    if (!pos) { stopFollow(); return; }
+    const tip = $('tip');
+    if (follow.kind === 'scheduled') {
+      tip.innerHTML = scheduledTipHTML(follow.trip);
+    } else {
+      const k = live.v.findIndex((row) => row[5] === follow.id);
+      if (k < 0) { stopFollow(); return; }
+      tip.innerHTML = liveTipHTML(k);
+    }
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, pos[0] + 16)) + 'px';
+    tip.style.top = Math.max(8, pos[1] - th - 16) + 'px';
+    const ll = mapObj.unproject([pos[0], pos[1]]);
+    mapObj.setCenter(ll);
+  }
+
   function draw() {
     // Live positions are projected for this exact frame. Unlike scheduled
     // arrows they must not be transformed by the in-flight affine estimate,
@@ -1385,7 +1456,9 @@
       }
     }
 
-    if (state.hoverTrip != null) {
+    if (follow) {
+      updateFollow();
+    } else if (state.hoverTrip != null) {
       const tip = $('tip');
       if (tip && tip.style.display !== 'none') tip.innerHTML = scheduledTipHTML(state.hoverTrip);
     }
@@ -1580,6 +1653,7 @@
   }
 
   async function activateDay(key) {
+    if (follow) stopFollow();
     if (!dayCache[key]) {
       const btn = document.querySelector(`#days button[data-day="${key}"]`);
       if (btn) btn.setAttribute('aria-busy', 'true');
@@ -1852,7 +1926,10 @@
         const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
         if (d < ld) { ld = d; lb = k; }
       }
-      if (lb >= 0 && liveRoutePtr[lb] >= 0) { selectRoute(liveRoutePtr[lb]); return; }
+      if (lb >= 0 && liveRoutePtr[lb] >= 0) {
+        startFollow('live', { id: live.v[lb][5] });
+        return;
+      }
     }
 
     let best = -1, bestD = 13;
@@ -1860,7 +1937,10 @@
       const d = Math.hypot(px[k] - mx, py[k] - my);
       if (d < bestD) { bestD = d; best = k; }
     }
-    if (best >= 0) { selectRoute(trips[pTrip[best] * 4 + 3]); return; }
+    if (best >= 0) {
+      startFollow('scheduled', { trip: pTrip[best] });
+      return;
+    }
 
     let hit = -1, hitD = 7;
     for (let i = 0; i < view.screenShapes.length; i++) {
@@ -1872,7 +1952,8 @@
       const d = distToPolyline(shape.xy, bx, by);
       if (d < hitD) { hitD = d; hit = route; }
     }
-    if (hit >= 0) { selectRoute(hit); return; }
+    if (hit >= 0) { stopFollow(); selectRoute(hit); return; }
+    stopFollow();
     clearSelection();
   }
 
@@ -2220,7 +2301,7 @@
     $('rClose').addEventListener('click', clearSelection);
     window.addEventListener('keydown', (e) => {
       if (document.querySelector('dialog[open]')) return;
-      if (e.key === 'Escape') { clearSelection(); return; }
+      if (e.key === 'Escape') { stopFollow(); clearSelection(); return; }
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
       if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea,dialog')) return;
       if (!activeRoutes || !activeRoutes.size) return;
@@ -2289,6 +2370,7 @@
         if (d < bestD) { bestD = d; best = k; }
       }
       const tip = $('tip');
+      if (follow) return;
 
       if (state.liveOn && liveScreen && liveCount) {
         const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
@@ -2363,7 +2445,7 @@
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
       tip.style.top = Math.max(8, e.clientY - th - 14) + 'px';
     });
-    mapEl.addEventListener('pointerleave', () => { state.hoverTrip = null; state.dirty = true; $('tip').style.display = 'none'; });
+    mapEl.addEventListener('pointerleave', () => { if (follow) return; state.hoverTrip = null; state.dirty = true; $('tip').style.display = 'none'; });
 
     chartLine.addEventListener('pointerdown', seekFromChart);
     chartLine.addEventListener('pointermove', (e) => { if (e.buttons) seekFromChart(e); });
@@ -2542,6 +2624,7 @@
       pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
       antialias: false,
     });
+    mapObj.on('dragstart', () => stopFollow());
     mapObj.on('load', () => {
       mapObj.touchZoomRotate.disableRotation();
       const F = D.fit;
