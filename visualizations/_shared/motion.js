@@ -2050,7 +2050,7 @@
       const btn = document.createElement('button');
       btn.dataset.future = '1';
       btn.setAttribute('aria-pressed', String(futureOn));
-      btn.title = 'Under-construction projects — ghost layer with inferred frequencies';
+      btn.title = 'Under-construction projects — ghost layer with approximate headways';
       const glyph = document.createElement('span');
       glyph.className = 'dot';
       glyph.style.background = 'linear-gradient(90deg,#8fb3c4,#c4dce6)';
@@ -2199,7 +2199,7 @@
           const status = project.status || 'under construction';
           const opening = project.opening || 'TBD';
           const when = /^TBD/i.test(opening) ? esc(opening) : `target ${esc(opening)}`;
-          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(CANVAS.futureLine)}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · inferred ~${project.headwayMin || '—'} min</small>`;
+          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(CANVAS.futureLine)}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · ${project.headwayMin || '—'} min headway</small>`;
           tip.style.display = 'block';
           const tw = tip.offsetWidth, th = tip.offsetHeight;
           tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
