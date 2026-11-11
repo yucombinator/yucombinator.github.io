@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>San Francisco in Motion — Yu Chen Hou</title>
+<meta name="description" content="Every scheduled trip across San Francisco and the Bay Area as moving arrows, on a 24-hour clock.">
+<meta name="author" content="Yu Chen Hou">
+<meta property="og:title" content="San Francisco in Motion">
+<meta property="og:description" content="Every scheduled trip across San Francisco and the Bay Area as moving arrows.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script>(function(){try{var s=localStorage.getItem('motion-theme');document.documentElement.dataset.theme=(s==='light'||s==='dark')?s:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}})();</script>
+<link rel="stylesheet" href="../_shared/motion.css?v=f7577a649ae4">
+<style>
+  :root{--accent:#f2c94c}
+</style>
+</head>
+<body>
+<main id="app">
+  <div id="map" tabindex="-1" aria-label="Map of scheduled transit across San Francisco and the Bay Area"></div>
+  <div class="basemap-scrim" aria-hidden="true"></div>
+  <canvas id="rail" aria-hidden="true"></canvas>
+  <canvas id="overlay" aria-hidden="true"></canvas>
+  <div class="vignette"></div>
+
+  <header>
+    <div class="brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17.2 5.8 H9.9 a2.9 2.9 0 0 0 0 5.8 h4.2 a2.9 2.9 0 0 1 0 5.8 H6.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg> <span class="city-wrap" id="cityWrap"></span> in Motion</div>
+    <div class="hright">
+      <button class="about-btn" id="aboutBtn">About</button>
+    </div>
+  </header>
+
+  <div class="meta">
+    <div class="day" id="dayLabel">—</div>
+    <div class="sub">Every scheduled trip across San Francisco and the Bay Area, as moving arrows. Drag or scroll to explore.</div>
+  </div>
+
+  <div id="tip" role="status" aria-live="polite"></div>
+
+  <section class="panel">
+    <button class="panel-toggle" id="panelToggle" aria-expanded="true" aria-controls="panelMain" aria-label="Collapse panel">
+      <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 L6 6.5 L11 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div id="panelMain">
+    <div class="row">
+      <details class="legend-fold" id="legendFold" open>
+        <summary class="legend-summary">Legend</summary>
+        <div class="legend" id="legend"></div>
+      </details>
+      <div class="controls">
+        <div class="days" id="days" role="group" aria-label="Service day">
+          <button data-day="weekday" aria-pressed="true">Weekday</button>
+          <button data-day="saturday" aria-pressed="false">Sat</button>
+          <button data-day="sunday" aria-pressed="false">Sun</button>
+        </div>
+        <div class="clock"><span id="clock">07:00</span><small id="zone">PST</small></div>
+        <button class="live" id="liveBtn" type="button" aria-pressed="false" hidden title="Show live vehicle positions"><span class="live-dot" aria-hidden="true"></span>Live</button>
+        <div class="speeds" id="speed" role="group" aria-label="Playback">
+          <button class="pp" data-play="toggle" aria-pressed="false" aria-label="Pause">
+            <svg class="ic-pause" viewBox="0 0 9 10" aria-hidden="true"><rect x="1" y="0" width="2.4" height="10" rx="1"/><rect x="5.6" y="0" width="2.4" height="10" rx="1"/></svg>
+            <svg class="ic-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0L8 5L0 10Z"/></svg>
+          </button>
+          <span class="speed-sep" aria-hidden="true"></span>
+          <button data-speed="24" aria-pressed="true" aria-label="0.5× speed" title="0.5× · 24h in 60 min"><svg viewBox="0 0 6 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/></svg></button>
+          <button data-speed="48" aria-pressed="false" aria-label="1× speed" title="1× · 24h in 30 min"><svg viewBox="0 0 14.2 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/></svg></button>
+          <button data-speed="120" aria-pressed="false" aria-label="2.5× speed" title="2.5× · 24h in 12 min"><svg viewBox="0 0 22.4 9" aria-hidden="true"><path d="M0 0L6 4.5L0 9Z"/><path d="M8.2 0L14.2 4.5L8.2 9Z"/><path d="M16.4 0L22.4 4.5L16.4 9Z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chartwrap" title="Scheduled departures per 10 minutes — filtered by the mode toggles"><canvas id="chart" role="img" aria-label="Scheduled departures per 10 minutes"></canvas><canvas id="chartline"></canvas></div>
+
+    <input class="scrub" id="scrub" type="range" min="0" max="86400" step="60" value="25200" aria-label="Time of day">
+    <div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+
+    <div class="foot">
+      <div class="stats">
+        <span>On the road <b id="s-active">0</b></span>
+        <span>Trips started <b id="s-started">0</b> / <b id="s-total">—</b></span>
+        <span>Peak hour <b>—</b> · — vehicles</span>
+        <span id="liveNote" aria-live="polite"></span>
+      </div>
+      <span class="src-wrap">
+        <span class="src-note" id="updated"></span>
+        <span class="src-sep">·</span>
+        <button class="src linkish" type="button" data-sources>Data: Muni, BART and Caltrain GTFS</button>
+        <span class="src-sep">·</span>
+        <a class="src" href="https://openfreemap.org/" target="_blank" rel="noopener">Basemap © OpenFreeMap / OpenStreetMap</a>
+        <span class="src-sep">·</span>
+        <a class="src" href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Inspired by Montreal in Motion (Allemanns Data)</a>
+      </span>
+    </div>
+    </div>
+    <div id="routePanel" role="region" aria-labelledby="rName" hidden>
+      <div class="rhead">
+        <span class="rdot" id="rDot" aria-hidden="true"></span>
+        <div class="rtitle"><b id="rName">Route</b><span id="rMeta"></span></div>
+        <button class="rclose" id="rClose" aria-label="Close route details">×</button>
+      </div>
+      <div class="rstats" id="rStats" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div id="loading"><span>Loading trips…</span></div>
+
+  <dialog id="about" aria-labelledby="aboutTitle">
+    <button class="close" id="closeAbout" aria-label="Close">×</button>
+    <h2 id="aboutTitle">San Francisco in Motion</h2>
+    <p>Every scheduled trip across San Francisco and the Bay Area — Muni buses, Muni Metro, the historic streetcars and cable cars, BART and Caltrain — drawn as arrows moving along their routes. Switch between the latest weekday, Saturday and Sunday, and click any arrow or line for that route's stops and stats.</p>
+    <p>This is mostly the timetable. Each arrow is interpolated along its GTFS shape between its first and last stop time; delays and cancellations are not included. The bar chart counts scheduled departures per 10 minutes for the modes you enable.</p>
+    <p>Data: Muni, BART and Caltrain GTFS feeds, used under their open data licences. <button class="linkish" id="sourcesBtn">See the full list</button>. Muni, BART and Caltrain routes use their published line colours where available; local buses are blue. Basemap © OpenFreeMap / OpenStreetMap.</p>
+    <p>Open source: the code behind this series lives in the <a href="https://github.com/yucombinator/yucombinator.github.io/tree/main/visualizations" target="_blank" rel="noopener">visualizations folder on GitHub</a>.</p>
+    <p>Inspired by <a href="https://allemannsdata.com/examples/montreal_in_motion/" target="_blank" rel="noopener">Montreal in Motion</a> by <a href="https://allemannsdata.com/" target="_blank" rel="noopener">Allemanns Data</a>. Built by <a href="https://yuchenhou.com" target="_blank" rel="noopener">Yu Chen Hou</a>.</p>
+  </dialog>
+
+  <dialog id="sources" aria-labelledby="sourcesTitle">
+    <button class="close" id="closeSources" aria-label="Close">×</button>
+    <h2 id="sourcesTitle">Data sources</h2>
+    <ul class="srclist">
+      <li>San Francisco Municipal Transportation Agency — Muni buses, Muni Metro, streetcars and cable cars</li>
+      <li>Bay Area Rapid Transit — BART</li>
+      <li>Peninsula Corridor Joint Powers Board — Caltrain</li>
+    </ul>
+    <p class="srclist-note">Muni, BART and Caltrain GTFS feeds are used under the operators' open data licences.</p>
+  </dialog>
+</main>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="../_shared/version.js?v=f7577a649ae4"></script>
+<script src="../_shared/cities.js?v=f7577a649ae4"></script>
+<script src="city.js?v=f7577a649ae4"></script>
+<script src="../_shared/motion.js?v=f7577a649ae4"></script>
+</body>
+</html>

@@ -313,3 +313,4 @@
     .legend-fold[open] .legend-summary::before{transform:rotate(90deg)}
     .legend-fold:not([open]) .legend{display:none}
   }
+  .live[hidden]{display:none}
