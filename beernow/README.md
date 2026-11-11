@@ -72,6 +72,10 @@ Static files deploy with the website repo: commit `beernow/` to `main` and
 GitHub Pages publishes it. Wrangler uses the `yuchenhou.com` zone in the
 `Houyuchen66@gmail.com` Cloudflare account.
 
+Cloudflare caches GitHub Pages assets for four hours, so bump the `?v=` query on
+`css/app.css` and `js/app.js` in `index.html` when you change them; the HTML
+itself is served dynamically.
+
 ## Layout
 
     index.html        page shell
