@@ -1019,10 +1019,14 @@
     }
     follow = { kind, ...value };
     state.hoverTrip = null;
-    selected = -1;
-    selStops = null;
-    $('panelMain').hidden = false;
-    $('routePanel').hidden = true;
+    if (value.route != null) {
+      selectRoute(value.route, true);
+    } else {
+      selected = -1;
+      selStops = null;
+      $('panelMain').hidden = false;
+      $('routePanel').hidden = true;
+    }
     state.dirty = true;
   }
 
@@ -1399,7 +1403,11 @@
           const bx = sx(i) + dx * sr * 3.2;
           const by = sy(i) + dy * sr * 3.2;
           octx.beginPath();
-          octx.arc(bx, by, br, 0, Math.PI * 2);
+          if (selMode === 'gorail' || selMode === 'up') {
+            octx.rect(bx - br, by - br, br * 2, br * 2);
+          } else {
+            octx.arc(bx, by, br, 0, Math.PI * 2);
+          }
           octx.fillStyle = col;
           octx.fill();
           octx.strokeStyle = CANVAS.badgeFill;
@@ -1935,7 +1943,7 @@
         if (d < ld) { ld = d; lb = k; }
       }
       if (lb >= 0 && liveRoutePtr[lb] >= 0) {
-        startFollow('live', { id: live.v[lb][5] });
+        startFollow('live', { id: live.v[lb][5], route: liveRoutePtr[lb] });
         return;
       }
     }
@@ -1946,7 +1954,7 @@
       if (d < bestD) { bestD = d; best = k; }
     }
     if (best >= 0) {
-      startFollow('scheduled', { trip: pTrip[best] });
+      startFollow('scheduled', { trip: pTrip[best], route: trips[pTrip[best] * 4 + 3] });
       return;
     }
 
@@ -2218,7 +2226,7 @@
         glyph.className = 'dot';
         glyph.style.background = item.dot;
       } else {
-        glyph.className = 'swatches' + (item.round ? ' round' : '');
+        glyph.className = 'swatches';
         for (const c of item.swatches || []) {
           const i = document.createElement('i');
           i.style.background = c;
