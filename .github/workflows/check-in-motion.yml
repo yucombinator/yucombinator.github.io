@@ -1,6 +1,7 @@
 name: Check In Motion framework
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "visualizations/**"
