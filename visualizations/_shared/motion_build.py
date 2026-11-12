@@ -194,6 +194,87 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def interpolate_stop_times(rows, stop_meta, offset=0):
+    """Fill blank stop times between published timepoints.
+
+    rows: iterable of (seq, stop_id, arrival, departure), where arrival and
+    departure may be None. stop_meta maps stop_id -> (lat, lon).
+    Returns rows as [seq, stop_id, arrival, departure, published], sorted by
+    sequence, or None when fewer than two rows have published times.
+    """
+    ordered = sorted(rows, key=lambda row: row[0])
+    if not ordered:
+        return None
+
+    published = [row[2] is not None and row[3] is not None for row in ordered]
+    if sum(published) < 2:
+        return None
+
+    points = []
+    for _seq, stop_id, arr, dep in ordered:
+        if arr is None and dep is not None:
+            arr = dep
+        elif dep is None and arr is not None:
+            dep = arr
+        points.append([arr, dep])
+
+    anchors = [i for i, (arr, dep) in enumerate(points) if arr is not None or dep is not None]
+    if len(anchors) < 2:
+        return None
+
+    def distance(a, b):
+        ma = stop_meta.get(ordered[a][1])
+        mb = stop_meta.get(ordered[b][1])
+        if ma is None or mb is None:
+            return None
+        return haversine_km(ma[0], ma[1], mb[0], mb[1])
+
+    # Stop-only feeds often omit the first/last time; they still belong to
+    # the nearest timed boundary rather than being left blank.
+    for i in range(anchors[0]):
+        points[i] = list(points[anchors[0]])
+    for i in range(anchors[-1] + 1, len(points)):
+        points[i] = list(points[anchors[-1]])
+
+    for left, right in zip(anchors, anchors[1:]):
+        if right <= left + 1:
+            continue
+        total = distance(left, right)
+        running = 0.0
+        travelled = [0.0]
+        for i in range(left + 1, right + 1):
+            leg = distance(i - 1, i)
+            running += leg if leg is not None else 0.0
+            travelled.append(running)
+        for k, i in enumerate(range(left + 1, right)):
+            if total and total > 0:
+                frac = travelled[k + 1] / total
+            else:
+                frac = (i - left) / (right - left)
+            frac = max(0.0, min(1.0, frac))
+            for t in (0, 1):
+                start = points[left][t]
+                end = points[right][t]
+                if start is not None and end is not None:
+                    points[i][t] = start + (end - start) * frac
+
+    out = []
+    for i, (_seq, stop_id, _arr, _dep) in enumerate(ordered):
+        arr, dep = points[i]
+        if arr is None:
+            arr = dep
+        if dep is None:
+            dep = arr
+        out.append([
+            ordered[i][0],
+            stop_id,
+            int(round(arr + offset)),
+            int(round(dep + offset)),
+            1 if published[i] else 0,
+        ])
+    return out
+
+
 def nearest_frac(xy, cum, total, px, py, lo=0.0, hi=1.0):
     """Fraction along a polyline of the closest point to (px, py).
 
