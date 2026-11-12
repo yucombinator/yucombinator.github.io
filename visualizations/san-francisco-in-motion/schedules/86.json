@@ -1,0 +1,1 @@
+{"route":"actransit:702","stops":[["Pleasant Hill BART",37.928768,-122.055306],["Salesforce Transit Center",37.789252,-122.396897]],"days":{"weekday":{"runs":[{"i":15265,"trip":"1541020","dir":1,"headsign":"San Francisco","start":14640,"end":16800,"stops":[[0,14640,14640,1],[1,16800,16800,1]]}]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}

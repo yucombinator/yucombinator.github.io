@@ -27,6 +27,7 @@ ASSETS = [HERE / "motion.js", HERE / "motion.css", HERE / "cities.js"] \
 for city in CITIES:
     ASSETS += sorted(city.glob("data*.json"))
     ASSETS += sorted(city.glob("stops-*.json"))
+    ASSETS += sorted(city.glob("schedules/*.json"))
     if (city / "busways.json").exists():
         ASSETS.append(city / "busways.json")
 

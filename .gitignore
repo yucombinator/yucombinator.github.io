@@ -6,3 +6,5 @@ __pycache__/
 visualizations/toronto-in-motion/live.json
 
 .wrangler/
+
+visualizations/*/build/gtfs

@@ -13,6 +13,7 @@ import shutil
 import sys
 import urllib.request
 import zipfile
+from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -252,11 +253,18 @@ def interpolate_stop_times(rows, stop_meta, offset=0):
             else:
                 frac = (i - left) / (right - left)
             frac = max(0.0, min(1.0, frac))
-            for t in (0, 1):
-                start = points[left][t]
-                end = points[right][t]
-                if start is not None and end is not None:
-                    points[i][t] = start + (end - start) * frac
+            # Interpolate one time between the previous departure and the
+            # next arrival. Interpolating arrival and departure separately
+            # creates overlapping dwells at consecutive stops, which reads
+            # as a time going backwards.
+            start = points[left][1]
+            end = points[right][0]
+            if start is not None and end is not None:
+                when = start + (end - start) * frac
+                if when < points[left][1]:
+                    when = points[left][1]
+                points[i][0] = when
+                points[i][1] = when
 
     out = []
     for i, (_seq, stop_id, _arr, _dep) in enumerate(ordered):
@@ -356,6 +364,8 @@ def run(cfg):
     day_trips = {spec["key"]: [] for spec in DAY_SPECS}   # (feed, shape, t0, t1, route)
     trip_meta = {}        # (feed, trip) -> (shape, first_lat, first_lon, last_lat, last_lon)
     trip_times = {}       # (feed, trip) -> [(seq, stop_id, arrival, departure)]
+    trip_schedule_rows = {}  # (feed, trip) -> all stop rows, including blank times
+    trip_attrs = {}       # (feed, trip) -> (headsign, direction)
     stop_meta_all = {}    # (feed, stop) -> (lat, lon)
     day_hist = {spec["key"]: {m: [0] * 144 for m in MODES} for spec in DAY_SPECS}
     shape_ids = set()
@@ -418,7 +428,13 @@ def run(cfg):
                 "last_stop": None,
                 "first_seq": None,
                 "last_seq": None,
+                "headsign": row.get("trip_headsign") or "",
+                "direction": int(row.get("direction_id") or 0),
             }
+            trip_attrs[(feed["id"], row["trip_id"])] = (
+                local_trips[row["trip_id"]]["headsign"],
+                local_trips[row["trip_id"]]["direction"],
+            )
             svc_counts[sid] = svc_counts.get(sid, 0) + 1
 
         # first/last stop time per trip, plus a stop count so the stops payload can
@@ -433,16 +449,20 @@ def run(cfg):
                     continue
                 arr = secs(row["arrival_time"])
                 dep = secs(row["departure_time"])
+                try:
+                    seq = int(row["stop_sequence"])
+                except (KeyError, ValueError):
+                    seq = 0
+                # Keep every stop row for the timetable; the animation
+                # profile below still requires complete times.
+                trip_schedule_rows.setdefault((feed["id"], tid), []).append(
+                    (seq, row.get("stop_id"), arr, dep))
                 if arr is None or dep is None:
                     continue
                 if t["t0"] is None or dep < t["t0"]:
                     t["t0"] = dep
                 if t["t1"] is None or arr > t["t1"]:
                     t["t1"] = arr
-                try:
-                    seq = int(row["stop_sequence"])
-                except (KeyError, ValueError):
-                    seq = 0
                 if t["first_stop"] is None or seq < t["first_seq"]:
                     t["first_stop"], t["first_seq"] = row.get("stop_id"), seq
                 if t["last_stop"] is None or seq > t["last_seq"]:
@@ -784,6 +804,19 @@ def run(cfg):
     route_keys = sorted(routes)
     route_index = {k: i for i, k in enumerate(route_keys)}
     route_out = {k: routes[k] for k in route_keys}
+    schedule_meta = {}
+    for (fid, sid), meta in stop_meta_all.items():
+        schedule_meta.setdefault(fid, {})[sid] = (meta[0], meta[1])
+
+    schedules = {
+        rk: {
+            "route": rk,
+            "stops": [],
+            "days": {spec["key"]: {"runs": []} for spec in DAY_SPECS},
+        }
+        for rk in route_keys
+    }
+    schedule_stop_index = {rk: {} for rk in route_keys}
 
     days_out = {}
     for spec in DAY_SPECS:
@@ -795,7 +828,44 @@ def run(cfg):
         for fid, sid, t0, t1, rk, tid in day_trips[key]:
             if (fid, sid) not in shape_index:
                 continue
+            run_i = len(trips_list)
             trips_list.append([shape_index[(fid, sid)], t0, t1, route_index[rk]])
+            if tid is not None:
+                rows = trip_schedule_rows.get((fid, tid))
+                if rows:
+                    ordered = sorted(rows)
+                    template_start = next((dep for _seq, _sid, _arr, dep in ordered
+                                           if dep is not None), None)
+                    offset = t0 - template_start if template_start is not None else 0
+                    timed = interpolate_stop_times(rows, schedule_meta.get(fid, {}), offset)
+                    if timed is None:
+                        if sum(1 for _seq, _sid, arr, dep in rows
+                               if arr is not None and dep is not None) >= 2:
+                            raise RuntimeError(f"schedule interpolation failed for {fid}:{tid}")
+                    else:
+                        table = schedule_stop_index[rk]
+                        route_stops = schedules[rk]["stops"]
+                        local_rows = []
+                        for _seq, stop_id, arr, dep, published in timed:
+                            if stop_id not in table:
+                                meta = stop_meta_all.get((fid, stop_id))
+                                table[stop_id] = len(route_stops)
+                                route_stops.append([
+                                    meta[2] if meta else stop_id,
+                                    meta[0] if meta else 0.0,
+                                    meta[1] if meta else 0.0,
+                                ])
+                            local_rows.append([table[stop_id], arr, dep, published])
+                        headsign, direction = trip_attrs.get((fid, tid), ("", 0))
+                        schedules[rk]["days"][key]["runs"].append({
+                            "i": run_i,
+                            "trip": tid,
+                            "dir": direction,
+                            "headsign": headsign,
+                            "start": local_rows[0][2],
+                            "end": local_rows[-1][1],
+                            "stops": local_rows,
+                        })
             prof_list.append(profile_index.get(trip_pattern.get((fid, tid)), -1)
                              if tid is not None else -1)
             a, b = trip_offsets.get((fid, tid), (0.0, 1.0))
@@ -821,6 +891,17 @@ def run(cfg):
                 for m, arr in day_hist[key].items() if any(arr)
             },
         }
+
+    schedule_dir = os.path.join(out_dir, "schedules")
+    os.makedirs(schedule_dir, exist_ok=True)
+    for old in Path(schedule_dir).glob("*.json"):
+        old.unlink()
+    for rk in route_keys:
+        idx = route_index[rk]
+        path = os.path.join(schedule_dir, f"{idx}.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(schedules[rk], fh, separators=(",", ":"))
+    print(f"wrote {len(route_keys)} schedule files to {schedule_dir}", file=sys.stderr)
 
     # The first day ships with the shared shapes/routes; the other two are fetched
     # on demand so the initial page load stays close to one service day of trips.

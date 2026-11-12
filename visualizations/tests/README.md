@@ -3,8 +3,14 @@
 - `check_configs.py` — city.js vs data.json contract, legend/tooltip integrity,
   registry/folder consistency, accent match, no per-city `app.js`.
 - `check_data.py` — rebuilds every city with `_shared/motion_build.py` into a
-  temp dir and compares `data.json`, both weekend files and every
-  `stops-*.json` byte-for-byte (ignoring the `built` timestamp).
+  temp dir and compares `data.json`, both weekend files, every
+  `stops-*.json`, and every `schedules/*.json` file byte-for-byte (ignoring
+  the `built` timestamp).
+- `check_schedules.py` — validates committed lazy timetables: every route
+  file exists, run indexes point at the matching day trips, times are
+  monotonic, and interpolated rows are marked.
+- `test_schedule_build.py` — unit tests for timepoint interpolation,
+  including distance weighting and avoidance of overlapping dwells.
 - `runtime-smoke.js` — browser checks used during the migration: load, total and
   per-mode counts at 12:00 (playback paused first), legend order, tooltip rows,
   city menu labels, accent, tooltip hover, BRT toggle, Saturday switch, and the

@@ -31,6 +31,20 @@ class InterpolateStopTimesTest(unittest.TestCase):
         self.assertEqual(result[1][2], 40)
         self.assertEqual(result[1][3], 40)
 
+    def test_interpolated_rows_do_not_overlap_previous_departure(self):
+        rows = [
+            (1, "a", 0, 0),
+            (2, "b", 120, 180),
+            (3, "c", None, None),
+            (4, "d", None, None),
+            (5, "e", None, None),
+            (6, "f", 240, 240),
+        ]
+        meta = {sid: (0.0, i * 0.01) for i, sid in enumerate("abcdef")}
+        result = interpolate_stop_times(rows, meta)
+        for prev, row in zip(result, result[1:]):
+            self.assertGreaterEqual(row[2], prev[3])
+
     def test_requires_two_published_timepoints(self):
         rows = [(1, "a", 0, 0), (2, "b", None, None), (3, "c", None, None)]
         meta = {"a": (0.0, 0.0), "b": (0.0, 0.01), "c": (0.0, 0.02)}

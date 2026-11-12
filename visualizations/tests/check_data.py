@@ -36,6 +36,14 @@ def compare(city, out):
             return f"{name} missing on one side"
         if a.read_bytes() != b.read_bytes():
             return f"{name} differs"
+    names = {p.name for p in (city / "schedules").glob("*.json")} \
+        | {p.name for p in (out / "schedules").glob("*.json")}
+    for name in sorted(names):
+        a, b = out / "schedules" / name, city / "schedules" / name
+        if not a.exists() or not b.exists():
+            return f"schedules/{name} missing on one side"
+        if a.read_bytes() != b.read_bytes():
+            return f"schedules/{name} differs"
     return None
 
 
