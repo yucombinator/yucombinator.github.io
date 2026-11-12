@@ -66,7 +66,7 @@ Extend `motion_build.py` to retain the information it already reads.
 2. Generate one schedule file per route:
    `visualizations/<city>-in-motion/schedules/<route-index>.json`
 
-   `route-index` is the integer route pointer used by `routeIds`/the `trips` rows. It is the sorted route order already used by `route_keys` in the builder and `Object.keys(D.routes)` in the runtime. The schedule file is written for every route with at least one timed run, across all configured service days.
+   `route-index` is the integer route pointer used by `routeIds`/the `trips` rows. It is the sorted route order already used by `route_keys` in the builder and `Object.keys(D.routes)` in the runtime. The schedule file is written for every route, across all configured service days; routes with no qualifying runs get empty day lists.
 
 3. Handle timepoint-only feeds. Some operators publish arrival/departure times only at selected stops; San Francisco has several such feeds. The builder must keep stop rows with blank times, not discard them.
 
@@ -111,7 +111,7 @@ Extend `motion_build.py` to retain the information it already reads.
 - `trip` plus `start` form the stable run key for cross-day matching. `trip` is no longer debug-only.
 - `start`/`end` mirror the first departure and last arrival and let the drawer render a compact run row before expanding stops.
 - Times remain seconds from the service-day start and may exceed `86400` for overnight service. The client formats with the existing `fmt()` convention.
-- A run is omitted only when it has fewer than two published timepoints; the map may still animate it.
+- A run is omitted only when it has fewer than two published timepoints; the map may still animate it, and the route file still exists with whatever runs qualify.
 
 5. Build from the final emitted day list, not from raw `day_trips`, so schedule indexes stay aligned with the emitted `trips` rows that survive shape filtering. For each emitted run:
 
@@ -227,7 +227,7 @@ Search mode:
 
 Build/data:
 
-- Every route with at least one qualifying run has a schedule file.
+- Every route has a schedule file, including routes with no qualifying runs and empty day lists.
 - For every day and route, the number of run records equals the number of dated `trips` rows for that route that have at least two published timepoints; the exception is documented per run.
 - Every recorded `i` indexes the matching day's trip row; every run has at least two published timepoints.
 - Stop times are non-decreasing within a run; first/last match the run's start/end.
