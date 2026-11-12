@@ -83,6 +83,12 @@
   const lineCtx = chartLine.getContext('2d');
 
   let follow = null;              // { kind: 'scheduled'|'live', trip?, id? }
+  const schedulePanel = {
+    open: false, mode: null, routePtr: -1, runIndex: -1, runKey: null,
+    day: null, previousMode: null, autoScroll: true, query: '',
+  };
+  const scheduleCache = new Map();
+  let scheduleSeq = 0;
   const state = {
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -1040,8 +1046,7 @@
     } else {
       selected = -1;
       selStops = null;
-      $('panelMain').hidden = false;
-      $('routePanel').hidden = true;
+      closeSchedulePanel();
     }
     state.dirty = true;
   }
@@ -1547,6 +1552,8 @@
   };
 
   function resize() {
+    const panel = document.querySelector('.panel');
+    document.documentElement.style.setProperty('--panel-h', `${(panel ? panel.offsetHeight : 220) + 14}px`);
     const w = overlay.clientWidth, h = overlay.clientHeight;
     const rawDpr = window.devicePixelRatio || 1;
     // big screens at 2x are 4x the pixels; cap the effect layers so the
@@ -1748,7 +1755,9 @@
       if (v > bestV) { bestV = v; bestB = b; }
     }
     state.dirty = true;
-    if (selected >= 0) fillRoutePanel(selected);
+    if (selected >= 0 && schedulePanel.open && schedulePanel.mode === 'route') {
+      renderScheduleRoute(selected);
+    }
     const hh = String(Math.floor(bestB / 6)).padStart(2, '0');
     document.querySelector('.stats').children[2].innerHTML =
       `Peak hour <b>${hh}:00</b> · ${Math.round(bestV).toLocaleString()} vehicles`;
@@ -1852,7 +1861,27 @@
     };
   }
 
-  function updateRouteStats(idx) {
+  function routeName(idx) {
+    const key = routeIds[idx];
+    const meta = D.routes[key] || {};
+    let modeLabel = MODE_LABEL[meta.m] || meta.m;
+    if (meta.m === 'ferry' && Array.isArray(CFG.ferryLabels)) {
+      const hay = (meta.l || '') + ' ' + (meta.a || '');
+      const rule = CFG.ferryLabels.find((r) => new RegExp(r.match, 'i').test(hay));
+      if (rule) modeLabel = rule.label;
+    }
+    return {
+      key,
+      name: (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key),
+      meta: (() => {
+        const parts = [meta.a, modeLabel].filter(Boolean);
+        return (parts.length === 2 && modeLabel.startsWith(meta.a))
+          ? modeLabel : parts.join(' · ');
+      })(),
+    };
+  }
+
+  function routeStatsHTML(idx) {
     const stats = routeStats(idx);
     const km = selStops && selStops.km ? selStops.km : 0;
     const run = selStops && selStops.run ? selStops.run : 0;
@@ -1868,45 +1897,137 @@
     }
     if (stats.trips) bits.push(`<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>`);
     else bits.push('<span>not running today</span>');
-    bits.push('<span id="rNow"></span>');
-    $('rStats').innerHTML = bits.join('');
+    return bits.join('');
   }
 
-  function fillRoutePanel(idx) {
-    const key = routeIds[idx];
-    const meta = D.routes[key] || {};
-    $('rName').textContent = (meta.s ? meta.s + ' · ' : '') + (meta.l || meta.s || key);
-    let modeLabel = MODE_LABEL[meta.m] || meta.m;
-    if (meta.m === 'ferry' && Array.isArray(CFG.ferryLabels)) {
-      const hay = (meta.l || '') + ' ' + (meta.a || '');
-      const rule = CFG.ferryLabels.find((r) => new RegExp(r.match, 'i').test(hay));
-      if (rule) modeLabel = rule.label;
+  function fillScheduleHeader(idx) {
+    if (!D || idx < 0) return;
+    const info = routeName(idx);
+    const name = $('schName'), meta = $('schMeta'), dot = $('schDot');
+    if (name) name.textContent = info.name;
+    if (meta) meta.textContent = info.meta;
+    if (dot) dot.style.background = slotColors[routeSlot[idx]];
+  }
+
+  function renderRouteRuns(idx, doc, day) {
+    if (!schedulePanel.open || schedulePanel.mode !== 'route' || schedulePanel.routePtr !== idx) return;
+    const body = $('schBody');
+    if (!body) return;
+    const dayDoc = doc && doc.days && doc.days[day];
+    const runs = dayDoc && Array.isArray(dayDoc.runs) ? dayDoc.runs : [];
+    const grouped = new Map();
+    for (const run of runs) {
+      const label = run.headsign || (run.dir === 1 ? 'Inbound' : 'Outbound');
+      if (!grouped.has(label)) grouped.set(label, []);
+      grouped.get(label).push(run);
     }
-    const parts = [meta.a, modeLabel].filter(Boolean);
-    $('rMeta').textContent = (parts.length === 2 && modeLabel.startsWith(meta.a))
-      ? modeLabel : parts.join(' · ');
-    $('rDot').style.background = slotColors[routeSlot[idx]];
-    updateRouteStats(idx);
+    let html = `<div class="rstats">${routeStatsHTML(idx)}</div>`;
+    if (!runs.length) {
+      html += `<p class="sched-empty">No scheduled runs for ${esc(dayDoc?.label || day)}.</p>`;
+    } else {
+      for (const [label, list] of grouped) {
+        list.sort((a, b) => a.start - b.start);
+        html += `<section class="sched-group"><h4>${esc(label)}</h4>`;
+        for (const run of list) {
+          html += `<button type="button" class="sched-run" data-run-index="${run.i}" ` +
+            `data-run-trip="${esc(run.trip)}" data-run-start="${run.start}" ` +
+            `aria-label="${esc(fmt(run.start))} to ${esc(fmt(run.end))}, ${esc(run.headsign || label)}">` +
+            `<span class="sr-time">${fmt(run.start)}</span>` +
+            `<span class="sr-arrow">→</span>` +
+            `<span class="sr-end">${fmt(run.end)}</span>` +
+            `<span class="sr-stops">${run.stops.length} stops</span></button>`;
+        }
+        html += '</section>';
+      }
+    }
+    body.innerHTML = html;
+  }
+
+  function loadRouteSchedule(routePtr) {
+    if (scheduleCache.has(routePtr)) return scheduleCache.get(routePtr);
+    const p = fetch(`schedules/${routePtr}.json?v=${window.MOTION_VERSION || 'local'}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('schedule ' + routePtr + ' ' + res.status);
+        return res.json();
+      })
+      .then((doc) => {
+        if (!doc || doc.route !== routeIds[routePtr]) {
+          throw new Error('schedule route mismatch for ' + routePtr);
+        }
+        return doc;
+      })
+      .catch((err) => {
+        scheduleCache.delete(routePtr);
+        console.warn('schedule load failed:', err);
+        return null;
+      });
+    scheduleCache.set(routePtr, p);
+    return p;
+  }
+
+  function renderScheduleRoute(idx, day = curDay) {
+    fillScheduleHeader(idx);
+    const body = $('schBody');
+    if (!body) return;
+    schedulePanel.day = day;
+    const seq = ++scheduleSeq;
+    body.innerHTML = `<div class="rstats">${routeStatsHTML(idx)}</div><p class="sched-loading">Loading timetable…</p>`;
+    loadRouteSchedule(idx).then((doc) => {
+      if (seq !== scheduleSeq || !schedulePanel.open || schedulePanel.mode !== 'route'
+          || schedulePanel.routePtr !== idx) return;
+      if (!doc) {
+        body.innerHTML = `<div class="rstats">${routeStatsHTML(idx)}</div>` +
+          '<p class="sched-empty">Timetable unavailable. <button type="button" class="linkish" id="schRetry">Retry</button></p>';
+        $('schRetry')?.addEventListener('click', () => renderScheduleRoute(idx, day));
+        return;
+      }
+      renderRouteRuns(idx, doc, day);
+    });
+  }
+
+  function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1) {
+    if (routePtr < 0 || routePtr >= routeIds.length) return;
+    if (mode === 'search' && schedulePanel.mode && schedulePanel.mode !== 'search') {
+      schedulePanel.previousMode = schedulePanel.mode;
+    }
+    schedulePanel.open = true;
+    schedulePanel.mode = mode;
+    schedulePanel.routePtr = routePtr;
+    schedulePanel.runKey = runKey;
+    schedulePanel.runIndex = runIndex;
+    schedulePanel.day = curDay;
+    const panel = $('schedulePanel');
+    if (panel) panel.hidden = false;
+    if (mode === 'route') {
+      renderScheduleRoute(routePtr);
+    } else if (mode === 'run') {
+      renderScheduleRoute(routePtr);
+    } else {
+      $('schBody').innerHTML = '<p class="sched-empty">Search routes and schedules.</p>';
+    }
+    const close = $('schClose');
+    if (close) close.focus();
+  }
+
+  function closeSchedulePanel() {
+    schedulePanel.open = false;
+    scheduleSeq++;
+    const panel = $('schedulePanel');
+    if (panel) panel.hidden = true;
   }
 
   async function selectRoute(idx, fromKeyboard = false) {
     if (idx < 0 || idx >= routeIds.length) return;
     selected = idx;
     selStops = null;
-    if (panelEl.classList.contains('collapsed') && matchMedia('(max-width: 680px)').matches) {
-      setPanelCollapsed(false);
-    }
-    $('panelMain').hidden = true;
-    $('routePanel').hidden = false;
-    const closeBtn = $('rClose');
-    if (closeBtn && !fromKeyboard) closeBtn.focus();
-    fillRoutePanel(idx);
+    fillScheduleHeader(idx);
+    openSchedulePanel('route', idx);
     state.dirty = true;
 
-    const key = routeIds[idx];
-    const cut = key.indexOf(':');
-    const feed = key.slice(0, cut);
-    const rid = key.slice(cut + 1);
+    const info = routeName(idx);
+    const cut = info.key.indexOf(':');
+    const feed = info.key.slice(0, cut);
+    const rid = info.key.slice(cut + 1);
     try {
       let doc = stopsCache.get(feed);
       if (!doc) {
@@ -1930,9 +2051,11 @@
           selStops.name.push(cleanStopName(row[2]));
         }
         projectStops();
-        if (selected === idx) fillRoutePanel(idx);
+        if (selected === idx && schedulePanel.open && schedulePanel.mode === 'route') {
+          renderScheduleRoute(idx);
+        }
       }
-    } catch { /* panel still shows what we know */ }
+    } catch { /* the drawer keeps the summary we know */ }
     state.dirty = true;
   }
 
@@ -1940,8 +2063,7 @@
     if (selected < 0) return;
     selected = -1;
     selStops = null;
-    $('panelMain').hidden = false;
-    $('routePanel').hidden = true;
+    closeSchedulePanel();
     if (mapEl && mapEl.focus) mapEl.focus();
     state.dirty = true;
   }
@@ -2321,6 +2443,29 @@
     wrap.append(btn, menu);
   }
 
+  function createSchedulePanel() {
+    if ($('schedulePanel')) return;
+    const el = document.createElement('aside');
+    el.id = 'schedulePanel';
+    el.className = 'schedule-panel';
+    el.hidden = true;
+    el.setAttribute('role', 'region');
+    el.setAttribute('aria-labelledby', 'schName');
+    el.innerHTML =
+      '<div class="sch-head">' +
+        '<span class="rdot" id="schDot" aria-hidden="true"></span>' +
+        '<div class="rtitle"><b id="schName">Route</b><span id="schMeta"></span></div>' +
+        '<button class="rclose" id="schClose" type="button" aria-label="Close schedule">×</button>' +
+      '</div>' +
+      '<div class="sch-body" id="schBody"></div>' +
+      '<div class="sch-foot"><button class="sch-search" id="scheduleSearch" type="button">Search routes &amp; schedules</button></div>';
+    document.getElementById('app').appendChild(el);
+    $('schClose').addEventListener('click', closeSchedulePanel);
+    $('scheduleSearch').addEventListener('click', () => {
+      openSchedulePanel('search', selected >= 0 ? selected : 0);
+    });
+  }
+
   function wire() {
     initTheme();
     const legendFold = $('legendFold');
@@ -2344,7 +2489,6 @@
       if (dx * dx + dy * dy > 36) return;   // a pan, not a click
       pickAt(e.clientX, e.clientY);
     });
-    $('rClose').addEventListener('click', clearSelection);
     window.addEventListener('keydown', (e) => {
       if (document.querySelector('dialog[open]')) return;
       if (e.key === 'Escape') { stopFollow(); clearSelection(); return; }
@@ -2589,6 +2733,7 @@
     const res = await fetch(`data.json?v=${window.MOTION_VERSION || 'local'}`);
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
+    createSchedulePanel();
 
     shapes = D.shapes.map((pts) => ({ pts }));
     shapeBounds = shapes.map((shape) => {
@@ -2713,6 +2858,13 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
+    window.__timSchedule = {
+      openRouteByIndex: (i) => openSchedulePanel('route', i),
+      openRunByIndex: (routeIndex, runIndex) => openSchedulePanel('run', routeIndex, null, runIndex),
+      openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
+      close: closeSchedulePanel,
+      state: () => ({ ...schedulePanel }),
+    };
     if (new URLSearchParams(location.search).has('fpsTest')) {
       window.__motionFpsTest = {
         start() {
