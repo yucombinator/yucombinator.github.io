@@ -238,6 +238,11 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       if (box.left < 0 || box.right > box.viewport) fails.push('mobile drawer outside viewport: ' + JSON.stringify(box));
       if (box.top < 0) fails.push('mobile drawer clipped above viewport: ' + JSON.stringify(box));
       if (box.closeTop < 0 || box.closeBottom > box.viewportH) fails.push('mobile close button unreachable: ' + JSON.stringify(box));
+      const bottomClose = await tab.evaluate(() => !!document.getElementById('schCloseBottom'));
+      if (!bottomClose) fails.push('mobile bottom close button missing');
+      await tab.evaluate(() => document.getElementById('schCloseBottom').click());
+      const closed = await tab.evaluate(() => ({ hidden: document.getElementById('schedulePanel').hidden, toggle: document.getElementById('scheduleToggle').hidden }));
+      if (!closed.hidden || closed.toggle) fails.push('mobile bottom close did not restore toggle: ' + JSON.stringify(closed));
     } catch (err) {
       fails.push('exception: ' + String(err).slice(0, 200));
     } finally {

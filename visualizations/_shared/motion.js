@@ -2771,7 +2771,8 @@
         '<button class="rclose" id="schClose" type="button" aria-label="Close schedule">×</button>' +
       '</div>' +
       '<div class="sch-body" id="schBody"></div>' +
-      '<div class="sch-foot"><button class="sch-search" id="scheduleSearch" type="button">Search routes &amp; schedules</button></div>';
+      '<div class="sch-foot"><button class="sch-search" id="scheduleSearch" type="button">Search routes &amp; schedules</button>' +
+      '<button class="sch-close-bottom" id="schCloseBottom" type="button">Close</button></div>';
     document.getElementById('app').appendChild(el);
     const toggle = document.createElement('button');
     toggle.id = 'scheduleToggle';
@@ -2791,6 +2792,7 @@
     });
     updateScheduleToggle();
     $('schClose').addEventListener('click', closeSchedulePanel);
+    $('schCloseBottom').addEventListener('click', closeSchedulePanel);
     $('scheduleSearch').addEventListener('click', () => {
       openSchedulePanel('search', selected >= 0 ? selected : 0);
     });
