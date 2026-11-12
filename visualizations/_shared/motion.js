@@ -85,7 +85,7 @@
   let follow = null;              // { kind: 'scheduled'|'live', trip?, id? }
   const schedulePanel = {
     open: false, mode: null, routePtr: -1, runIndex: -1, runKey: null,
-    day: null, previousMode: null, autoScroll: true, query: '',
+    day: null, previousMode: null, previousRunKey: null, autoScroll: true, query: '', searchIndex: -1,
   };
   const scheduleCache = new Map();
   let scheduleSeq = 0;
@@ -1773,6 +1773,22 @@
     });
     drawChart();
     state.dirty = true;
+    if (schedulePanel.open && schedulePanel.routePtr >= 0) {
+      const ptr = schedulePanel.routePtr;
+      if (schedulePanel.mode === 'route') {
+        renderScheduleRoute(ptr, key);
+      } else if (schedulePanel.mode === 'run') {
+        loadRouteSchedule(ptr).then((doc) => {
+          const run = doc && findScheduleRun(doc, key, schedulePanel.runKey, -1);
+          if (run) {
+            schedulePanel.runIndex = run.i;
+            renderScheduleRun(ptr, [run.trip, run.start], run.i);
+          } else {
+            renderScheduleRoute(ptr, key, true);
+          }
+        });
+      }
+    }
     updateUI();
   }
 
@@ -1929,6 +1945,9 @@
       grouped.get(label).push(run);
     }
     let html = `<div class="rstats">${routeStatsHTML(idx)}</div>`;
+    if (schedulePanel.notRunning) {
+      html += '<p class="sched-empty">Not running on this day.</p>';
+    }
     if (!runs.length) {
       html += `<p class="sched-empty">No scheduled runs for ${esc(dayDoc?.label || day)}.</p>`;
     } else {
@@ -2025,9 +2044,10 @@
           || schedulePanel.routePtr !== routePtr) return;
       const run = doc && findScheduleRun(doc, schedulePanel.day, runKey, runIndex);
       if (!run) {
-        renderScheduleRoute(routePtr);
+        renderScheduleRoute(routePtr, schedulePanel.day, true);
         return;
       }
+      schedulePanel.notRunning = false;
       schedulePanel.run = run;
       schedulePanel.runKey = [run.trip, run.start];
       schedulePanel.runIndex = run.i;
@@ -2115,8 +2135,10 @@
     return p;
   }
 
-  function renderScheduleRoute(idx, day = curDay) {
+  function renderScheduleRoute(idx, day = curDay, notRunning = false) {
+    schedulePanel.mode = 'route';
     fillScheduleHeader(idx);
+    schedulePanel.notRunning = notRunning;
     const body = $('schBody');
     if (!body) return;
     schedulePanel.day = day;
@@ -2135,10 +2157,88 @@
     });
   }
 
+  function matchingRoutes(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const out = [];
+    for (let i = 0; i < routeIds.length; i++) {
+      const meta = D.routes[routeIds[i]] || {};
+      const hay = [meta.s, meta.l, meta.a, MODE_LABEL[meta.m] || meta.m].join(' ').toLowerCase();
+      if (!q || hay.includes(q)) out.push(i);
+      if (out.length >= 60) break;
+    }
+    return out;
+  }
+
+  function renderSearchResults() {
+    const box = $('schResults');
+    if (!box) return;
+    const matches = matchingRoutes(schedulePanel.query);
+    schedulePanel.searchIndex = matches.length ? 0 : -1;
+    if (!matches.length) {
+      box.innerHTML = '<p class="sched-empty">No matching routes.</p>';
+      return;
+    }
+    box.innerHTML = matches.map((idx, n) => {
+      const info = routeName(idx);
+      const meta = D.routes[routeIds[idx]] || {};
+      const dot = slotColors[routeSlot[idx]];
+      return `<button type="button" class="sched-search-row${n === 0 ? ' active' : ''}" ` +
+        `data-route-index="${idx}" aria-label="${esc(info.name)}"> ` +
+        `<span class="rdot" style="background:${dot}"></span>` +
+        `<span class="ssr-text"><b>${esc(info.name)}</b><span>${esc(info.meta)}</span></span></button>`;
+    }).join('');
+  }
+
+  function renderScheduleSearch(query = '') {
+    schedulePanel.query = query;
+    schedulePanel.searchIndex = -1;
+    const body = $('schBody');
+    if (!body) return;
+    body.innerHTML = '<div class="sch-searchbar"><input id="schQuery" type="search" ' +
+      'placeholder="Search routes" autocomplete="off" aria-label="Search routes"></div>' +
+      '<div id="schResults" class="sch-results"></div>';
+    const input = $('schQuery');
+    if (!input) return;
+    input.value = query;
+    input.addEventListener('input', () => {
+      schedulePanel.query = input.value;
+      renderSearchResults();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        const mode = schedulePanel.previousMode || 'route';
+        openSchedulePanel(mode, schedulePanel.routePtr, schedulePanel.previousRunKey);
+        return;
+      }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
+      const rows = [...document.querySelectorAll('#schResults [data-route-index]')];
+      if (!rows.length) return;
+      e.preventDefault();
+      if (e.key === 'Enter') {
+        const row = rows[schedulePanel.searchIndex >= 0 ? schedulePanel.searchIndex : 0];
+        if (row) selectScheduleRoute(+row.dataset.routeIndex);
+        return;
+      }
+      const delta = e.key === 'ArrowDown' ? 1 : -1;
+      schedulePanel.searchIndex = (schedulePanel.searchIndex + delta + rows.length) % rows.length;
+      rows.forEach((row, n) => row.classList.toggle('active', n === schedulePanel.searchIndex));
+      rows[schedulePanel.searchIndex].scrollIntoView({ block: 'nearest' });
+    });
+    renderSearchResults();
+    input.focus();
+  }
+
+  function selectScheduleRoute(routePtr) {
+    selectRoute(routePtr, true);
+  }
+
   function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1) {
     if (routePtr < 0 || routePtr >= routeIds.length) return;
     if (mode === 'search' && schedulePanel.mode && schedulePanel.mode !== 'search') {
       schedulePanel.previousMode = schedulePanel.mode;
+      schedulePanel.previousRunKey = schedulePanel.runKey;
     }
     schedulePanel.open = true;
     schedulePanel.mode = mode;
@@ -2149,14 +2249,16 @@
     const panel = $('schedulePanel');
     if (panel) panel.hidden = false;
     if (mode === 'route') {
+      schedulePanel.notRunning = false;
       renderScheduleRoute(routePtr);
     } else if (mode === 'run') {
       renderScheduleRun(routePtr, runKey, runIndex);
     } else {
-      $('schBody').innerHTML = '<p class="sched-empty">Search routes and schedules.</p>';
+      renderScheduleSearch('');
     }
     const close = $('schClose');
-    if (close) close.focus();
+    if (mode === 'search') $('schQuery')?.focus();
+    else if (close) close.focus();
   }
 
   function closeSchedulePanel() {
@@ -2621,6 +2723,8 @@
         updateScheduleFollow(performance.now() + 2000);
         return;
       }
+      const result = e.target.closest('#schResults [data-route-index]');
+      if (result) { selectScheduleRoute(+result.dataset.routeIndex); return; }
       const row = e.target.closest('[data-run-index]');
       if (row) openRunByIndex(schedulePanel.routePtr, +row.dataset.runIndex);
     });
@@ -2657,7 +2761,15 @@
     });
     window.addEventListener('keydown', (e) => {
       if (document.querySelector('dialog[open]')) return;
-      if (e.key === 'Escape') { stopFollow(); clearSelection(); return; }
+      if (e.key === 'Escape') {
+        if (schedulePanel.open && schedulePanel.mode === 'search') {
+          openSchedulePanel(schedulePanel.previousMode || 'route', schedulePanel.routePtr,
+            schedulePanel.previousRunKey);
+          return;
+        }
+        if (schedulePanel.open) { closeSchedulePanel(); return; }
+        stopFollow(); clearSelection(); return;
+      }
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
       if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea,dialog')) return;
       if (!activeRoutes || !activeRoutes.size) return;

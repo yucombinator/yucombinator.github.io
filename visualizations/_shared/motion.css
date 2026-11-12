@@ -178,6 +178,16 @@
   .sched-stop.sched-next{color:#e2efea}
   .sched-stop.sched-next .st-time{color:var(--accent)}
   .sched-note{margin:8px 0 0;color:#7f9ba1;font-size:10px;line-height:1.4}
+  .sch-searchbar{padding:10px 0 8px}
+  #schQuery{width:100%;box-sizing:border-box;background:#0c1a22;border:1px solid #33505a;border-radius:6px;color:#e2efea;font:inherit;font-size:12px;padding:8px 10px;outline:none}
+  #schQuery:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}
+  .sch-results{display:flex;flex-direction:column;gap:1px}
+  .sched-search-row{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-top:1px solid #172a32;padding:8px 0;color:#b9cccf;font:inherit;text-align:left;cursor:pointer}
+  .sched-search-row:hover,.sched-search-row.active,.sched-search-row:focus-visible{color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+  .ssr-text{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+  .ssr-text b{font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ssr-text span{font-size:10px;color:#7f9ba1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sched-search-row .rdot{width:8px;height:8px;box-shadow:none}
 
   .panel-toggle{display:none}
   @media (max-width:680px){
@@ -302,6 +312,9 @@
   html[data-theme="light"] .sched-group h4{color:#5f727b}
   html[data-theme="light"] .sched-run{border-color:#e1e9ec;color:#3f565f}
   html[data-theme="light"] .sched-run-head b,html[data-theme="light"] .sched-stop.sched-next{color:#1e333b}
+  html[data-theme="light"] #schQuery{background:#f4f7f8;border-color:#c6d3d9;color:#1e333b}
+  html[data-theme="light"] .sched-search-row{border-color:#e1e9ec;color:#3f565f}
+  html[data-theme="light"] .ssr-text span,html[data-theme="light"] .sch-results .sched-empty{color:#6f828a}
   html[data-theme="light"] .sched-stop{border-color:#e1e9ec;color:#3f565f}
   html[data-theme="light"] .sched-stop .st-time,html[data-theme="light"] .sched-run-head span,html[data-theme="light"] .sched-note{color:#60747c}
   html[data-theme="light"] .sched-run .sr-stops,html[data-theme="light"] .sched-loading,html[data-theme="light"] .sched-empty{color:#6f828a}
