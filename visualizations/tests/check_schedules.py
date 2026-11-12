@@ -79,6 +79,8 @@ def check_city(city):
                 if not isinstance(stops, list) or len(stops) < 2:
                     fail(f"{city.name}: {path.name} {day} i {i} has <2 stops")
                     continue
+                if run.get("start") != stops[0][2] or run.get("end") != stops[-1][1]:
+                    fail(f"{city.name}: {path.name} {day} i {i} start/end disagree with stops")
                 if sum(1 for row in stops if isinstance(row, list) and len(row) > 3
                        and row[3] == 1) < 2:
                     fail(f"{city.name}: {path.name} {day} i {i} has <2 published rows")

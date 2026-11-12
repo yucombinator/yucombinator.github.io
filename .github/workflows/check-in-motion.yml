@@ -22,6 +22,10 @@ jobs:
           python-version: "3.12"
       - name: Static config contract
         run: python3 visualizations/tests/check_configs.py
+      - name: Schedule unit and synthetic build tests
+        run: |
+          python3 visualizations/tests/test_schedule_build.py -v
+          python3 visualizations/tests/test_synthetic_build.py -v
       - name: Schedule payload contract
         run: python3 visualizations/tests/check_schedules.py
       - name: Assets stamped

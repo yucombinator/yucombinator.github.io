@@ -5,6 +5,7 @@
   'use strict';
 
   const CFG = window.MOTION_CONFIG || {};
+  const TEST_MODE = new URLSearchParams(location.search).has('test');
   const MODES = (CFG.modes || []).map((m) => m.key);
   const MODE_LABEL = {}, MODE_COLOR = {}, MODE_RADIUS = {};
   const MODE_LINE_WIDTH = {}, MODE_LINE_ALPHA = {};
@@ -1968,8 +1969,7 @@
             seenNextDay = true;
           }
           html += `<button type="button" class="sched-run" data-run-index="${run.i}" ` +
-            `data-run-trip="${esc(run.trip)}" data-run-start="${run.start}" ` +
-            `aria-label="${esc(fmtNext(run.start))} to ${esc(fmtNext(run.end))}, ${esc(run.headsign || label)}">` +
+            `data-run-trip="${esc(run.trip)}" data-run-start="${run.start}">` +
             `<span class="sr-time">${fmtNext(run.start)}</span>` +
             `<span class="sr-arrow">→</span>` +
             `<span class="sr-end">${fmtNext(run.end)}</span>` +
@@ -3219,20 +3219,25 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
-    window.__timBadgeLabel = badgeLabel;
-    window.__timFmtNext = fmtNext;
-    window.__timSchedule = {
-      openRouteByIndex: (i) => openSchedulePanel('route', i),
-      openRunByIndex: openRunByIndex,
-      openLiveRouteByIndex: (i) => {
-        stopFollow();
-        follow = { kind: 'live', id: 'test', route: i };
-        openSchedulePanel('route', i);
-      },
-      openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
-      close: closeSchedulePanel,
-      state: () => ({ ...schedulePanel, following: !!follow }),
-    };
+    if (TEST_MODE) {
+      window.__timBadgeLabel = badgeLabel;
+      window.__timFmtNext = fmtNext;
+      window.__timSchedule = {
+        openRouteByIndex: (i) => openSchedulePanel('route', i),
+        openRouteByKey: (key) => openSchedulePanel('route', routeIds.indexOf(key)),
+        openRunByIndex: openRunByIndex,
+        openLiveRouteByIndex: (i) => {
+          stopFollow();
+          follow = { kind: 'live', id: 'test', route: i };
+          openSchedulePanel('route', i);
+        },
+        openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
+        close: closeSchedulePanel,
+        setTime: (t) => { setPlaying(false); seek(t); },
+        routeIndex: (key) => routeIds.indexOf(key),
+        state: () => ({ ...schedulePanel, following: !!follow, t: state.t, selected }),
+      };
+    }
     if (new URLSearchParams(location.search).has('fpsTest')) {
       window.__motionFpsTest = {
         start() {

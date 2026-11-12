@@ -11,7 +11,10 @@
   monotonic, and interpolated rows are marked.
 - `test_schedule_build.py` — unit tests for timepoint interpolation,
   including distance weighting and avoidance of overlapping dwells.
-- `runtime-schedule.js` — browser checks for the schedule drawer: opening
+- `app.spec.js` — Playwright desktop/mobile/landscape checks against a deterministic `?test=1` page.
+- `live.spec.js` — Playwright production checks (custom domain, current asset version, schedule payload, mobile Routes entry).
+- `test_synthetic_build.py` — offline synthetic GTFS build covering frequency, timepoint blanks, and 24h+ runs.
+- `runtime-schedule.js` — legacy browser checks for the schedule drawer: opening
   route mode, run mode, follow persistence, inactive runs, route search,
   Escape ordering, and the mobile sheet.
 - `runtime-smoke.js` — browser checks used during the migration: load, total and
@@ -32,11 +35,29 @@
   nightly GTFS refresh; refresh `runtime-expected.json` with it. It is a
   migration/UI check, not a deploy gate.
 
-CI: `.github/workflows/check-in-motion.yml` runs the config contract,
-schedule payload contract, and stamp check on every visualizations change; `check-in-motion-parity.yml` rebuilds all
+CI: `.github/workflows/check-in-motion.yml` runs the config contract, synthetic builder tests, schedule payload contract, and stamp check on every visualizations change; `.github/workflows/check-browser.yml` runs Playwright; `.github/workflows/check-production.yml` runs the deployed-site check daily. `check-in-motion-parity.yml` rebuilds all
 cities weekly/manually because it needs the GTFS downloads. The San Francisco
 parity build needs `BAY_AREA_511_KEY` (or a populated ACE GTFS cache); without
 it the ACE route is absent and parity fails independently of this feature.
 
 The pre-unification captures were used only during the migration and are kept
 in the branch history, not as test fixtures.
+
+## Portable browser suite
+
+```bash
+cd visualizations/tests
+npm ci
+npx playwright install chromium
+npx playwright test
+```
+
+Playwright runs desktop, mobile, landscape, and an axe-core drawer scan against
+a deterministic `?test=1` page. The deployed-site monitor is:
+
+```bash
+npx playwright test --config=playwright.live.config.js
+```
+
+The legacy `runtime-smoke.js` / `runtime-schedule.js` eval harnesses remain for
+manual investigation; they are not the deploy gate.

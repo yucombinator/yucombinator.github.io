@@ -11,7 +11,7 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     const fails = [];
     const tab = await browser.open({
       name: 'schedule-' + city,
-      url: `${base}/${city}/?cb=${Date.now()}`,
+      url: `${base}/${city}/?test=1&cb=${Date.now()}`,
       viewport: { width: 1280, height: 860 },
     });
     try {
@@ -201,7 +201,7 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     const fails = [];
     const tab = await browser.open({
       name: 'schedule-mobile',
-      url: `${base}/seattle-in-motion/?cb=${Date.now()}`,
+      url: `${base}/seattle-in-motion/?test=1&cb=${Date.now()}`,
       viewport: { width: 390, height: 844 },
     });
     try {
@@ -254,7 +254,7 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     const fails = [];
     const tab = await browser.open({
       name: 'schedule-landscape',
-      url: `${base}/seattle-in-motion/?cb=${Date.now()}`,
+      url: `${base}/seattle-in-motion/?test=1&cb=${Date.now()}`,
       viewport: { width: 844, height: 390 },
     });
     try {
