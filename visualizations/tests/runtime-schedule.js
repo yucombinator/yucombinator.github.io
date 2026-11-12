@@ -40,6 +40,47 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       if (!got.runs && !/no runs|not running|no timetable/i.test(got.body)) {
         fails.push('route mode has neither runs nor an empty state');
       }
+      if (city === 'seattle-in-motion' && got.runs) {
+        const run = await tab.evaluate(() => {
+          const b = document.querySelector('#schBody [data-run-index]');
+          return b ? { i: +b.dataset.runIndex, start: +b.dataset.runStart } : null;
+        });
+        if (run) {
+          await tab.evaluate((start) => {
+            const s = document.getElementById('scrub');
+            s.value = String(start + 60);
+            s.dispatchEvent(new Event('input', { bubbles: true }));
+          }, run.start);
+          await tab.evaluate((i) => window.__timSchedule.openRunByIndex(0, i), run.i);
+          await tab.waitForSelector('#schBody .sched-stop', { timeout: 10000 });
+          const active = await tab.evaluate(() => ({
+            text: document.getElementById('schRunState')?.textContent || '',
+            following: window.__timSchedule.state().following,
+          }));
+          if (!/following/i.test(active.text) || !active.following) {
+            fails.push('active run did not enter following state: ' + JSON.stringify(active));
+          }
+          await tab.evaluate(() => window.__timSchedule.close());
+          const closed = await tab.evaluate(() => window.__timSchedule.state());
+          if (closed.open !== false || closed.following !== true) {
+            fails.push('closing drawer did not preserve follow: ' + JSON.stringify(closed));
+          }
+          await tab.evaluate((start) => {
+            const s = document.getElementById('scrub');
+            s.value = String(Math.max(0, start - 60));
+            s.dispatchEvent(new Event('input', { bubbles: true }));
+          }, run.start);
+          await tab.evaluate((i) => window.__timSchedule.openRunByIndex(0, i), run.i);
+          await tab.waitForSelector('#schBody .sched-stop', { timeout: 10000 });
+          const inactive = await tab.evaluate(() => ({
+            text: document.getElementById('schRunState')?.textContent || '',
+            following: window.__timSchedule.state().following,
+          }));
+          if (!/not active/i.test(inactive.text) || inactive.following) {
+            fails.push('inactive run entered follow: ' + JSON.stringify(inactive));
+          }
+        }
+      }
     } catch (err) {
       fails.push('exception: ' + String(err).slice(0, 200));
     } finally {

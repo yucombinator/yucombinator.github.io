@@ -597,6 +597,7 @@
     if (state.liveOn && liveAnim && now < liveAnim.start + liveAnim.duration) {
       state.dirty = true;
     }
+    updateScheduleFollow(now);
 
     if (state.dirty) {
       const busy = state.playing && now - lastMoveAt > 250;
@@ -1029,6 +1030,7 @@
     if (!follow) return;
     follow = null;
     state.hoverTrip = null;
+    updateScheduleRunState();
     const tip = $('tip');
     if (tip) tip.style.display = 'none';
     state.dirty = true;
@@ -1043,6 +1045,11 @@
     state.hoverTrip = null;
     if (value.route != null) {
       selectRoute(value.route, true);
+      if (kind === 'scheduled') {
+        openSchedulePanel('run', value.route, null, value.trip);
+      } else {
+        openSchedulePanel('route', value.route);
+      }
     } else {
       selected = -1;
       selStops = null;
@@ -1943,6 +1950,149 @@
     body.innerHTML = html;
   }
 
+  function findScheduleRun(doc, day, runKey, runIndex) {
+    const runs = doc?.days?.[day]?.runs || [];
+    if (runIndex >= 0) {
+      const found = runs.find((run) => run.i === runIndex);
+      if (found) return found;
+    }
+    if (Array.isArray(runKey)) {
+      return runs.find((run) => run.trip === runKey[0] && run.start === runKey[1]) || null;
+    }
+    return null;
+  }
+
+  function runIsActive(run, t) {
+    if (!run) return false;
+    return (t >= run.start && t <= run.end) || (t + DAY >= run.start && t + DAY <= run.end);
+  }
+
+  function runClock(run, t) {
+    return (t + DAY >= run.start && t + DAY <= run.end) ? t + DAY : t;
+  }
+
+  function runName(run) {
+    return run.headsign || (run.dir === 1 ? 'Inbound' : 'Outbound');
+  }
+
+  function renderRunBody(doc, run) {
+    const body = $('schBody');
+    if (!body) return;
+    const active = runIsActive(run, state.t);
+    const following = !!(follow && follow.kind === 'scheduled' && follow.trip === run.i);
+    const interpolated = run.stops.some((row) => row[3] === 0);
+    const now = runClock(run, state.t);
+    let next = run.stops.findIndex((row) => row[2] >= now);
+    if (next < 0) next = run.stops.length - 1;
+    let html = '<div class="sched-run-head">' +
+      `<div><b>${esc(runName(run))}</b><span>${esc(curDayData?.label || curDay)} · ${run.stops.length} stops</span></div>` +
+      `<span class="sched-state" id="schRunState" aria-live="polite">${following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t)}</span>` +
+      '</div>' +
+      '<button type="button" class="sched-recenter" id="schRecenter" hidden>Recenter</button>' +
+      '<div class="sched-stops" id="schedStops">';
+    for (let i = 0; i < run.stops.length; i++) {
+      const row = run.stops[i];
+      const stop = doc.stops[row[0]];
+      const name = stop ? cleanStopName(stop[0]) : '';
+      const when = fmt(row[2]);
+      const cls = i < next ? 'sched-done' : i === next ? 'sched-next' : '';
+      html += `<div class="sched-stop ${cls}" data-stop-index="${i}">` +
+        `<span class="st-time">${row[3] ? '' : '~'}${when}</span>` +
+        `<span class="st-name">${esc(name)}</span></div>`;
+    }
+    html += '</div>';
+    if (interpolated) {
+      html += '<p class="sched-note">~ times interpolated between published timepoints.</p>';
+    }
+    body.innerHTML = html;
+    schedulePanel.autoScroll = true;
+    schedulePanel.lastStop = next;
+    const nextEl = body.querySelector('.sched-next');
+    if (nextEl && nextEl.offsetTop > body.clientHeight * 0.6) {
+      body.scrollTop = Math.max(0, nextEl.offsetTop - 44);
+    }
+  }
+
+  function renderScheduleRun(routePtr, runKey = null, runIndex = -1) {
+    fillScheduleHeader(routePtr);
+    const body = $('schBody');
+    if (!body) return;
+    schedulePanel.day = curDay;
+    const seq = ++scheduleSeq;
+    body.innerHTML = '<p class="sched-loading">Loading run…</p>';
+    loadRouteSchedule(routePtr).then((doc) => {
+      if (seq !== scheduleSeq || !schedulePanel.open || schedulePanel.mode !== 'run'
+          || schedulePanel.routePtr !== routePtr) return;
+      const run = doc && findScheduleRun(doc, schedulePanel.day, runKey, runIndex);
+      if (!run) {
+        renderScheduleRoute(routePtr);
+        return;
+      }
+      schedulePanel.run = run;
+      schedulePanel.runKey = [run.trip, run.start];
+      schedulePanel.runIndex = run.i;
+      renderRunBody(doc, run);
+    });
+  }
+
+  function updateScheduleRunState() {
+    if (!schedulePanel.open || schedulePanel.mode !== 'run' || !schedulePanel.run) return;
+    const el = $('schRunState');
+    if (!el) return;
+    const run = schedulePanel.run;
+    const active = runIsActive(run, state.t);
+    el.textContent = (follow && follow.kind === 'scheduled' && follow.trip === run.i)
+      ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
+  }
+
+  function updateScheduleFollow(now) {
+    if (!schedulePanel.open || schedulePanel.mode !== 'run' || !schedulePanel.run) return;
+    if (!follow || follow.kind !== 'scheduled' || follow.trip !== schedulePanel.run.i) return;
+    if (now - (schedulePanel.lastSync || 0) < 900) return;
+    schedulePanel.lastSync = now;
+    updateScheduleRunState();
+    const run = schedulePanel.run;
+    const t = runClock(run, state.t);
+    let next = run.stops.findIndex((row) => row[2] >= t);
+    if (next < 0) next = run.stops.length - 1;
+    if (next === schedulePanel.lastStop) return;
+    schedulePanel.lastStop = next;
+    const body = $('schBody');
+    if (!body) return;
+    body.querySelectorAll('.sched-stop').forEach((el) => {
+      const i = +el.dataset.stopIndex;
+      el.classList.toggle('sched-done', i < next);
+      el.classList.toggle('sched-next', i === next);
+    });
+    if (schedulePanel.autoScroll) {
+      const el = body.querySelector(`.sched-stop[data-stop-index="${next}"]`);
+      if (el && (el.offsetTop < body.scrollTop || el.offsetTop > body.scrollTop + body.clientHeight - 50)) {
+        body.scrollTop = Math.max(0, el.offsetTop - 44);
+      }
+    }
+  }
+
+  function openRunByIndex(routePtr, runIndex) {
+    openSchedulePanel('run', routePtr, null, runIndex);
+    loadRouteSchedule(routePtr).then((doc) => {
+      const run = doc && findScheduleRun(doc, curDay, null, runIndex);
+      if (!run) return;
+      if (runIsActive(run, state.t)) {
+        if (!(follow && follow.kind === 'scheduled' && follow.trip === run.i)) {
+          startFollow('scheduled', { trip: run.i, route: routePtr });
+        } else {
+          schedulePanel.run = run;
+          schedulePanel.runKey = [run.trip, run.start];
+          schedulePanel.runIndex = run.i;
+          renderRunBody(doc, run);
+        }
+      } else {
+        stopFollow();
+        openSchedulePanel('run', routePtr, [run.trip, run.start], run.i);
+      }
+    });
+  }
+
   function loadRouteSchedule(routePtr) {
     if (scheduleCache.has(routePtr)) return scheduleCache.get(routePtr);
     const p = fetch(`schedules/${routePtr}.json?v=${window.MOTION_VERSION || 'local'}`)
@@ -2001,7 +2151,7 @@
     if (mode === 'route') {
       renderScheduleRoute(routePtr);
     } else if (mode === 'run') {
-      renderScheduleRoute(routePtr);
+      renderScheduleRun(routePtr, runKey, runIndex);
     } else {
       $('schBody').innerHTML = '<p class="sched-empty">Search routes and schedules.</p>';
     }
@@ -2464,6 +2614,22 @@
     $('scheduleSearch').addEventListener('click', () => {
       openSchedulePanel('search', selected >= 0 ? selected : 0);
     });
+    $('schBody').addEventListener('click', (e) => {
+      if (e.target.closest('#schRecenter')) {
+        schedulePanel.autoScroll = true;
+        $('schRecenter').hidden = true;
+        updateScheduleFollow(performance.now() + 2000);
+        return;
+      }
+      const row = e.target.closest('[data-run-index]');
+      if (row) openRunByIndex(schedulePanel.routePtr, +row.dataset.runIndex);
+    });
+    $('schBody').addEventListener('wheel', () => {
+      if (schedulePanel.mode !== 'run') return;
+      schedulePanel.autoScroll = false;
+      const b = $('schRecenter');
+      if (b) b.hidden = false;
+    }, { passive: true });
   }
 
   function wire() {
@@ -2860,10 +3026,10 @@
     window.__timMap = mapObj;
     window.__timSchedule = {
       openRouteByIndex: (i) => openSchedulePanel('route', i),
-      openRunByIndex: (routeIndex, runIndex) => openSchedulePanel('run', routeIndex, null, runIndex),
+      openRunByIndex: openRunByIndex,
       openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
       close: closeSchedulePanel,
-      state: () => ({ ...schedulePanel }),
+      state: () => ({ ...schedulePanel, following: !!follow }),
     };
     if (new URLSearchParams(location.search).has('fpsTest')) {
       window.__motionFpsTest = {
