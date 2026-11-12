@@ -106,6 +106,13 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
         }
       }
       if (city === 'seattle-in-motion') {
+        const badges = await tab.evaluate(() => ({
+          one: window.__timBadgeLabel?.('1 Line'),
+          two: window.__timBadgeLabel?.('2 Line'),
+        }));
+        if (badges.one !== '1' || badges.two !== '2') {
+          fails.push('Seattle map badges not shortened: ' + JSON.stringify(badges));
+        }
         const cycling = await tab.evaluate(() => {
           const map = document.getElementById('map');
           map.focus();

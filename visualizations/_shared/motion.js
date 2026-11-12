@@ -1436,7 +1436,7 @@
         octx.fill();
         octx.stroke();
 
-        const badge = meta.s;
+        const badge = badgeLabel(meta.s);
         const drawBadge = (i, fromI) => {
           let dx = sx(i) - sx(fromI), dy = sy(i) - sy(fromI);
           const len = Math.hypot(dx, dy) || 1;
@@ -1818,6 +1818,10 @@
       if (mapObj) projectCorridors();
       state.dirty = true;
     } catch { /* overlay is optional */ }
+  }
+
+  function badgeLabel(value) {
+    return String(value || '').replace(/\s+Line$/i, '').trim();
   }
 
   function cleanStopName(name) {
@@ -3149,6 +3153,7 @@
       $('loading').classList.add('done');
     });
     window.__timMap = mapObj;
+    window.__timBadgeLabel = badgeLabel;
     window.__timSchedule = {
       openRouteByIndex: (i) => openSchedulePanel('route', i),
       openRunByIndex: openRunByIndex,
