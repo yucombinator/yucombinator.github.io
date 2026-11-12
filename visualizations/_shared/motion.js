@@ -1961,13 +1961,18 @@
       for (const [label, list] of grouped) {
         list.sort((a, b) => a.start - b.start);
         html += `<section class="sched-group"><h4>${esc(label)}</h4>`;
+        let seenNextDay = false;
         for (const run of list) {
+          if (run.start >= DAY && !seenNextDay) {
+            html += '<p class="sched-daybreak">Next day</p>';
+            seenNextDay = true;
+          }
           html += `<button type="button" class="sched-run" data-run-index="${run.i}" ` +
             `data-run-trip="${esc(run.trip)}" data-run-start="${run.start}" ` +
-            `aria-label="${esc(fmt(run.start))} to ${esc(fmt(run.end))}, ${esc(run.headsign || label)}">` +
-            `<span class="sr-time">${fmt(run.start)}</span>` +
+            `aria-label="${esc(fmtNext(run.start))} to ${esc(fmtNext(run.end))}, ${esc(run.headsign || label)}">` +
+            `<span class="sr-time">${fmtNext(run.start)}</span>` +
             `<span class="sr-arrow">→</span>` +
-            `<span class="sr-end">${fmt(run.end)}</span>` +
+            `<span class="sr-end">${fmtNext(run.end)}</span>` +
             `<span class="sr-dest">(${esc(runDestination(doc, run))})</span></button>`;
         }
         html += '</section>';
@@ -2031,7 +2036,7 @@
       const row = run.stops[i];
       const stop = doc.stops[row[0]];
       const name = stop ? cleanStopName(stop[0]) : '';
-      const when = fmt(row[2]);
+      const when = fmtNext(row[2]);
       const cls = i < next ? 'sched-done' : i === next ? 'sched-next' : '';
       html += `<div class="sched-stop ${cls}" data-stop-index="${i}">` +
         `<span class="st-time">${row[3] ? '' : '~'}${when}</span>` +
@@ -2260,7 +2265,9 @@
     const toggle = $('scheduleToggle');
     if (!toggle) return;
     const mobile = matchMedia('(max-width: 680px)').matches;
-    toggle.hidden = !(mobile && !schedulePanel.open && schedulePanel.routePtr >= 0);
+    toggle.hidden = !(mobile && !schedulePanel.open);
+    toggle.textContent = schedulePanel.routePtr >= 0 ? 'Show schedule' : 'Routes';
+    toggle.setAttribute('aria-expanded', String(schedulePanel.open));
   }
 
   function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1, focusClose = true, forceOpen = false) {
@@ -2385,12 +2392,13 @@
   }
 
   function pickAt(clientX, clientY) {
+    const coarse = matchMedia('(pointer: coarse)').matches;
     const r = overlay.getBoundingClientRect();
     const mx = clientX - r.left, my = clientY - r.top;
     const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
 
     if (state.liveOn && liveScreen && liveCount) {
-      let lb = -1, ld = 15;
+      let lb = -1, ld = coarse ? 24 : 15;
       for (let k = 0; k < liveCount; k++) {
         const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
         if (d < ld) { ld = d; lb = k; }
@@ -2401,7 +2409,7 @@
       }
     }
 
-    let best = -1, bestD = 13;
+    let best = -1, bestD = coarse ? 28 : 13;
     for (let k = 0; k < activeCount; k++) {
       const d = Math.hypot(px[k] - mx, py[k] - my);
       if (d < bestD) { bestD = d; best = k; }
@@ -2411,13 +2419,14 @@
       return;
     }
 
-    let hit = -1, hitD = 7;
+    let hit = -1, hitD = coarse ? 24 : 7;
     for (let i = 0; i < view.screenShapes.length; i++) {
       const route = shapeRoute[i];
       if (route < 0) continue;
       const shape = view.screenShapes[i];
       if (!shape || shape.xy.length < 4) continue;
-      if (bx < shape.minx - 8 || bx > shape.maxx + 8 || by < shape.miny - 8 || by > shape.maxy + 8) continue;
+      const pad = coarse ? 24 : 8;
+      if (bx < shape.minx - pad || bx > shape.maxx + pad || by < shape.miny - pad || by > shape.maxy + pad) continue;
       const d = distToPolyline(shape.xy, bx, by);
       if (d < hitD) { hitD = d; hit = route; }
     }
@@ -2577,6 +2586,8 @@
     const hh = Math.floor(s / 3600) % 24, mm = Math.floor(s / 60) % 60;
     return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
   };
+
+  const fmtNext = (s) => s >= DAY ? `+1 ${fmt(s)}` : fmt(s);
 
   function startedBefore(t) {
     const count = (x) => {
@@ -2771,9 +2782,14 @@
     toggle.setAttribute('aria-controls', 'schedulePanel');
     document.getElementById('app').appendChild(toggle);
     toggle.addEventListener('click', () => {
-      openSchedulePanel(schedulePanel.mode || 'route', schedulePanel.routePtr,
-        schedulePanel.runKey, schedulePanel.runIndex, true, true);
+      if (schedulePanel.routePtr < 0) {
+        openSchedulePanel('search', 0, null, -1, true, true);
+      } else {
+        openSchedulePanel(schedulePanel.mode || 'route', schedulePanel.routePtr,
+          schedulePanel.runKey, schedulePanel.runIndex, true, true);
+      }
     });
+    updateScheduleToggle();
     $('schClose').addEventListener('click', closeSchedulePanel);
     $('scheduleSearch').addEventListener('click', () => {
       openSchedulePanel('search', selected >= 0 ? selected : 0);
@@ -2789,12 +2805,14 @@
       const row = e.target.closest('[data-run-index]');
       if (row) openRunByIndex(schedulePanel.routePtr, +row.dataset.runIndex);
     });
-    $('schBody').addEventListener('wheel', () => {
+    const releaseAutoScroll = () => {
       if (schedulePanel.mode !== 'run') return;
       schedulePanel.autoScroll = false;
       const b = $('schRecenter');
       if (b) b.hidden = false;
-    }, { passive: true });
+    };
+    $('schBody').addEventListener('wheel', releaseAutoScroll, { passive: true });
+    $('schBody').addEventListener('pointerdown', releaseAutoScroll, { passive: true });
   }
 
   function wire() {
@@ -2818,7 +2836,8 @@
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       down = null;
-      if (dx * dx + dy * dy > 36) return;   // a pan, not a click
+      const coarse = matchMedia('(pointer: coarse)').matches;
+      if (dx * dx + dy * dy > (coarse ? 324 : 36)) return;   // a pan, not a tap
       pickAt(e.clientX, e.clientY);
     });
     window.addEventListener('keydown', (e) => {
@@ -2904,7 +2923,7 @@
 
       if (state.liveOn && liveScreen && liveCount) {
         const bx = (mx - aff.ox) / aff.sx, by = (my - aff.oy) / aff.sy;
-        let lb = -1, ld = 15;
+        let lb = -1, ld = coarse ? 24 : 15;
         for (let k = 0; k < liveCount; k++) {
           const d = Math.hypot(liveScreen[k * 4] - bx, liveScreen[k * 4 + 1] - by);
           if (d < ld) { ld = d; lb = k; }
@@ -3199,6 +3218,7 @@
     });
     window.__timMap = mapObj;
     window.__timBadgeLabel = badgeLabel;
+    window.__timFmtNext = fmtNext;
     window.__timSchedule = {
       openRouteByIndex: (i) => openSchedulePanel('route', i),
       openRunByIndex: openRunByIndex,

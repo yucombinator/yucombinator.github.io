@@ -157,6 +157,8 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
         if (afterEscape !== 'route') fails.push('search escape did not return to route mode: ' + afterEscape);
       }
       if (city === 'toronto-in-motion') {
+        const night = await tab.evaluate(() => window.__timFmtNext?.(90000));
+        if (night !== '+1 01:00') fails.push('overnight time label missing: ' + night);
         const shared = await tab.evaluate(async () => {
           const v = window.MOTION_VERSION || 'local';
           const doc = await (await fetch('schedules/135.json?v=' + v)).json();
@@ -204,6 +206,19 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     });
     try {
       await tab.waitForSelector('#loading.done', { timeout: 60000 });
+      await tab.waitForSelector('#scheduleToggle:not([hidden])', { timeout: 15000 });
+      const fresh = await tab.evaluate(() => ({
+        hidden: document.getElementById('schedulePanel').hidden,
+        label: document.getElementById('scheduleToggle').textContent.trim(),
+      }));
+      if (!fresh.hidden) fails.push('mobile schedule drawer opened by default');
+      if (fresh.label !== 'Routes') fails.push('mobile cold-start entry missing: ' + fresh.label);
+      await tab.evaluate(() => document.getElementById('scheduleToggle').click());
+      await tab.waitForSelector('#schQuery', { timeout: 10000 });
+      if (await tab.evaluate(() => document.getElementById('schedulePanel').hidden)) {
+        fails.push('mobile Routes entry did not open search');
+      }
+      await tab.evaluate(() => window.__timSchedule.close());
       await tab.evaluate(() => window.__timSchedule?.openRouteByIndex(0));
       await tab.waitForSelector('#scheduleToggle:not([hidden])', { timeout: 15000 });
       const hiddenByDefault = await tab.evaluate(() => document.getElementById('schedulePanel').hidden);
@@ -229,6 +244,35 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       await browser.close({ name: 'schedule-mobile' });
     }
     results.push({ city: 'schedule-mobile', pass: fails.length === 0, fails });
+  }
+  {
+    const fails = [];
+    const tab = await browser.open({
+      name: 'schedule-landscape',
+      url: `${base}/seattle-in-motion/?cb=${Date.now()}`,
+      viewport: { width: 844, height: 390 },
+    });
+    try {
+      await tab.waitForSelector('#loading.done', { timeout: 60000 });
+      await tab.evaluate(() => window.__timSchedule?.openRouteByIndex(0));
+      await tab.waitForSelector('#schedulePanel:not([hidden])', { timeout: 15000 });
+      await tab.waitForSelector('#schBody .sched-run, #schBody .sched-empty', { timeout: 15000 });
+      const box = await tab.evaluate(() => {
+        const panel = document.getElementById('schedulePanel').getBoundingClientRect();
+        const close = document.getElementById('schClose').getBoundingClientRect();
+        return { top: panel.top, bottom: panel.bottom, height: panel.height,
+          closeTop: close.top, closeBottom: close.bottom, viewportH: innerHeight };
+      });
+      if (box.height < 160) fails.push('landscape drawer unusably short: ' + JSON.stringify(box));
+      if (box.top < 0 || box.closeTop < 0 || box.closeBottom > box.viewportH) {
+        fails.push('landscape drawer/close outside viewport: ' + JSON.stringify(box));
+      }
+    } catch (err) {
+      fails.push('exception: ' + String(err).slice(0, 200));
+    } finally {
+      await browser.close({ name: 'schedule-landscape' });
+    }
+    results.push({ city: 'schedule-landscape', pass: fails.length === 0, fails });
   }
   return results;
 };
