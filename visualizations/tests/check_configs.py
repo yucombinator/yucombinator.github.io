@@ -100,6 +100,8 @@ def main():
             fail(f"{city.name}: accent mismatch")
         if "app.js" in html:
             fail(f"{city.name}: still references per-city app.js")
+        if 'id="routePanel"' in html:
+            fail(f"{city.name}: stale routePanel markup")
 
     for name in ("motion.js", "motion.css", "motion_build.py"):
         text = (SHARED / name).read_text()

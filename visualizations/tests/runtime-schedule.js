@@ -143,5 +143,30 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     }
     results.push({ city, pass: fails.length === 0, fails });
   }
+  {
+    const fails = [];
+    const tab = await browser.open({
+      name: 'schedule-mobile',
+      url: `${base}/seattle-in-motion/?cb=${Date.now()}`,
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      await tab.waitForSelector('#loading.done', { timeout: 60000 });
+      await tab.evaluate(() => window.__timSchedule?.openRouteByIndex(0));
+      await tab.waitForSelector('#schBody .sched-run, #schBody .sched-empty', { timeout: 15000 });
+      const box = await tab.evaluate(() => {
+        const el = document.getElementById('schedulePanel');
+        const r = el.getBoundingClientRect();
+        return { width: r.width, left: r.left, right: r.right, viewport: innerWidth };
+      });
+      if (box.width > box.viewport - 12) fails.push('mobile drawer too wide: ' + JSON.stringify(box));
+      if (box.left < 0 || box.right > box.viewport) fails.push('mobile drawer outside viewport: ' + JSON.stringify(box));
+    } catch (err) {
+      fails.push('exception: ' + String(err).slice(0, 200));
+    } finally {
+      await browser.close({ name: 'schedule-mobile' });
+    }
+    results.push({ city: 'schedule-mobile', pass: fails.length === 0, fails });
+  }
   return results;
 };

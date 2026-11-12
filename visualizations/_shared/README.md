@@ -4,7 +4,7 @@ One engine and one build pipeline for every city page.
 
 ```
 _shared/
-  motion.js        renderer, chart, scrubber, hover, tooltips, city switcher
+  motion.js        renderer, chart, scrubber, schedule drawer, search, city switcher
   motion.css       shared layout/theme; accent comes from --accent
   cities.js        registry used by the city switcher
   version.js       generated asset+data version (stamp_version.py)
@@ -18,8 +18,10 @@ toronto-in-motion/
 vancouver-in-motion/…  seattle-in-motion/…
 tests/
   check_configs.py static contract checks
-  check_data.py    rebuild every city and compare with committed data
+  check_data.py    rebuild every city and compare with committed data/schedules
+  check_schedules.py validate lazy route timetables
   runtime-smoke.js browser checks (load, counts, tooltips, BRT toggle, hover)
+  runtime-schedule.js browser checks (drawer, run mode, search, day switch)
 ```
 
 ## Adding a city
@@ -30,7 +32,8 @@ tests/
    route_type, route_color, agency, route_name, route_short)` function returning
    `(mode, hex)` or `None`, then `CFG` and `mb.run(CFG)`.
 3. Add a `data/` folder? No: run `python3 build/build_data.py` to write
-   `data.json`, `data-saturday.json`, `data-sunday.json` and `stops-*.json`.
+   `data.json`, `data-saturday.json`, `data-sunday.json`, `stops-*.json` and
+   the lazy `schedules/<route-index>.json` timetables.
 4. Add the city to `_shared/cities.js` and the hand-written cards in `../index.html`.
 5. Run `python3 _shared/stamp_version.py` and the tests. `.nojekyll` at the repo
    root keeps GitHub Pages from skipping `_shared/` (Jekyll ignores `_` dirs).
@@ -52,13 +55,24 @@ tests/
 
 ```bash
 python3 tests/check_configs.py
-python3 tests/check_data.py          # rebuilds all cities, compares JSON/stops
+python3 tests/check_data.py          # rebuilds all cities, compares JSON/stops/schedules
+python3 tests/check_schedules.py     # validates committed route timetables
 python3 _shared/stamp_version.py --check
 ```
 
-The browser smoke suite is `tests/runtime-smoke.js`; load it in an omp eval
-kernel (see the header comment) and run `runRuntimeSmoke(<base url>)`.
-Its expected values live in `tests/runtime-expected.json`.
+The browser smoke suites are `tests/runtime-smoke.js` and
+`tests/runtime-schedule.js`; load each in an omp eval kernel (see the header
+comments) and run `runRuntimeSmoke(<base url>)` and
+`runScheduleSmoke(<base url>)`. The existing expected values live in
+`tests/runtime-expected.json`.
+
+## Schedule drawer
+
+The drawer is created by `motion.js`; no city page needs schedule markup.
+`motion_build.py` writes one compact timetable per route index and service day.
+The engine fetches it only when a route or run is opened, using
+`schedules/${routeIndex}.json?v=${window.MOTION_VERSION}`. Interpolated
+stop rows carry `published: 0` and render with a leading `~`.
 
 ## Note
 

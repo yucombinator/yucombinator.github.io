@@ -21,5 +21,7 @@ jobs:
           python-version: "3.12"
       - name: Static config contract
         run: python3 visualizations/tests/check_configs.py
+      - name: Schedule payload contract
+        run: python3 visualizations/tests/check_schedules.py
       - name: Assets stamped
         run: python3 visualizations/_shared/stamp_version.py --check

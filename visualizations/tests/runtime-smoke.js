@@ -169,5 +169,8 @@ globalThis.runRuntimeSmoke = async function runRuntimeSmoke(base) {
     }
     results.push({ city, pass: fails.length === 0, fails });
   }
+  if (typeof globalThis.runScheduleSmoke === 'function') {
+    results.push(...await globalThis.runScheduleSmoke(base));
+  }
   return results;
 };
