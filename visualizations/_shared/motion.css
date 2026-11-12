@@ -164,7 +164,7 @@
   .sched-run:hover,.sched-run:focus-visible{color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
   .sched-run .sr-time,.sched-run .sr-end{font-variant-numeric:tabular-nums}
   .sched-run .sr-arrow{color:#607b82}
-  .sched-run .sr-stops{color:#7f9ba1;font-size:10.5px;text-align:right}
+  .sched-run .sr-dest{color:#7f9ba1;font-size:10.5px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sched-run[data-active="true"]{color:var(--accent)}
   .sched-run-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:8px 0 4px}
   .sched-run-head b{display:block;color:#e2efea;font-size:12px;font-weight:500}
@@ -320,7 +320,7 @@
   html[data-theme="light"] .ssr-text span,html[data-theme="light"] .sch-results .sched-empty{color:#6f828a}
   html[data-theme="light"] .sched-stop{border-color:#e1e9ec;color:#3f565f}
   html[data-theme="light"] .sched-stop .st-time,html[data-theme="light"] .sched-run-head span,html[data-theme="light"] .sched-note{color:#60747c}
-  html[data-theme="light"] .sched-run .sr-stops,html[data-theme="light"] .sched-loading,html[data-theme="light"] .sched-empty{color:#6f828a}
+  html[data-theme="light"] .sched-run .sr-dest,html[data-theme="light"] .sched-loading,html[data-theme="light"] .sched-empty{color:#6f828a}
   html[data-theme="light"] .panel-toggle{background:#fff;border-color:#c6d3d9;color:#4f666e}
   html[data-theme="light"] .mode-tip{background:#fff;border-color:#c8d4da;box-shadow:0 12px 28px rgba(30,50,60,.16)}
   html[data-theme="light"] #tip{background:#fff;border-color:#c8d4da;color:#22353d;box-shadow:0 8px 26px rgba(30,50,60,.18)}

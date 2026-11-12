@@ -1968,7 +1968,7 @@
             `<span class="sr-time">${fmt(run.start)}</span>` +
             `<span class="sr-arrow">→</span>` +
             `<span class="sr-end">${fmt(run.end)}</span>` +
-            `<span class="sr-stops">${run.stops.length} stops</span></button>`;
+            `<span class="sr-dest">(${esc(runDestination(doc, run))})</span></button>`;
         }
         html += '</section>';
       }
@@ -1999,6 +1999,13 @@
 
   function runName(run) {
     return run.headsign || (run.dir === 1 ? 'Inbound' : 'Outbound');
+  }
+
+  function runDestination(doc, run) {
+    const headsign = (run.headsign || '').trim();
+    if (headsign) return headsign;
+    const last = run.stops && run.stops.length ? doc.stops[run.stops[run.stops.length - 1][0]] : null;
+    return last ? cleanStopName(last[0]) : runName(run);
   }
 
   function stopOffset(el) {

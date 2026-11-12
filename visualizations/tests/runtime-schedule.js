@@ -37,6 +37,13 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       if (!got.name) fails.push('route name missing');
       if (!got.search) fails.push('search button missing');
       if (got.oldPanel) fails.push('old route panel still exists');
+      if (got.runs) {
+        const row = await tab.evaluate(() => ({
+          dest: document.querySelector('#schBody .sched-run .sr-dest')?.textContent || '',
+          counts: !!document.querySelector('#schBody .sched-run .sr-stops'),
+        }));
+        if (!row.dest.trim() || row.counts) fails.push('run row destination missing: ' + JSON.stringify(row));
+      }
       if (!got.runs && !/no runs|not running|no timetable/i.test(got.body)) {
         fails.push('route mode has neither runs nor an empty state');
       }
