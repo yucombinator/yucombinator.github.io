@@ -240,16 +240,16 @@ def interpolate_stop_times(rows, stop_meta, offset=0):
     for left, right in zip(anchors, anchors[1:]):
         if right <= left + 1:
             continue
-        total = distance(left, right)
         running = 0.0
         travelled = [0.0]
         for i in range(left + 1, right + 1):
             leg = distance(i - 1, i)
             running += leg if leg is not None else 0.0
             travelled.append(running)
+        path = travelled[-1]
         for k, i in enumerate(range(left + 1, right)):
-            if total and total > 0:
-                frac = travelled[k + 1] / total
+            if path and path > 0:
+                frac = travelled[k + 1] / path
             else:
                 frac = (i - left) / (right - left)
             frac = max(0.0, min(1.0, frac))

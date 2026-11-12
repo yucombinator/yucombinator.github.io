@@ -40,7 +40,15 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       if (!got.runs && !/no runs|not running|no timetable/i.test(got.body)) {
         fails.push('route mode has neither runs nor an empty state');
       }
+      if (city === 'seattle-in-motion') {
+        await tab.evaluate(() => window.__timSchedule.openLiveRouteByIndex(0));
+        await tab.waitForSelector('.sched-live-note', { timeout: 10000 });
+        const live = await tab.evaluate(() => document.querySelector('.sched-live-note')?.textContent || '');
+        if (!/live vehicle/i.test(live)) fails.push('live route context missing: ' + live);
+        await tab.evaluate(() => window.__timSchedule.openRouteByIndex(0));
+      }
       if (city === 'seattle-in-motion' && got.runs) {
+
         const run = await tab.evaluate(() => {
           const b = document.querySelector('#schBody [data-run-index]');
           return b ? { i: +b.dataset.runIndex, start: +b.dataset.runStart } : null;
@@ -60,6 +68,22 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
           if (!/following/i.test(active.text) || !active.following) {
             fails.push('active run did not enter following state: ' + JSON.stringify(active));
           }
+          await tab.evaluate(() => {
+            const b = document.getElementById('schBody');
+            b.scrollTop = b.scrollHeight;
+            b.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+          });
+          await tab.waitForSelector('#schRecenter:not([hidden])', { timeout: 5000 });
+          await tab.evaluate(() => document.getElementById('schRecenter').click());
+          await new Promise((r) => setTimeout(r, 250));
+          const visible = await tab.evaluate(() => {
+            const b = document.getElementById('schBody');
+            const n = document.querySelector('.sched-next');
+            if (!n) return false;
+            const br = b.getBoundingClientRect(), nr = n.getBoundingClientRect();
+            return nr.top >= br.top && nr.bottom <= br.bottom;
+          });
+          if (!visible) fails.push('recenter did not bring the next stop into view');
           await tab.evaluate(() => window.__timSchedule.close());
           const closed = await tab.evaluate(() => window.__timSchedule.state());
           if (closed.open !== false || closed.following !== true) {
@@ -82,7 +106,21 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
         }
       }
       if (city === 'seattle-in-motion') {
+        const cycling = await tab.evaluate(() => {
+          const map = document.getElementById('map');
+          map.focus();
+          const name = () => document.getElementById('schName')?.textContent || '';
+          const before = name();
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+          const one = name();
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+          return { before, one, after: name(), focus: document.activeElement?.id };
+        });
+        if (cycling.one === cycling.before || cycling.after === cycling.one) {
+          fails.push('keyboard route cycling stopped after first step: ' + JSON.stringify(cycling));
+        }
         await tab.evaluate(() => document.getElementById('scheduleSearch').click());
+
         await tab.waitForSelector('#schQuery', { timeout: 10000 });
         const focused = await tab.evaluate(() => document.activeElement?.id);
         if (focused !== 'schQuery') fails.push('search input not focused: ' + focused);
@@ -157,10 +195,14 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
       const box = await tab.evaluate(() => {
         const el = document.getElementById('schedulePanel');
         const r = el.getBoundingClientRect();
-        return { width: r.width, left: r.left, right: r.right, viewport: innerWidth };
+        const close = document.getElementById('schClose').getBoundingClientRect();
+        return { width: r.width, left: r.left, right: r.right, top: r.top, viewport: innerWidth,
+          closeTop: close.top, closeBottom: close.bottom, viewportH: innerHeight };
       });
       if (box.width > box.viewport - 12) fails.push('mobile drawer too wide: ' + JSON.stringify(box));
       if (box.left < 0 || box.right > box.viewport) fails.push('mobile drawer outside viewport: ' + JSON.stringify(box));
+      if (box.top < 0) fails.push('mobile drawer clipped above viewport: ' + JSON.stringify(box));
+      if (box.closeTop < 0 || box.closeBottom > box.viewportH) fails.push('mobile close button unreachable: ' + JSON.stringify(box));
     } catch (err) {
       fails.push('exception: ' + String(err).slice(0, 200));
     } finally {

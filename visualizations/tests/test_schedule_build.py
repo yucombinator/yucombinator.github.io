@@ -31,6 +31,13 @@ class InterpolateStopTimesTest(unittest.TestCase):
         self.assertEqual(result[1][2], 40)
         self.assertEqual(result[1][3], 40)
 
+    def test_interpolates_non_collinear_path_by_path_distance(self):
+        rows = [(1, "a", 0, 0), (2, "b", None, None), (3, "c", 120, 120)]
+        meta = {"a": (0.0, 0.0), "b": (0.0, 0.01), "c": (0.01, 0.01)}
+        result = interpolate_stop_times(rows, meta)
+        self.assertAlmostEqual(result[1][2], 60, delta=2)
+        self.assertAlmostEqual(result[1][3], 60, delta=2)
+
     def test_interpolated_rows_do_not_overlap_previous_departure(self):
         rows = [
             (1, "a", 0, 0),

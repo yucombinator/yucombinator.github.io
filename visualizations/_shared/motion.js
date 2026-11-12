@@ -1945,6 +1945,9 @@
       grouped.get(label).push(run);
     }
     let html = `<div class="rstats">${routeStatsHTML(idx)}</div>`;
+    if (follow && follow.kind === 'live' && follow.route === idx) {
+      html += '<p class="sched-live-note">Live vehicle · showing route timetable.</p>';
+    }
     if (schedulePanel.notRunning) {
       html += '<p class="sched-empty">Not running on this day.</p>';
     }
@@ -1994,6 +1997,11 @@
     return run.headsign || (run.dir === 1 ? 'Inbound' : 'Outbound');
   }
 
+  function stopOffset(el) {
+    const body = $('schBody');
+    return body ? el.getBoundingClientRect().top - body.getBoundingClientRect().top : 0;
+  }
+
   function renderRunBody(doc, run) {
     const body = $('schBody');
     if (!body) return;
@@ -2007,7 +2015,6 @@
       `<div><b>${esc(runName(run))}</b><span>${esc(curDayData?.label || curDay)} · ${run.stops.length} stops</span></div>` +
       `<span class="sched-state" id="schRunState" aria-live="polite">${following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t)}</span>` +
       '</div>' +
-      '<button type="button" class="sched-recenter" id="schRecenter" hidden>Recenter</button>' +
       '<div class="sched-stops" id="schedStops">';
     for (let i = 0; i < run.stops.length; i++) {
       const row = run.stops[i];
@@ -2026,9 +2033,10 @@
     body.innerHTML = html;
     schedulePanel.autoScroll = true;
     schedulePanel.lastStop = next;
+    if ($('schRecenter')) $('schRecenter').hidden = true;
     const nextEl = body.querySelector('.sched-next');
-    if (nextEl && nextEl.offsetTop > body.clientHeight * 0.6) {
-      body.scrollTop = Math.max(0, nextEl.offsetTop - 44);
+    if (nextEl && stopOffset(nextEl) > body.clientHeight * 0.6) {
+      body.scrollTop = Math.max(0, stopOffset(nextEl) - 44);
     }
   }
 
@@ -2065,17 +2073,17 @@
       ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
   }
 
-  function updateScheduleFollow(now) {
+  function updateScheduleFollow(now, force = false) {
     if (!schedulePanel.open || schedulePanel.mode !== 'run' || !schedulePanel.run) return;
     if (!follow || follow.kind !== 'scheduled' || follow.trip !== schedulePanel.run.i) return;
-    if (now - (schedulePanel.lastSync || 0) < 900) return;
+    if (!force && now - (schedulePanel.lastSync || 0) < 900) return;
     schedulePanel.lastSync = now;
     updateScheduleRunState();
     const run = schedulePanel.run;
     const t = runClock(run, state.t);
     let next = run.stops.findIndex((row) => row[2] >= t);
     if (next < 0) next = run.stops.length - 1;
-    if (next === schedulePanel.lastStop) return;
+    if (!force && next === schedulePanel.lastStop) return;
     schedulePanel.lastStop = next;
     const body = $('schBody');
     if (!body) return;
@@ -2084,10 +2092,13 @@
       el.classList.toggle('sched-done', i < next);
       el.classList.toggle('sched-next', i === next);
     });
-    if (schedulePanel.autoScroll) {
+    if (schedulePanel.autoScroll || force) {
       const el = body.querySelector(`.sched-stop[data-stop-index="${next}"]`);
-      if (el && (el.offsetTop < body.scrollTop || el.offsetTop > body.scrollTop + body.clientHeight - 50)) {
-        body.scrollTop = Math.max(0, el.offsetTop - 44);
+      if (el) {
+        const top = stopOffset(el);
+        if (force || top < 0 || top > body.clientHeight - 50) {
+          body.scrollTop = Math.max(0, body.scrollTop + top - 44);
+        }
       }
     }
   }
@@ -2234,7 +2245,7 @@
     selectRoute(routePtr, true);
   }
 
-  function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1) {
+  function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1, focusClose = true) {
     if (routePtr < 0 || routePtr >= routeIds.length) return;
     if (mode === 'search' && schedulePanel.mode && schedulePanel.mode !== 'search') {
       schedulePanel.previousMode = schedulePanel.mode;
@@ -2248,6 +2259,7 @@
     schedulePanel.day = curDay;
     const panel = $('schedulePanel');
     if (panel) panel.hidden = false;
+    if ($('schRecenter')) $('schRecenter').hidden = mode !== 'run';
     if (mode === 'route') {
       schedulePanel.notRunning = false;
       renderScheduleRoute(routePtr);
@@ -2258,7 +2270,7 @@
     }
     const close = $('schClose');
     if (mode === 'search') $('schQuery')?.focus();
-    else if (close) close.focus();
+    else if (close && focusClose) close.focus();
   }
 
   function closeSchedulePanel() {
@@ -2273,7 +2285,7 @@
     selected = idx;
     selStops = null;
     fillScheduleHeader(idx);
-    openSchedulePanel('route', idx);
+    openSchedulePanel('route', idx, null, -1, !fromKeyboard);
     state.dirty = true;
 
     const info = routeName(idx);
@@ -2707,6 +2719,7 @@
       '<div class="sch-head">' +
         '<span class="rdot" id="schDot" aria-hidden="true"></span>' +
         '<div class="rtitle"><b id="schName">Route</b><span id="schMeta"></span></div>' +
+        '<button class="sched-recenter" id="schRecenter" type="button" hidden>Recenter</button>' +
         '<button class="rclose" id="schClose" type="button" aria-label="Close schedule">×</button>' +
       '</div>' +
       '<div class="sch-body" id="schBody"></div>' +
@@ -2716,13 +2729,12 @@
     $('scheduleSearch').addEventListener('click', () => {
       openSchedulePanel('search', selected >= 0 ? selected : 0);
     });
+    $('schRecenter').addEventListener('click', () => {
+      schedulePanel.autoScroll = true;
+      $('schRecenter').hidden = true;
+      updateScheduleFollow(performance.now(), true);
+    });
     $('schBody').addEventListener('click', (e) => {
-      if (e.target.closest('#schRecenter')) {
-        schedulePanel.autoScroll = true;
-        $('schRecenter').hidden = true;
-        updateScheduleFollow(performance.now() + 2000);
-        return;
-      }
       const result = e.target.closest('#schResults [data-route-index]');
       if (result) { selectScheduleRoute(+result.dataset.routeIndex); return; }
       const row = e.target.closest('[data-run-index]');
@@ -2745,6 +2757,7 @@
       const syncFold = (e) => { legendFold.open = !e.matches; };
       if (foldMq.addEventListener) foldMq.addEventListener('change', syncFold);
       else if (foldMq.addListener) foldMq.addListener(syncFold);
+      legendFold.addEventListener('toggle', resize);
     }
     buildLegend();
     buildCityMenu();
@@ -3139,6 +3152,11 @@
     window.__timSchedule = {
       openRouteByIndex: (i) => openSchedulePanel('route', i),
       openRunByIndex: openRunByIndex,
+      openLiveRouteByIndex: (i) => {
+        stopFollow();
+        follow = { kind: 'live', id: 'test', route: i };
+        openSchedulePanel('route', i);
+      },
       openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
       close: closeSchedulePanel,
       state: () => ({ ...schedulePanel, following: !!follow }),

@@ -170,14 +170,17 @@
   .sched-run-head b{display:block;color:#e2efea;font-size:12px;font-weight:500}
   .sched-run-head span{display:block;color:#7f9ba1;font-size:10px;margin-top:2px}
   .sched-state{color:var(--accent)!important;font-size:10px!important;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
-  .sched-recenter{align-self:flex-start;background:none;border:1px solid #33505a;border-radius:4px;color:var(--accent);font:inherit;font-size:10px;padding:3px 6px;margin:2px 0 6px}
+  .sched-recenter{background:none;border:1px solid #33505a;border-radius:4px;color:var(--accent);font:inherit;font-size:10px;padding:3px 6px;white-space:nowrap;cursor:pointer}
+  .sch-head .sched-recenter{margin-left:auto;margin-right:6px}
+  .sch-head .rclose{margin-left:0}
   .sched-stops{margin-top:4px}
   .sched-stop{display:grid;grid-template-columns:48px 1fr;gap:8px;padding:4px 0;border-top:1px solid #172a32;color:#b9cccf;font-size:11.5px;line-height:1.35}
   .sched-stop .st-time{font-variant-numeric:tabular-nums;color:#8fa6ab}
   .sched-stop.sched-done{opacity:.42}
   .sched-stop.sched-next{color:#e2efea}
   .sched-stop.sched-next .st-time{color:var(--accent)}
-  .sched-note{margin:8px 0 0;color:#7f9ba1;font-size:10px;line-height:1.4}
+  .sched-note,.sched-live-note{margin:8px 0 0;color:#7f9ba1;font-size:10px;line-height:1.4}
+  .sched-live-note{color:var(--accent)}
   .sch-searchbar{padding:10px 0 8px}
   #schQuery{width:100%;box-sizing:border-box;background:#0c1a22;border:1px solid #33505a;border-radius:6px;color:#e2efea;font:inherit;font-size:12px;padding:8px 10px;outline:none}
   #schQuery:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}
@@ -246,7 +249,7 @@
     .stats{gap:12px;font-size:10.5px}
   }
   @media (max-width:680px){
-    .schedule-panel{left:8px;right:8px;top:auto;bottom:calc(var(--panel-h,240px) + 18px);width:auto;max-height:70vh;border-radius:10px}
+    .schedule-panel{left:8px;right:8px;top:auto;bottom:calc(var(--panel-h,240px) + 18px);width:auto;max-height:min(70vh,calc(100vh - var(--panel-h,240px) - 26px));border-radius:10px}
   }
   @media (prefers-reduced-motion:reduce){ .panel,.vignette{transition:none} }
 
