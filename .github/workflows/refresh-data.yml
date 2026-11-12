@@ -121,5 +121,9 @@ jobs:
             echo "No data changes — skipping commit"
           else
             git commit -m "Refresh GTFS snapshot ($(date -u +%F))"
+            git pull --rebase -X theirs origin main
+            python3 visualizations/_shared/stamp_version.py
+            git add visualizations/_shared/version.js visualizations/*/index.html
+            git commit --amend --no-edit
             git push
           fi
