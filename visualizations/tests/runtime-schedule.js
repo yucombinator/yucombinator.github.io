@@ -205,7 +205,13 @@ globalThis.runScheduleSmoke = async function runScheduleSmoke(base) {
     try {
       await tab.waitForSelector('#loading.done', { timeout: 60000 });
       await tab.evaluate(() => window.__timSchedule?.openRouteByIndex(0));
+      await tab.waitForSelector('#scheduleToggle:not([hidden])', { timeout: 15000 });
+      const hiddenByDefault = await tab.evaluate(() => document.getElementById('schedulePanel').hidden);
+      if (!hiddenByDefault) fails.push('mobile schedule drawer opened by default');
+      await tab.evaluate(() => document.getElementById('scheduleToggle').click());
       await tab.waitForSelector('#schBody .sched-run, #schBody .sched-empty', { timeout: 15000 });
+      const toggleAfterOpen = await tab.evaluate(() => document.getElementById('scheduleToggle').hidden);
+      if (!toggleAfterOpen) fails.push('mobile schedule toggle remained visible after expansion');
       const box = await tab.evaluate(() => {
         const el = document.getElementById('schedulePanel');
         const r = el.getBoundingClientRect();

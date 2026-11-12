@@ -2256,8 +2256,16 @@
     selectRoute(routePtr, true);
   }
 
-  function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1, focusClose = true) {
+  function updateScheduleToggle() {
+    const toggle = $('scheduleToggle');
+    if (!toggle) return;
+    const mobile = matchMedia('(max-width: 680px)').matches;
+    toggle.hidden = !(mobile && !schedulePanel.open && schedulePanel.routePtr >= 0);
+  }
+
+  function openSchedulePanel(mode, routePtr, runKey = null, runIndex = -1, focusClose = true, forceOpen = false) {
     if (routePtr < 0 || routePtr >= routeIds.length) return;
+    const wasOpen = schedulePanel.open;
     if (mode === 'search' && schedulePanel.mode && schedulePanel.mode !== 'search') {
       schedulePanel.previousMode = schedulePanel.mode;
       schedulePanel.previousRunKey = schedulePanel.runKey;
@@ -2271,6 +2279,13 @@
     const panel = $('schedulePanel');
     if (panel) panel.hidden = false;
     if ($('schRecenter')) $('schRecenter').hidden = mode !== 'run';
+    if (!wasOpen && !forceOpen && matchMedia('(max-width: 680px)').matches) {
+      schedulePanel.open = false;
+      if (panel) panel.hidden = true;
+      scheduleSeq++;
+      updateScheduleToggle();
+      return;
+    }
     if (mode === 'route') {
       schedulePanel.notRunning = false;
       renderScheduleRoute(routePtr);
@@ -2282,6 +2297,7 @@
     const close = $('schClose');
     if (mode === 'search') $('schQuery')?.focus();
     else if (close && focusClose) close.focus();
+    updateScheduleToggle();
   }
 
   function closeSchedulePanel() {
@@ -2289,6 +2305,7 @@
     scheduleSeq++;
     const panel = $('schedulePanel');
     if (panel) panel.hidden = true;
+    updateScheduleToggle();
   }
 
   async function selectRoute(idx, fromKeyboard = false) {
@@ -2335,10 +2352,19 @@
   }
 
   function clearSelection() {
-    if (selected < 0) return;
+    if (selected < 0) {
+      if (schedulePanel.open) closeSchedulePanel();
+      schedulePanel.routePtr = -1;
+      schedulePanel.mode = null;
+      updateScheduleToggle();
+      return;
+    }
     selected = -1;
     selStops = null;
     closeSchedulePanel();
+    schedulePanel.routePtr = -1;
+    schedulePanel.mode = null;
+    updateScheduleToggle();
     if (mapEl && mapEl.focus) mapEl.focus();
     state.dirty = true;
   }
@@ -2736,6 +2762,18 @@
       '<div class="sch-body" id="schBody"></div>' +
       '<div class="sch-foot"><button class="sch-search" id="scheduleSearch" type="button">Search routes &amp; schedules</button></div>';
     document.getElementById('app').appendChild(el);
+    const toggle = document.createElement('button');
+    toggle.id = 'scheduleToggle';
+    toggle.className = 'schedule-toggle';
+    toggle.type = 'button';
+    toggle.hidden = true;
+    toggle.textContent = 'Show schedule';
+    toggle.setAttribute('aria-controls', 'schedulePanel');
+    document.getElementById('app').appendChild(toggle);
+    toggle.addEventListener('click', () => {
+      openSchedulePanel(schedulePanel.mode || 'route', schedulePanel.routePtr,
+        schedulePanel.runKey, schedulePanel.runIndex, true, true);
+    });
     $('schClose').addEventListener('click', closeSchedulePanel);
     $('scheduleSearch').addEventListener('click', () => {
       openSchedulePanel('search', selected >= 0 ? selected : 0);
