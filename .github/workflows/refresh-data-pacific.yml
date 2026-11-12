@@ -43,6 +43,7 @@ jobs:
             visualizations/${{ matrix.city }}/data-saturday.json
             visualizations/${{ matrix.city }}/data-sunday.json
             visualizations/${{ matrix.city }}/stops-*.json
+            visualizations/${{ matrix.city }}/schedules/*.json
           if-no-files-found: error
 
   commit:
@@ -74,6 +75,11 @@ jobs:
         run: |
           python3 visualizations/tests/check_snapshot.py --city vancouver-in-motion
           python3 visualizations/tests/check_snapshot.py --city seattle-in-motion
+      - name: Validate route schedules
+        run: |
+          python3 visualizations/tests/check_schedules.py --city vancouver-in-motion
+          python3 visualizations/tests/check_schedules.py --city seattle-in-motion
+
       - name: Stamp the data version
         run: python3 visualizations/_shared/stamp_version.py
       - name: Commit if a snapshot changed
@@ -82,8 +88,10 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add visualizations/vancouver-in-motion/data*.json \
                   visualizations/vancouver-in-motion/stops-*.json \
+                  'visualizations/vancouver-in-motion/schedules/*.json' \
                   visualizations/seattle-in-motion/data*.json \
                   visualizations/seattle-in-motion/stops-*.json \
+                  'visualizations/seattle-in-motion/schedules/*.json' \
                   visualizations/_shared/version.js \
                   visualizations/*/index.html
           if git diff --cached --quiet; then

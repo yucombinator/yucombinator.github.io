@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate the per-route schedule payloads against the shipped data."""
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -109,10 +110,14 @@ def check_city(city):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--city', choices=[c.name for c in CITIES])
+    args = parser.parse_args()
+    cities = [c for c in CITIES if args.city in (None, c.name)]
     routes = 0
-    for city in CITIES:
+    for city in cities:
         routes += check_city(city)
-    print(f"{len(CITIES)} cities, {routes} routes, {len(fails)} failures")
+    print(f"{len(cities)} cities, {routes} routes, {len(fails)} failures")
     return 1 if fails else 0
 
 

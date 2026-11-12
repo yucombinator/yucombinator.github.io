@@ -45,6 +45,9 @@ jobs:
       # Same idea as the advisory freshness check in the planner: a run that
       # quietly produced an empty or half-downloaded table must fail loudly and
       # leave the deployed data alone.
+      - name: Validate route schedules
+        run: python3 visualizations/tests/check_schedules.py --city toronto-in-motion
+
       - name: Check the snapshot is complete and current
         run: |
           python3 - <<'PY'
@@ -111,6 +114,7 @@ jobs:
                   visualizations/toronto-in-motion/data-saturday.json \
                   visualizations/toronto-in-motion/data-sunday.json \
                   'visualizations/toronto-in-motion/stops-*.json' \
+                  'visualizations/toronto-in-motion/schedules/*.json' \
                   visualizations/_shared/version.js \
                   visualizations/*/index.html 
           if git diff --cached --quiet; then
