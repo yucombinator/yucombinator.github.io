@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .superpowers/
+.worktrees/
 
 visualizations/toronto-in-motion/live.json
 
