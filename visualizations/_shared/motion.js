@@ -2948,7 +2948,9 @@
     toggle.hidden = true;
     toggle.textContent = 'Show schedule';
     toggle.setAttribute('aria-controls', 'schedulePanel');
-    document.getElementById('app').appendChild(toggle);
+    const headerHost = document.querySelector('.hright');
+    if (headerHost && $('aboutBtn')) headerHost.insertBefore(toggle, $('aboutBtn'));
+    else document.getElementById('app').appendChild(toggle);
     toggle.addEventListener('click', () => {
       if (schedulePanel.routePtr < 0) {
         openSchedulePanel('search', 0, null, -1, true, true);

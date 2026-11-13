@@ -219,3 +219,25 @@ test('following a run chains into an available return run', async ({ page }) => 
   await expect.poll(async () => page.evaluate(() => window.__timSchedule.follow()?.trip),
     { timeout: 10_000 }).not.toBe(info.trip);
 });
+
+test('Routes sits between the theme control and About in the header', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop header placement');
+  await load(page);
+  const order = await page.evaluate(() => [...document.querySelector('.hright').children]
+    .map((el) => el.id || el.className));
+  expect(order.indexOf('scheduleToggle')).toBe(order.indexOf('themeBtn') + 1);
+  expect(order.indexOf('scheduleToggle')).toBeLessThan(order.indexOf('aboutBtn'));
+});
+
+test('mobile header controls fit in the viewport', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'mobile header geometry');
+  await load(page);
+  const box = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    viewport: innerWidth,
+    order: [...document.querySelector('.hright').children].map((el) => el.id || el.className),
+  }));
+  expect(box.scroll).toBeLessThanOrEqual(box.viewport);
+  expect(box.order.indexOf('scheduleToggle')).toBe(box.order.indexOf('themeBtn') + 1);
+  expect(box.order.indexOf('scheduleToggle')).toBeLessThan(box.order.indexOf('aboutBtn'));
+});
