@@ -84,6 +84,7 @@
   const lineCtx = chartLine.getContext('2d');
 
   let follow = null;              // { kind: 'scheduled'|'live', trip?, id? }
+  let returnPending = false;
   const schedulePanel = {
     open: false, mode: null, routePtr: -1, runIndex: -1, runKey: null,
     day: null, previousMode: null, previousRunKey: null, autoScroll: true, query: '', searchIndex: -1,
@@ -599,6 +600,7 @@
       state.dirty = true;
     }
     updateScheduleRunPosition(now);
+    if (follow?.kind === 'scheduled') maybeChainFollow(now);
 
     if (state.dirty) {
       const busy = state.playing && now - lastMoveAt > 250;
@@ -1059,7 +1061,9 @@
       stopFollow();
       return;
     }
-    follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, lastTip: 0, tipHtml: '' };
+    follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, lastTip: 0, tipHtml: '', lastReturnCheck: 0 };
+    schedulePanel.noReturn = false;
+    returnPending = false;
     state.hoverTrip = null;
     if (value.route != null) {
       selectRoute(value.route, true);
@@ -1074,6 +1078,51 @@
       closeSchedulePanel();
     }
     state.dirty = true;
+  }
+
+  function scheduleStopDistance(doc, a, b) {
+    const sa = doc.stops[a], sb = doc.stops[b];
+    if (!sa || !sb) return Infinity;
+    const lat = (sa[1] - sb[1]) * 111_320;
+    const lon = (sa[2] - sb[2]) * 111_320 * Math.cos(sa[1] * Math.PI / 180);
+    return Math.hypot(lat, lon);
+  }
+
+  async function maybeChainFollow(now) {
+    if (returnPending || !follow || follow.kind !== 'scheduled' || !state.playing) return;
+    if (now - (follow.lastReturnCheck || 0) < 900) return;
+    follow.lastReturnCheck = now;
+    returnPending = true;
+    const routePtr = follow.route;
+    const trip = follow.trip;
+    try {
+      const doc = await loadRouteSchedule(routePtr);
+      if (!follow || follow.kind !== 'scheduled' || follow.trip !== trip || !state.playing) return;
+      const current = findScheduleRun(doc, curDay, null, trip);
+      if (!current) return;
+      const currentClock = runClock(current, state.t);
+      if (currentClock < current.end) return;
+      const last = current.stops && current.stops[current.stops.length - 1];
+      const runs = doc.days?.[curDay]?.runs || [];
+      let next = null;
+      for (const run of runs) {
+        if (run.i === current.i || run.dir === current.dir) continue;
+        if (run.start < current.end) continue;
+        const first = run.stops && run.stops[0];
+        if (!first || scheduleStopDistance(doc, last?.[0], first[0]) > 2000) continue;
+        if (!next || run.start < next.start) next = run;
+      }
+      if (!next) {
+        schedulePanel.noReturn = true;
+        stopFollow();
+        return;
+      }
+      const nextClock = next.start >= DAY ? next.start - DAY : next.start;
+      seek(nextClock + 1);
+      startFollow('scheduled', { trip: next.i, route: routePtr });
+    } finally {
+      returnPending = false;
+    }
   }
 
   function followScreenPos() {
@@ -2129,8 +2178,9 @@
     if (!el) return;
     const run = schedulePanel.run;
     const active = runIsActive(run, state.t);
-    const text = (follow && follow.kind === 'scheduled' && follow.trip === run.i)
-      ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
+    const text = schedulePanel.noReturn ? 'Run ended · no return'
+      : (follow && follow.kind === 'scheduled' && follow.trip === run.i)
+        ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
     if (el.textContent !== text) el.textContent = text;
   }
 
@@ -3341,6 +3391,8 @@
         openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
         close: closeSchedulePanel,
         setTime: (t) => { setPlaying(false); seek(t); },
+        play: () => setPlaying(true),
+        follow: () => follow && { ...follow },
         futureTip: (id) => {
           const project = FUTURE.find((p) => p.id === id);
           return project ? futureTipHTML(project) : '';

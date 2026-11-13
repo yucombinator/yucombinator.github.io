@@ -196,3 +196,26 @@ test('large route exposes a current-time jump and collapsible groups', async ({ 
   await page.locator('#schNow').click();
   await expect(page.locator('#schBody .sched-run').first()).toBeVisible();
 });
+
+test('following a run chains into an available return run', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop follow chaining');
+  await load(page);
+  const info = await page.evaluate(async () => {
+    const idx = window.__timSchedule.routeIndex('puget:2LINE');
+    const v = window.MOTION_VERSION || 'local';
+    const doc = await (await fetch(`/seattle-in-motion/schedules/${idx}.json?v=${v}`)).json();
+    const runs = doc.days.weekday.runs;
+    const current = runs.find((run) => run.dir === 0 && runs.some((next) =>
+      next.dir !== run.dir && next.start >= run.end));
+    if (!current) return null;
+    window.__timSchedule.setTime(current.start + 1);
+    window.__timSchedule.openRunByIndex(idx, current.i);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.__timSchedule.setTime(current.end - 1);
+    window.__timSchedule.play();
+    return { trip: current.i };
+  });
+  test.skip(!info, 'no return pair in fixture');
+  await expect.poll(async () => page.evaluate(() => window.__timSchedule.follow()?.trip),
+    { timeout: 10_000 }).not.toBe(info.trip);
+});
