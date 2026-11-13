@@ -1088,6 +1088,18 @@
     return Math.hypot(lat, lon);
   }
 
+  function flashFollowNotice(text) {
+    const tip = $('tip');
+    if (!tip) return;
+    tip.innerHTML = `<div class="m">Follow</div><strong>${esc(text)}</strong>`;
+    tip.style.display = 'block';
+    tip.style.left = '12px';
+    tip.style.top = '88px';
+    setTimeout(() => {
+      if (tip.textContent.includes(text)) tip.style.display = 'none';
+    }, 3500);
+  }
+
   async function maybeChainFollow(now) {
     if (returnPending || !follow || follow.kind !== 'scheduled' || !state.playing) return;
     if (now - (follow.lastReturnCheck || 0) < 900) return;
@@ -1115,6 +1127,7 @@
       if (!next) {
         schedulePanel.noReturn = true;
         stopFollow();
+        flashFollowNotice('Run ended · no return run found');
         return;
       }
       const nextClock = next.start >= DAY ? next.start - DAY : next.start;
