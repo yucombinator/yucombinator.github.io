@@ -2310,8 +2310,7 @@
   function updateScheduleToggle() {
     const toggle = $('scheduleToggle');
     if (!toggle) return;
-    const mobile = matchMedia('(max-width: 680px)').matches;
-    toggle.hidden = !(mobile && !schedulePanel.open);
+    toggle.hidden = schedulePanel.open;
     toggle.textContent = schedulePanel.routePtr >= 0 ? 'Show schedule' : 'Routes';
     toggle.setAttribute('aria-expanded', String(schedulePanel.open));
   }

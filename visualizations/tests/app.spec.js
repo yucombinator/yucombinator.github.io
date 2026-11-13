@@ -186,3 +186,13 @@ test('drawer close button stays pinned to the top right', async ({ page, isMobil
   expect(close.x + close.width).toBeGreaterThanOrEqual(box.x + box.width - 24);
   expect(close.y).toBeLessThan(box.y + 36);
 });
+
+test('schedule toggle is hidden while the drawer is open', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop toggle visibility');
+  await load(page);
+  await page.evaluate(() => window.__timSchedule.openRouteByKey('puget:2LINE'));
+  await expect(page.locator('#schedulePanel')).toBeVisible();
+  await expect(page.locator('#scheduleToggle')).toBeHidden();
+  await page.evaluate(() => window.__timSchedule.close());
+  await expect(page.locator('#scheduleToggle')).toBeVisible();
+});
