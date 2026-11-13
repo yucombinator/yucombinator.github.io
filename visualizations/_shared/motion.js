@@ -1730,6 +1730,25 @@
     };
   }
 
+  function clearDayError() {
+    const box = $('dayError');
+    if (box) box.remove();
+  }
+
+  function showDayError(key, err) {
+    clearDayError();
+    const meta = document.querySelector('.meta');
+    if (!meta) return;
+    const box = document.createElement('div');
+    box.id = 'dayError';
+    box.className = 'day-error';
+    box.setAttribute('role', 'alert');
+    box.innerHTML = `<span>Could not load ${esc(key)} service.</span>` +
+      '<button type="button" id="dayRetry">Retry</button>';
+    meta.appendChild(box);
+    $('dayRetry')?.addEventListener('click', () => activateDay(key));
+  }
+
   async function activateDay(key) {
     if (follow) stopFollow();
     if (!dayCache[key]) {
@@ -1744,11 +1763,13 @@
       } catch (err) {
         console.warn('day load failed:', err);
         if (btn) btn.removeAttribute('aria-busy');
+        showDayError(key, err);
         return;
       }
       if (btn) btn.removeAttribute('aria-busy');
     }
     if (!dayCache[key]) return;
+    clearDayError();
     const d = dayCache[key];
     curDay = key;
     curDayData = d;
@@ -1981,9 +2002,10 @@
     if (!runs.length) {
       html += `<p class="sched-empty">No scheduled runs for ${esc(dayDoc?.label || day)}.</p>`;
     } else {
+      html += `<div class="sched-tools"><button type="button" id="schNow">Jump to current time</button><span>${runs.length} runs</span></div>`;
       for (const [label, list] of grouped) {
         list.sort((a, b) => a.start - b.start);
-        html += `<section class="sched-group"><h4>${esc(label)}</h4>`;
+        html += `<details class="sched-group" open><summary>${esc(label)} · ${list.length} runs</summary>`;
         let seenNextDay = false;
         for (const run of list) {
           if (run.start >= DAY && !seenNextDay) {
@@ -1997,7 +2019,7 @@
             `<span class="sr-end">${fmtNext(run.end)}</span>` +
             `<span class="sr-dest">(${esc(runDestination(doc, run))})</span></button>`;
         }
-        html += '</section>';
+        html += '</details>';
       }
     }
     body.innerHTML = html;
@@ -2884,6 +2906,12 @@
       updateScheduleRunPosition(performance.now(), true);
     });
     $('schBody').addEventListener('click', (e) => {
+      if (e.target.closest('#schNow')) {
+        const rows = [...document.querySelectorAll('#schBody .sched-run')];
+        const target = rows.find((row) => +row.dataset.runStart >= state.t) || rows[rows.length - 1];
+        if (target) { target.scrollIntoView({ block: 'center' }); target.focus(); }
+        return;
+      }
       const result = e.target.closest('#schResults [data-route-index]');
       if (result) { selectScheduleRoute(+result.dataset.routeIndex); return; }
       const row = e.target.closest('[data-run-index]');

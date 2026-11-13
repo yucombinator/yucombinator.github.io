@@ -68,6 +68,8 @@
   header{text-shadow:0 1px 10px rgba(7,13,20,.9)}
   .meta .day{font-size:11px;letter-spacing:1px;color:#93aab0;text-transform:uppercase}
   .meta .sub{margin-top:5px;font-size:12px;color:#7d949b;max-width:34ch;line-height:1.5}
+  .day-error{margin-top:8px;display:flex;align-items:center;gap:8px;pointer-events:auto;color:#ffb4b4;font-size:11px}
+  .day-error button{background:none;border:1px solid #6a3b3b;border-radius:4px;color:var(--accent-text);font:inherit;font-size:10px;padding:3px 7px;cursor:pointer}
 
   .panel{position:absolute;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));background:var(--panel);border:1px solid #203440;border-radius:10px;padding:10px 14px 8px;z-index:4}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px}
@@ -165,6 +167,10 @@
   .sched-loading,.sched-empty{margin:12px 0;color:#8ea5aa;font-size:11.5px;line-height:1.5}
   .sched-retry{color:var(--accent-text);background:none;border:0;padding:0;font:inherit;text-decoration:underline;cursor:pointer}
   .sched-group{margin-top:14px}
+  .sched-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 4px;color:#7f9ba1;font-size:10px}
+  .sched-tools button{background:none;border:1px solid #33505a;border-radius:4px;color:var(--accent-text);font:inherit;font-size:10px;padding:4px 7px;cursor:pointer}
+  .sched-group{margin-top:8px}
+  .sched-group summary{color:#9db3b8;font-size:10px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;cursor:pointer;padding:4px 0}
   .sched-group h4{margin:0 0 5px;color:#9db3b8;font-size:10px;font-weight:500;letter-spacing:.7px;text-transform:uppercase}
   .sched-daybreak{margin:8px 0 2px;color:var(--accent-text);font-size:9px;letter-spacing:.7px;text-transform:uppercase}
   .sched-run{display:grid;grid-template-columns:42px 12px 42px 1fr;align-items:center;gap:5px;width:100%;background:none;border:0;border-top:1px solid #182a32;padding:7px 0;color:#b9cccf;font:inherit;font-size:11.5px;text-align:left;cursor:pointer}

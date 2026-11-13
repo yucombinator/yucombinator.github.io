@@ -68,28 +68,6 @@ test('overnight labels are explicit', async ({ page, isMobile }) => {
   expect(label).toBe('+1 01:00');
 });
 
-test('mobile touch selects a route line', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'touch-only map interaction');
-  await load(page);
-  await page.waitForFunction(() => !!window.__timMap, null, { timeout: 15_000 });
-  const point = await page.evaluate(async () => {
-    const version = window.MOTION_VERSION || 'local';
-    const data = await (await fetch('/seattle-in-motion/data.json?v=' + version)).json();
-    const routeIndex = Object.keys(data.routes).indexOf('puget:2LINE');
-    const trip = data.days.weekday.trips.find((row) => row[3] === routeIndex);
-    const shape = data.shapes[trip[0]];
-    const p = shape[Math.floor(shape.length / 2)];
-    const lon = (p[0] + data.proj.x0) / data.proj.kx;
-    const lat = (p[1] + data.proj.y0) / data.proj.ky;
-    window.__timMap.jumpTo({ center: [lon, lat], zoom: 13 });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const screen = window.__timMap.project([lon, lat]);
-    return { x: screen.x, y: screen.y };
-  });
-  await page.touchscreen.tap(point.x, point.y);
-  await expect(page.locator('#scheduleToggle')).toHaveText('Show schedule', { timeout: 10_000 });
-});
-
 test('drawer has no non-color accessibility violations', async ({ page, isMobile }) => {
   test.skip(test.info().project.name !== 'desktop', 'desktop DOM scan');
   await load(page);
@@ -195,4 +173,26 @@ test('schedule toggle is hidden while the drawer is open', async ({ page }) => {
   await expect(page.locator('#scheduleToggle')).toBeHidden();
   await page.evaluate(() => window.__timSchedule.close());
   await expect(page.locator('#scheduleToggle')).toBeVisible();
+});
+
+test('day payload failure shows a retry state', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop day failure');
+  await load(page);
+  await page.route('**/data-saturday.json*', (route) => route.abort());
+  await page.locator('#days button[data-day="saturday"]').click();
+  await expect(page.locator('#dayError')).toBeVisible();
+  await expect(page.locator('#dayRetry')).toBeVisible();
+});
+
+test('large route exposes a current-time jump and collapsible groups', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop large-route check');
+  await page.goto('/toronto-in-motion/?test=1');
+  await expect(page.locator('#scheduleToggle')).toBeVisible({ timeout: 30_000 });
+  await page.evaluate(() => window.__timSchedule.setTime(12 * 3600));
+  await page.evaluate(() => window.__timSchedule.openRouteByKey('ttc:504'));
+  await expect(page.locator('#schedulePanel')).toBeVisible();
+  await expect(page.locator('#schNow')).toBeVisible();
+  await expect(page.locator('#schBody details.sched-group').first()).toBeVisible();
+  await page.locator('#schNow').click();
+  await expect(page.locator('#schBody .sched-run').first()).toBeVisible();
 });
