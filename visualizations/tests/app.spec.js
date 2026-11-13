@@ -241,3 +241,13 @@ test('mobile header controls fit in the viewport', async ({ page, isMobile }) =>
   expect(box.order.indexOf('scheduleToggle')).toBe(box.order.indexOf('themeBtn') + 1);
   expect(box.order.indexOf('scheduleToggle')).toBeLessThan(box.order.indexOf('aboutBtn'));
 });
+
+test('Routes header control matches the About link color', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop header styling');
+  await load(page);
+  const colors = await page.evaluate(() => {
+    const c = (id) => getComputedStyle(document.getElementById(id)).color;
+    return { routes: c('scheduleToggle'), about: c('aboutBtn') };
+  });
+  expect(colors.routes).toBe(colors.about);
+});

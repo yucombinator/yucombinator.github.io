@@ -154,7 +154,7 @@
 
   .schedule-panel{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right));top:88px;bottom:calc(var(--panel-h,240px) + 24px + env(safe-area-inset-bottom));width:min(390px,calc(100vw - 32px));display:flex;flex-direction:column;background:var(--panel);border:1px solid #203440;border-radius:10px;box-shadow:0 14px 38px rgba(0,0,0,.32);overflow:hidden;color:var(--text)}
   .schedule-panel[hidden]{display:none}
-  .schedule-toggle{display:inline-flex;align-items:center;background:none;border:0;color:var(--accent-text);font:inherit;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:6px 0;cursor:pointer}
+  .schedule-toggle{display:inline-flex;align-items:center;background:none;border:0;color:#9db3b8;font:inherit;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:6px 0;cursor:pointer}
   .schedule-toggle[hidden]{display:none!important}
   .schedule-toggle:hover{color:var(--accent)}
   html[data-theme="light"] .schedule-toggle{color:var(--accent-text)}
