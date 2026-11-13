@@ -10,7 +10,10 @@ test('production serves current assets and usable mobile schedule entry', async 
   const schedule = await request.get('/visualizations/seattle-in-motion/schedules/0.json');
   expect(schedule.status()).toBe(200);
   const doc = await schedule.json();
-  expect(doc.route).toBeTruthy();
+  const dataRes = await request.get('/visualizations/seattle-in-motion/data.json');
+  expect(dataRes.status()).toBe(200);
+  const data = await dataRes.json();
+  expect(doc.route).toBe(Object.keys(data.routes)[0]);
   expect(Array.isArray(doc.days.weekday.runs)).toBe(true);
 
   await page.locator('#scheduleToggle').click();

@@ -598,7 +598,7 @@
     if (state.liveOn && liveAnim && now < liveAnim.start + liveAnim.duration) {
       state.dirty = true;
     }
-    updateScheduleFollow(now);
+    updateScheduleRunPosition(now);
 
     if (state.dirty) {
       const busy = state.playing && now - lastMoveAt > 250;
@@ -949,11 +949,18 @@
     octx.lineCap = 'round';
     octx.lineJoin = 'round';
     for (const project of FUTURE) {
+      const modeKey = project.mode === 'train' ? 'lrt' : project.mode;
+      if (modeKey && state.modes[modeKey] === false) continue;
       const xy = (project.shape || []).map(([lon, lat]) => {
         const p = mapObj.project([lon, lat]);
         return [p.x, p.y];
       });
       if (xy.length < 2) continue;
+      const xs = xy.map((p) => p[0]);
+      const ys = xy.map((p) => p[1]);
+      if (Math.max(...xs) < -40 || Math.min(...xs) > view.w + 40
+          || Math.max(...ys) < -40 || Math.min(...ys) > view.h + 40) continue;
+      const lineColor = project.color || CANVAS.futureLine;
       const drawGhost = (width, color, alpha) => {
         octx.strokeStyle = color;
         octx.lineWidth = width;
@@ -965,7 +972,7 @@
         octx.stroke();
       };
       drawGhost(4.8, CANVAS.futureCasing, 0.72);
-      drawGhost(2.5, CANVAS.futureLine, 0.95);
+      drawGhost(2.5, lineColor, 0.95);
       futureHits.push({ xy, project });
 
       const travel = Math.max(300, (project.travelMin || 30) * 60);
@@ -973,7 +980,7 @@
       const count = Math.max(1, Math.min(6, Math.ceil(travel / headway)));
       const phase = (state.t % travel) / travel;
       octx.setLineDash([]);
-      octx.fillStyle = CANVAS.futureLine;
+      octx.fillStyle = lineColor;
       for (const reverse of [false, true]) {
         for (let i = 0; i < count; i++) {
           let f = (phase + (i * headway) / travel) % 1;
@@ -988,6 +995,16 @@
       }
     }
     octx.restore();
+  }
+
+  function futureTipHTML(project) {
+    const status = project.status || 'planned';
+    const opening = project.opening || 'TBD';
+    const when = /^TBD/i.test(opening) || /\btarget\b/i.test(opening)
+      ? esc(opening) : `target ${esc(opening)}`;
+    return `<div class="m"><span class="cd" style="background:${esc(project.color || CANVAS.futureLine)}"></span>` +
+      `Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div>` +
+      `<strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · ${project.headwayMin || '—'} min headway</small>`;
   }
 
   function futureAt(mx, my) {
@@ -1774,19 +1791,23 @@
     });
     drawChart();
     state.dirty = true;
-    if (schedulePanel.open && schedulePanel.routePtr >= 0) {
+    if (schedulePanel.routePtr >= 0) {
       const ptr = schedulePanel.routePtr;
       if (schedulePanel.mode === 'route') {
-        renderScheduleRoute(ptr, key);
+        if (schedulePanel.open) renderScheduleRoute(ptr, key);
       } else if (schedulePanel.mode === 'run') {
         loadRouteSchedule(ptr).then((doc) => {
           const run = doc && findScheduleRun(doc, key, schedulePanel.runKey, -1);
           if (run) {
             schedulePanel.runIndex = run.i;
-            renderScheduleRun(ptr, [run.trip, run.start], run.i);
+            schedulePanel.runKey = [run.trip, run.start];
+            if (schedulePanel.open) renderScheduleRun(ptr, schedulePanel.runKey, run.i);
           } else {
-            renderScheduleRoute(ptr, key, true);
+            schedulePanel.mode = 'route';
+            schedulePanel.runIndex = -1;
+            if (schedulePanel.open) renderScheduleRoute(ptr, key, true);
           }
+          updateScheduleToggle();
         });
       }
     }
@@ -1942,10 +1963,11 @@
     const body = $('schBody');
     if (!body) return;
     const dayDoc = doc && doc.days && doc.days[day];
-    const runs = dayDoc && Array.isArray(dayDoc.runs) ? dayDoc.runs : [];
+    const allRuns = dayDoc && Array.isArray(dayDoc.runs) ? dayDoc.runs : [];
+    const runs = allRuns.filter((run) => !/not in service|drop off only|sorry/i.test(run.headsign || ''));
     const grouped = new Map();
     for (const run of runs) {
-      const label = run.headsign || (run.dir === 1 ? 'Inbound' : 'Outbound');
+      const label = run.dir === 1 ? 'Inbound' : 'Outbound';
       if (!grouped.has(label)) grouped.set(label, []);
       grouped.get(label).push(run);
     }
@@ -2085,14 +2107,14 @@
     if (!el) return;
     const run = schedulePanel.run;
     const active = runIsActive(run, state.t);
-    el.textContent = (follow && follow.kind === 'scheduled' && follow.trip === run.i)
+    const text = (follow && follow.kind === 'scheduled' && follow.trip === run.i)
       ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
+    if (el.textContent !== text) el.textContent = text;
   }
 
-  function updateScheduleFollow(now, force = false) {
+  function updateScheduleRunPosition(now, force = false) {
     if (!schedulePanel.open || schedulePanel.mode !== 'run' || !schedulePanel.run) return;
-    if (!follow || follow.kind !== 'scheduled' || follow.trip !== schedulePanel.run.i) return;
-    if (!force && now - (schedulePanel.lastSync || 0) < 900) return;
+    if (!force && now - (schedulePanel.lastSync || 0) < 500) return;
     schedulePanel.lastSync = now;
     updateScheduleRunState();
     const run = schedulePanel.run;
@@ -2108,7 +2130,8 @@
       el.classList.toggle('sched-done', i < next);
       el.classList.toggle('sched-next', i === next);
     });
-    if (schedulePanel.autoScroll || force) {
+    const following = !!(follow && follow.kind === 'scheduled' && follow.trip === run.i);
+    if ((schedulePanel.autoScroll && following) || force) {
       const el = body.querySelector(`.sched-stop[data-stop-index="${next}"]`);
       if (el) {
         const top = stopOffset(el);
@@ -2186,34 +2209,51 @@
 
   function matchingRoutes(query) {
     const q = String(query || '').trim().toLowerCase();
-    const out = [];
+    const scored = [];
     for (let i = 0; i < routeIds.length; i++) {
       const meta = D.routes[routeIds[i]] || {};
-      const hay = [meta.s, meta.l, meta.a, MODE_LABEL[meta.m] || meta.m].join(' ').toLowerCase();
-      if (!q || hay.includes(q)) out.push(i);
-      if (out.length >= 60) break;
+      const short = String(meta.s || '').toLowerCase();
+      const long = String(meta.l || '').toLowerCase();
+      const agency = String(meta.a || '').toLowerCase();
+      const mode = String(MODE_LABEL[meta.m] || meta.m || '').toLowerCase();
+      let rank;
+      if (!q) rank = 4;
+      else if (short === q) rank = 0;
+      else if (short.startsWith(q)) rank = 1;
+      else if (short.includes(q)) rank = 2;
+      else if (long.includes(q) || agency.includes(q) || mode.includes(q)) rank = 3;
+      else continue;
+      scored.push({ i, rank, short, mode: String(meta.m || '') });
     }
-    return out;
+    scored.sort((a, b) => a.rank - b.rank
+      || MODES.indexOf(a.mode) - MODES.indexOf(b.mode)
+      || a.short.localeCompare(b.short)
+      || routeIds[a.i].localeCompare(routeIds[b.i]));
+    return { items: scored.slice(0, 60).map((x) => x.i), total: scored.length };
   }
 
   function renderSearchResults() {
     const box = $('schResults');
     if (!box) return;
-    const matches = matchingRoutes(schedulePanel.query);
+    const { items: matches, total } = matchingRoutes(schedulePanel.query);
     schedulePanel.searchIndex = matches.length ? 0 : -1;
+    const count = $('schCount');
+    if (count) count.textContent = total ? `Showing ${matches.length} of ${total} routes` : '';
     if (!matches.length) {
       box.innerHTML = '<p class="sched-empty">No matching routes.</p>';
       return;
     }
     box.innerHTML = matches.map((idx, n) => {
       const info = routeName(idx);
-      const meta = D.routes[routeIds[idx]] || {};
       const dot = slotColors[routeSlot[idx]];
-      return `<button type="button" class="sched-search-row${n === 0 ? ' active' : ''}" ` +
-        `data-route-index="${idx}" aria-label="${esc(info.name)}"> ` +
+      return `<button type="button" role="option" id="sch-opt-${n}" ` +
+        `class="sched-search-row${n === 0 ? ' active' : ''}" data-route-index="${idx}" ` +
+        `aria-selected="${n === 0 ? 'true' : 'false'}">` +
         `<span class="rdot" style="background:${dot}"></span>` +
         `<span class="ssr-text"><b>${esc(info.name)}</b><span>${esc(info.meta)}</span></span></button>`;
     }).join('');
+    const input = $('schQuery');
+    if (input) input.setAttribute('aria-activedescendant', 'sch-opt-0');
   }
 
   function renderScheduleSearch(query = '') {
@@ -2222,8 +2262,10 @@
     const body = $('schBody');
     if (!body) return;
     body.innerHTML = '<div class="sch-searchbar"><input id="schQuery" type="search" ' +
-      'placeholder="Search routes" autocomplete="off" aria-label="Search routes"></div>' +
-      '<div id="schResults" class="sch-results"></div>';
+      'placeholder="Search routes" autocomplete="off" role="combobox" ' +
+      'aria-autocomplete="list" aria-controls="schResults" aria-label="Search routes"></div>' +
+      '<p class="sch-count" id="schCount"></p>' +
+      '<div id="schResults" class="sch-results" role="listbox"></div>';
     const input = $('schQuery');
     if (!input) return;
     input.value = query;
@@ -2250,7 +2292,11 @@
       }
       const delta = e.key === 'ArrowDown' ? 1 : -1;
       schedulePanel.searchIndex = (schedulePanel.searchIndex + delta + rows.length) % rows.length;
-      rows.forEach((row, n) => row.classList.toggle('active', n === schedulePanel.searchIndex));
+      rows.forEach((row, n) => {
+        row.classList.toggle('active', n === schedulePanel.searchIndex);
+        row.setAttribute('aria-selected', String(n === schedulePanel.searchIndex));
+      });
+      input.setAttribute('aria-activedescendant', 'sch-opt-' + schedulePanel.searchIndex);
       rows[schedulePanel.searchIndex].scrollIntoView({ block: 'nearest' });
     });
     renderSearchResults();
@@ -2258,7 +2304,7 @@
   }
 
   function selectScheduleRoute(routePtr) {
-    selectRoute(routePtr, true);
+    selectRoute(routePtr, false);
   }
 
   function updateScheduleToggle() {
@@ -2284,12 +2330,31 @@
     schedulePanel.runIndex = runIndex;
     schedulePanel.day = curDay;
     const panel = $('schedulePanel');
-    if (panel) panel.hidden = false;
+    if (panel) {
+      panel.hidden = false;
+      if (mode === 'search') {
+        panel.setAttribute('aria-label', 'Route search');
+        panel.removeAttribute('aria-labelledby');
+      } else {
+        panel.removeAttribute('aria-label');
+        panel.setAttribute('aria-labelledby', 'schName');
+      }
+    }
     if ($('schRecenter')) $('schRecenter').hidden = mode !== 'run';
     if (!wasOpen && !forceOpen && matchMedia('(max-width: 680px)').matches) {
       schedulePanel.open = false;
       if (panel) panel.hidden = true;
       scheduleSeq++;
+      if (mode === 'run' && runKey == null) {
+        loadRouteSchedule(routePtr).then((doc) => {
+          const run = doc && findScheduleRun(doc, curDay, null, runIndex);
+          if (run) {
+            schedulePanel.runKey = [run.trip, run.start];
+            schedulePanel.runIndex = run.i;
+            updateScheduleToggle();
+          }
+        });
+      }
       updateScheduleToggle();
       return;
     }
@@ -2303,16 +2368,22 @@
     }
     const close = $('schClose');
     if (mode === 'search') $('schQuery')?.focus();
-    else if (close && focusClose) close.focus();
+    else if (focusClose) ($('schName') || close)?.focus();
     updateScheduleToggle();
   }
 
   function closeSchedulePanel() {
+    const wasInside = $('schedulePanel')?.contains(document.activeElement);
     schedulePanel.open = false;
     scheduleSeq++;
     const panel = $('schedulePanel');
     if (panel) panel.hidden = true;
     updateScheduleToggle();
+    if (wasInside) {
+      const toggle = $('scheduleToggle');
+      if (toggle && !toggle.hidden) toggle.focus();
+      else if (mapEl) mapEl.focus();
+    }
   }
 
   async function selectRoute(idx, fromKeyboard = false) {
@@ -2431,6 +2502,18 @@
       if (d < hitD) { hitD = d; hit = route; }
     }
     if (hit >= 0) { stopFollow(); selectRoute(hit); return; }
+    if (futureOn) {
+      const project = futureAt(mx, my);
+      if (project) {
+        const tip = $('tip');
+        tip.innerHTML = futureTipHTML(project);
+        tip.style.display = 'block';
+        const tw = tip.offsetWidth, th = tip.offsetHeight;
+        tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, mx + 14)) + 'px';
+        tip.style.top = Math.max(8, my - th - 14) + 'px';
+        return;
+      }
+    }
     stopFollow();
     clearSelection();
   }
@@ -2710,7 +2793,7 @@
       const btn = document.createElement('button');
       btn.dataset.future = '1';
       btn.setAttribute('aria-pressed', String(futureOn));
-      btn.title = 'Under-construction projects — ghost layer with approximate headways';
+      btn.title = 'Future projects and extensions — ghost layer with approximate headways';
       const glyph = document.createElement('span');
       glyph.className = 'dot';
       glyph.style.background = 'linear-gradient(90deg,#8fb3c4,#c4dce6)';
@@ -2766,7 +2849,7 @@
     el.innerHTML =
       '<div class="sch-head">' +
         '<span class="rdot" id="schDot" aria-hidden="true"></span>' +
-        '<div class="rtitle"><b id="schName">Route</b><span id="schMeta"></span></div>' +
+        '<div class="rtitle"><b id="schName" tabindex="-1">Route</b><span id="schMeta"></span></div>' +
         '<button class="sched-recenter" id="schRecenter" type="button" hidden>Recenter</button>' +
         '<button class="rclose" id="schClose" type="button" aria-label="Close schedule">×</button>' +
       '</div>' +
@@ -2799,7 +2882,7 @@
     $('schRecenter').addEventListener('click', () => {
       schedulePanel.autoScroll = true;
       $('schRecenter').hidden = true;
-      updateScheduleFollow(performance.now(), true);
+      updateScheduleRunPosition(performance.now(), true);
     });
     $('schBody').addEventListener('click', (e) => {
       const result = e.target.closest('#schResults [data-route-index]');
@@ -2952,10 +3035,7 @@
         if (project) {
           state.hoverTrip = null;
           state.dirty = true;
-          const status = project.status || 'under construction';
-          const opening = project.opening || 'TBD';
-          const when = /^TBD/i.test(opening) ? esc(opening) : `target ${esc(opening)}`;
-          tip.innerHTML = `<div class="m"><span class="cd" style="background:${esc(CANVAS.futureLine)}"></span>Future project · ${esc(project.modeLabel || project.mode || 'transit')}</div><strong>${esc(project.name)}</strong><small>${esc(status)} · ${when} · ${project.headwayMin || '—'} min headway</small>`;
+          tip.innerHTML = futureTipHTML(project);
           tip.style.display = 'block';
           const tw = tip.offsetWidth, th = tip.offsetHeight;
           tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, e.clientX + 14)) + 'px';
@@ -3234,6 +3314,10 @@
         openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
         close: closeSchedulePanel,
         setTime: (t) => { setPlaying(false); seek(t); },
+        futureTip: (id) => {
+          const project = FUTURE.find((p) => p.id === id);
+          return project ? futureTipHTML(project) : '';
+        },
         routeIndex: (key) => routeIds.indexOf(key),
         state: () => ({ ...schedulePanel, following: !!follow, t: state.t, selected }),
       };
