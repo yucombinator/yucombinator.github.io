@@ -181,6 +181,7 @@
   let px = null, py = null, pAng = null, pTrip = null;
   let slotBuckets = null, slotCounts = null;
   let activeCount = 0;       // dots currently drawn (viewport)
+  let idleView = true;        // few/no vehicles in view: show the network
   let activeTotal = 0;       // trips running, on screen or not
   const modeTotals = new Array(MODES.length).fill(0);
   let view = { w: 0, h: 0, screenShapes: [] };
@@ -439,12 +440,13 @@
     lctx.lineCap = 'round';
     const ss = view.screenShapes;
     const zLine = mapObj ? mapObj.getZoom() : fitZoom;
-    const showIdle = zLine >= 13.5 && !follow;
+    const showIdle = (zLine >= 13.5 || idleView) && !follow;
+    const idleNetwork = idleView;
     // Bus routes are noise at region zoom: drop them below z10.4, then ease
     // them back in (quadratically, so the packed-shape overlap stays light)
     // until they are fully drawn at z12.4.
     const busRaw = Math.max(0, Math.min(1, (zLine - 10.4) / 2));
-    const busFade = busRaw * busRaw;
+    const busFade = idleNetwork ? Math.max(0.28, busRaw * busRaw) : busRaw * busRaw;
     const cull = aff.sx === 1 && aff.sy === 1 && aff.ox === 0 && aff.oy === 0;
     for (const { shapeIdx, color, mode, route } of railShapes) {
       if (!state.modes[mode]) continue;
@@ -459,7 +461,7 @@
       if (bus && busFade < 0.01) continue;
       lctx.strokeStyle = liveRoute
         ? color + (MODE_LINE_ALPHA[mode] || (bus ? '2b' : '5c'))
-        : CANVAS.inactiveLine;
+        : idleNetwork ? (themeLight ? 'rgba(45,75,85,.42)' : 'rgba(176,200,210,.48)') : CANVAS.inactiveLine;
       lctx.lineWidth = MODE_LINE_WIDTH[mode] || (bus ? 1 : 1.15);
       lctx.globalAlpha = bus ? busFade : 1;
       lctx.beginPath();
@@ -1289,6 +1291,9 @@
         activeCount++;
       }
     }
+
+    const idleNow = activeCount < 8;
+    if (idleNow !== idleView) { idleView = idleNow; linesDirty = true; state.dirty = true; }
 
     if (corridors) {
       const zc = mapObj ? mapObj.getZoom() : fitZoom;

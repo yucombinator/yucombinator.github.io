@@ -265,3 +265,22 @@ test('boot survives a delayed Saturday payload', async ({ page }) => {
   await page.waitForTimeout(1800);
   await expect(page.locator('#loading')).not.toContainText('Could not load trip data');
 });
+
+test('quiet view keeps the network visible', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop low-service map');
+  await load(page);
+  await page.evaluate(async () => {
+    await window.__timSchedule.setDay('saturday');
+    window.__timSchedule.setTime(50 * 60);
+    window.__timMap.jumpTo({ center: [-122.19, 48.07], zoom: 9.5 });
+  });
+  await page.waitForTimeout(900);
+  const painted = await page.evaluate(() => {
+    const el = document.getElementById('rail');
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    let n = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i]) n++;
+    return n;
+  });
+  expect(painted).toBeGreaterThan(1000);
+});
