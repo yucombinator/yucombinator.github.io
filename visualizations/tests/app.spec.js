@@ -311,3 +311,28 @@ test('boot paints the map after an async Saturday day load', async ({ page }) =>
     return n;
   }), { timeout: 10_000 }).toBeGreaterThan(1000);
 });
+
+test('speed defaults to 0.25 and the 1x control toggles 2.5x', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop playback controls');
+  await load(page);
+  await page.evaluate(() => window.__timSchedule.play());
+  const quarter = page.locator('#speed button[data-speed="12"]');
+  const half = page.locator('#speed button[data-speed="24"]');
+  const one = page.locator('#speed button[data-speed="48"]');
+
+  await expect(quarter).toHaveAttribute('aria-pressed', 'true');
+  await expect(half).toHaveAttribute('aria-pressed', 'false');
+  await expect(one).toHaveAttribute('aria-pressed', 'false');
+
+  await one.click();
+  await expect(one).toHaveAttribute('aria-pressed', 'true');
+  await expect(one).toHaveAttribute('aria-label', '1× speed');
+
+  await one.click();
+  await expect(one).toHaveAttribute('aria-pressed', 'true');
+  await expect(one).toHaveAttribute('aria-label', '2.5× speed');
+
+  await half.click();
+  await expect(half).toHaveAttribute('aria-pressed', 'true');
+  await expect(one).toHaveAttribute('aria-pressed', 'false');
+});

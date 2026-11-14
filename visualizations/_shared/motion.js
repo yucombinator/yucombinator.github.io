@@ -94,7 +94,7 @@
   const state = {
     t: 7 * 3600,
     playing: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-    speed: 24,
+    speed: 12,
     modes: Object.fromEntries(MODES.map((m) => [m, true])),
     hoverTrip: null,
     dirty: true,
@@ -2813,7 +2813,14 @@
 
   function updateSpeedButtons() {
     document.querySelectorAll('#speed button[data-speed]').forEach((b) => {
-      b.setAttribute('aria-pressed', String(state.playing && +b.dataset.speed === state.speed));
+      const speed = +b.dataset.speed;
+      const boosted = speed === 48 && state.speed === 120;
+      b.setAttribute('aria-pressed', String(state.playing && (speed === state.speed || boosted)));
+      if (speed === 48) {
+        const label = boosted ? '2.5× speed' : '1× speed';
+        b.setAttribute('aria-label', label);
+        b.title = boosted ? '2.5× · 24h in 12 min' : '1× · 24h in 30 min';
+      }
     });
   }
 
@@ -3069,7 +3076,11 @@
       }
       const btn = e.target.closest('button[data-speed]');
       if (!btn) return;
-      state.speed = +btn.dataset.speed;
+      const speed = +btn.dataset.speed;
+      // The 1× button doubles as the 2.5× toggle once it is active.
+      state.speed = speed === 48 && state.speed === 48 ? 120
+        : speed === 48 && state.speed === 120 ? 48
+          : speed;
       updateSpeedButtons();
       if (!state.playing) setPlaying(true);
     });
