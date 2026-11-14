@@ -177,7 +177,7 @@
   let tripCount = 0;
   let modeOfTrip = null;      // Uint8Array
   let hourBuckets = null;     // trip indices grouped by start hour
-  let startTimes = null;      // sorted Int32Array of t0
+  let startTimes = new Int32Array(0); // sorted t0; empty during boot before a day loads
   let px = null, py = null, pAng = null, pTrip = null;
   let slotBuckets = null, slotCounts = null;
   let activeCount = 0;       // dots currently drawn (viewport)
@@ -2757,6 +2757,7 @@
   const fmtNext = (s) => s >= DAY ? `+1 ${fmt(s)}` : fmt(s);
 
   function startedBefore(t) {
+    if (!startTimes || !startTimes.length) return 0;
     const count = (x) => {
       let lo = 0, hi = startTimes.length;
       while (lo < hi) { const mid = (lo + hi) >> 1; if (startTimes[mid] <= x) lo = mid + 1; else hi = mid; }
@@ -3334,7 +3335,8 @@
     const now = new Date();
     state.t = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
     const localDay = now.getDay() === 0 ? 'sunday' : now.getDay() === 6 ? 'saturday' : 'weekday';
-    activateDay(D.order.includes(localDay) ? localDay : D.order[0]);
+    const startDay = TEST_MODE ? D.order[0] : (D.order.includes(localDay) ? localDay : D.order[0]);
+    activateDay(startDay);
 
     anchorA = lngLatOf(0, 0);
     anchorB = lngLatOf(1000, 1000);
@@ -3406,6 +3408,7 @@
         openSearch: () => openSchedulePanel('search', selected >= 0 ? selected : 0),
         close: closeSchedulePanel,
         setTime: (t) => { setPlaying(false); seek(t); },
+        setDay: (key) => activateDay(key),
         play: () => setPlaying(true),
         follow: () => follow && { ...follow },
         futureTip: (id) => {

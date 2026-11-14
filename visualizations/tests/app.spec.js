@@ -251,3 +251,17 @@ test('Routes header control matches the About link color', async ({ page }) => {
   });
   expect(colors.routes).toBe(colors.about);
 });
+
+test('boot survives a delayed Saturday payload', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop boot race');
+  await page.route('**/data-saturday.json*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+  await page.goto('/seattle-in-motion/?test=1');
+  await expect(page.locator('#scheduleToggle')).toBeVisible({ timeout: 30_000 });
+  await page.evaluate(() => window.__timSchedule.setDay('saturday'));
+  await expect(page.locator('#loading')).not.toContainText('Could not load trip data', { timeout: 10_000 });
+  await page.waitForTimeout(1800);
+  await expect(page.locator('#loading')).not.toContainText('Could not load trip data');
+});
