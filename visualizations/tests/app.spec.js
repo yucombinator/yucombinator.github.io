@@ -356,3 +356,24 @@ test('following a run keeps the line stats visible', async ({ page }) => {
   await expect(page.locator('#schRunState')).toHaveText('Following');
   expect(info.following).toBe(info.trip);
 });
+
+test('live mode advances scheduled-only routes', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop live fallback');
+  await page.route('**/sf-live.seattle-live.workers.dev/live.json*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      generated: Date.now(), feeds: [], routes: [],
+      v: [[0, 37.7, -122.4, -1, Date.now(), 'test']],
+    }),
+  }));
+  await page.goto('/san-francisco-in-motion/?test=1');
+  await expect(page.locator('#scheduleToggle')).toBeVisible({ timeout: 30_000 });
+  await page.evaluate(() => window.__timSchedule.setTime(8 * 3600));
+  await page.locator('#liveBtn').click();
+  await expect(page.locator('#liveBtn')).toHaveAttribute('aria-pressed', 'true');
+  const before = await page.evaluate(() => window.__timSchedule.state().t);
+  await page.waitForTimeout(700);
+  const after = await page.evaluate(() => window.__timSchedule.state().t);
+  expect(after).toBeGreaterThan(before);
+});

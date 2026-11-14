@@ -592,7 +592,13 @@
 
     if (needsProjection) { projectPieces(); needsProjection = false; state.dirty = true; }
 
-    if (state.playing) {
+    if (state.liveOn) {
+      // Live feeds do not cover every operator. Keep their scheduled arrows
+      // moving at real time so routes such as BART do not look frozen.
+      state.t += dt;
+      if (state.t >= DAY) state.t -= DAY;
+      state.dirty = true;
+    } else if (state.playing) {
       state.t += dt * state.speed;
       if (state.t >= DAY) state.t -= DAY;
       state.dirty = true;
@@ -2681,7 +2687,7 @@
       if (state.liveOn) {
         if (stale) setLive(false);
         else {
-          if (isNew) {
+          if (isNew && !state.liveOn) {
             const c = cityClock(live.generated);
             seek(c.h * 3600 + c.m * 60 + c.s);
           }
