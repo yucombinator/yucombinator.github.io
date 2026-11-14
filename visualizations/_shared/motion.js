@@ -2023,17 +2023,20 @@
     const km = selStops && selStops.km ? selStops.km : 0;
     const run = selStops && selStops.run ? selStops.run : 0;
     const stopsN = selStops ? selStops.n : 0;
-    const bits = [`<span><b>${stats.trips.toLocaleString()}</b> trips today</span>`];
-    if (stopsN) bits.push(`<span><b>${stopsN}</b> stops</span>`);
-    if (km) bits.push(`<span><b>${km.toFixed(1)}</b> km</span>`);
-    if (run) bits.push(`<span><b>${Math.round(run / 60)}</b> min end-to-end</span>`);
-    if (run && km) bits.push(`<span><b>${Math.round(km / (run / 3600))}</b> km/h avg</span>`);
+    const stat = (value, label, cls = '') =>
+      `<span class="rstat${cls ? ' ' + cls : ''}"><b>${value}</b><span>${label}</span></span>`;
+    const bits = [stat(stats.trips.toLocaleString(), 'trips today')];
+    if (stopsN) bits.push(stat(stopsN, 'route stops'));
+    if (km) bits.push(stat(km.toFixed(1) + ' km', 'route length'));
+    if (run) bits.push(stat(Math.round(run / 60) + ' min', 'end-to-end'));
+    if (run && km) bits.push(stat(Math.round(km / (run / 3600)) + ' km/h', 'avg speed'));
     if (stats.headway) {
       const hw = stats.headway >= 10 ? Math.round(stats.headway) : stats.headway.toFixed(1);
-      bits.push(`<span><b>~${hw}</b> min headway at peak (${String(stats.peakHour).padStart(2, '0')}:00)</span>`);
+      bits.push(stat('~' + hw + ' min',
+        'peak headway · ' + String(stats.peakHour).padStart(2, '0') + ':00', 'wide'));
     }
-    if (stats.trips) bits.push(`<span><b>${fmt(stats.first)}</b>–<b>${fmt(stats.last)}</b></span>`);
-    else bits.push('<span>not running today</span>');
+    if (stats.trips) bits.push(stat(fmt(stats.first) + '–' + fmt(stats.last), 'service span'));
+    else bits.push(stat('—', 'not running today'));
     return bits.join('');
   }
 
@@ -2142,7 +2145,7 @@
       ? `<div class="rstats" id="schStats">${routeStatsHTML(schedulePanel.routePtr)}</div>` : '';
     html += '<div class="sched-run-head">' +
       `<div><b>${esc(runName(run))}</b><span>${esc(curDayData?.label || curDay)} · ${run.stops.length} stops</span></div>` +
-      `<span class="sched-state" id="schRunState" aria-live="polite">${following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t)}</span>` +
+      `<span class="sched-state${following ? ' is-following' : ''}" id="schRunState" aria-live="polite">${following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t)}</span>` +
       '</div>' +
       '<div class="sched-stops" id="schedStops">';
     for (let i = 0; i < run.stops.length; i++) {
@@ -2198,9 +2201,10 @@
     if (!el) return;
     const run = schedulePanel.run;
     const active = runIsActive(run, state.t);
+    const following = !!(follow && follow.kind === 'scheduled' && follow.trip === run.i);
     const text = schedulePanel.noReturn ? 'Run ended · no return'
-      : (follow && follow.kind === 'scheduled' && follow.trip === run.i)
-        ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
+      : following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t);
+    el.classList.toggle('is-following', following && !schedulePanel.noReturn);
     if (el.textContent !== text) el.textContent = text;
   }
 
