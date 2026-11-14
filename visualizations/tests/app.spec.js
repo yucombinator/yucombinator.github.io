@@ -284,3 +284,21 @@ test('quiet view keeps the network visible', async ({ page }) => {
   });
   expect(painted).toBeGreaterThan(1000);
 });
+
+test('boot paints the map after an async Saturday day load', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop boot rendering');
+  await page.clock.install({ time: new Date('2026-11-14T00:50:00-08:00') });
+  await page.route('**/data-saturday.json*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+  await page.goto('/seattle-in-motion/');
+  await expect(page.locator('#loading')).toHaveClass(/done/, { timeout: 30_000 });
+  await expect.poll(async () => page.evaluate(() => {
+    const el = document.getElementById('rail');
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    let n = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i]) n++;
+    return n;
+  }), { timeout: 10_000 }).toBeGreaterThan(1000);
+});

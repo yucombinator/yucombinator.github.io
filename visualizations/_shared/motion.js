@@ -1203,7 +1203,7 @@
     const { w, h } = view;
     octx.clearRect(0, 0, w, h);
     const ss = view.screenShapes;
-    if (!ss.length) return;
+    if (!ss.length || !hourBuckets) return;
 
     // rail lines live on their own canvas layer; redraw only when the
     // projection changes (not every frame)
