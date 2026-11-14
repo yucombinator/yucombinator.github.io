@@ -1,5 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+
+const test = base.extend({
+  page: async ({ page }, use) => {
+    const errors = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+    await use(page);
+    expect(errors, 'uncaught page errors').toEqual([]);
+  },
+});
 
 async function load(page) {
   await page.goto('/seattle-in-motion/?test=1');
