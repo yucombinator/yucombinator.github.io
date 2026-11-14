@@ -336,3 +336,23 @@ test('speed defaults to 0.25 and the 1x control toggles 2.5x', async ({ page }) 
   await expect(half).toHaveAttribute('aria-pressed', 'true');
   await expect(one).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('following a run keeps the line stats visible', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'desktop follow layout');
+  await load(page);
+  const info = await page.evaluate(async () => {
+    const idx = window.__timSchedule.routeIndex('puget:2LINE');
+    const v = window.MOTION_VERSION || 'local';
+    const doc = await (await fetch(`/seattle-in-motion/schedules/${idx}.json?v=${v}`)).json();
+    const run = doc.days.weekday.runs.find((r) => r.start > 0);
+    window.__timSchedule.setTime(run.start + 1);
+    window.__timSchedule.openRunByIndex(idx, run.i);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return { trip: run.i, following: window.__timSchedule.follow()?.trip };
+  });
+  await expect(page.locator('#schBody .rstats')).toBeVisible();
+  await expect(page.locator('#schBody .rstats')).toContainText('trips today');
+  await expect(page.locator('#schBody .rstats')).toContainText('stops');
+  await expect(page.locator('#schRunState')).toHaveText('Following');
+  expect(info.following).toBe(info.trip);
+});

@@ -2059,7 +2059,7 @@
       if (!grouped.has(label)) grouped.set(label, []);
       grouped.get(label).push(run);
     }
-    let html = `<div class="rstats">${routeStatsHTML(idx)}</div>`;
+    let html = `<div class="rstats" id="schStats">${routeStatsHTML(idx)}</div>`;
     if (follow && follow.kind === 'live' && follow.route === idx) {
       html += '<p class="sched-live-note">Live vehicle · showing route timetable.</p>';
     }
@@ -2138,7 +2138,9 @@
     const now = runClock(run, state.t);
     let next = run.stops.findIndex((row) => row[2] >= now);
     if (next < 0) next = run.stops.length - 1;
-    let html = '<div class="sched-run-head">' +
+    let html = schedulePanel.routePtr >= 0
+      ? `<div class="rstats" id="schStats">${routeStatsHTML(schedulePanel.routePtr)}</div>` : '';
+    html += '<div class="sched-run-head">' +
       `<div><b>${esc(runName(run))}</b><span>${esc(curDayData?.label || curDay)} · ${run.stops.length} stops</span></div>` +
       `<span class="sched-state" id="schRunState" aria-live="polite">${following ? 'Following' : active ? 'Scheduled' : 'Not active at ' + fmt(state.t)}</span>` +
       '</div>' +
@@ -2283,12 +2285,12 @@
     if (!body) return;
     schedulePanel.day = day;
     const seq = ++scheduleSeq;
-    body.innerHTML = `<div class="rstats">${routeStatsHTML(idx)}</div><p class="sched-loading">Loading timetable…</p>`;
+    body.innerHTML = `<div class="rstats" id="schStats">${routeStatsHTML(idx)}</div><p class="sched-loading">Loading timetable…</p>`;
     loadRouteSchedule(idx).then((doc) => {
       if (seq !== scheduleSeq || !schedulePanel.open || schedulePanel.mode !== 'route'
           || schedulePanel.routePtr !== idx) return;
       if (!doc) {
-        body.innerHTML = `<div class="rstats">${routeStatsHTML(idx)}</div>` +
+        body.innerHTML = `<div class="rstats" id="schStats">${routeStatsHTML(idx)}</div>` +
           '<p class="sched-empty">Timetable unavailable. <button type="button" class="linkish" id="schRetry">Retry</button></p>';
         $('schRetry')?.addEventListener('click', () => renderScheduleRoute(idx, day));
         return;
@@ -2510,8 +2512,12 @@
           selStops.name.push(cleanStopName(row[2]));
         }
         projectStops();
-        if (selected === idx && schedulePanel.open && schedulePanel.mode === 'route') {
-          renderScheduleRoute(idx);
+        if (selected === idx && schedulePanel.open) {
+          if (schedulePanel.mode === 'route') renderScheduleRoute(idx);
+          else if (schedulePanel.mode === 'run') {
+            const stats = $('schStats');
+            if (stats) stats.innerHTML = routeStatsHTML(idx);
+          }
         }
       }
     } catch { /* the drawer keeps the summary we know */ }
