@@ -5,7 +5,14 @@
   'use strict';
 
   const CFG = window.MOTION_CONFIG || {};
+  const CITY = (CFG.slug || 'in-motion').replace(/-in-motion$/, '');
   const TEST_MODE = new URLSearchParams(location.search).has('test');
+
+  function track(event, params) {
+    try {
+      (window.dataLayer = window.dataLayer || []).push(Object.assign({ event, city: CITY }, params || {}));
+    } catch { /* analytics must never break the map */ }
+  }
   const MODES = (CFG.modes || []).map((m) => m.key);
   const MODE_LABEL = {}, MODE_COLOR = {}, MODE_RADIUS = {};
   const MODE_LINE_WIDTH = {}, MODE_LINE_ALPHA = {};
@@ -142,6 +149,7 @@
       state.dirty = true;
       drawChart();
     }
+    if (persist) track('motion_theme', { theme: themeLight ? 'light' : 'dark' });
   }
 
   function initTheme() {
@@ -1070,6 +1078,11 @@
       return;
     }
     follow = { kind, ...value, lastLon: null, lastLat: null, lastCam: 0, lastProj: 0, lastTip: 0, tipHtml: '', lastReturnCheck: 0 };
+    track('motion_follow', {
+      kind,
+      route: value.route != null ? routeIds[value.route] : null,
+      trip: value.trip != null ? value.trip : value.id,
+    });
     schedulePanel.noReturn = false;
     returnPending = false;
     state.hoverTrip = null;
@@ -2489,6 +2502,7 @@
 
   async function selectRoute(idx, fromKeyboard = false) {
     if (idx < 0 || idx >= routeIds.length) return;
+    const changed = selected !== idx;
     selected = idx;
     selStops = null;
     fillScheduleHeader(idx);
@@ -2496,6 +2510,7 @@
     state.dirty = true;
 
     const info = routeName(idx);
+    if (changed) track('motion_route', { route: info.key, label: info.name });
     const cut = info.key.indexOf(':');
     const feed = info.key.slice(0, cut);
     const rid = info.key.slice(cut + 1);
@@ -2751,6 +2766,7 @@
   function setLive(on) {
     if (on && (!live || Date.now() - live.generated > LIVE_STALE_MS)) return;
     state.liveOn = on;
+    track('motion_live', { enabled: on });
     stopLiveTimer();
     setLiveControlsDisabled(on);
     if (on) {
@@ -3083,11 +3099,13 @@
     $('days').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-day]');
       if (!btn || btn.dataset.day === curDay) return;
+      track('motion_day', { day: btn.dataset.day });
       activateDay(btn.dataset.day);
     });
     $('speed').addEventListener('click', (e) => {
       if (e.target.closest('button[data-play]')) {
         setPlaying(!state.playing);
+        track('motion_play', { playing: state.playing });
         return;
       }
       const btn = e.target.closest('button[data-speed]');
@@ -3097,16 +3115,21 @@
       state.speed = speed === 48 && state.speed === 48 ? 120
         : speed === 48 && state.speed === 120 ? 48
           : speed;
+      track('motion_speed', { speed: state.speed });
       updateSpeedButtons();
       if (!state.playing) setPlaying(true);
     });
     $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(+e.target.value); });
+    $('scrub').addEventListener('change', () => {
+      track('motion_scrub', { hour: Math.floor(state.t / 3600), day: curDay });
+    });
 
     $('legend').addEventListener('click', (e) => {
       const futureBtn = e.target.closest('button[data-future]');
       if (futureBtn) {
         futureOn = !futureOn;
         futureBtn.setAttribute('aria-pressed', String(futureOn));
+        track('motion_future', { enabled: futureOn });
         state.dirty = true;
         return;
       }
@@ -3115,6 +3138,7 @@
       const m = btn.dataset.mode;
       state.modes[m] = !state.modes[m];
       btn.setAttribute('aria-pressed', String(state.modes[m]));
+      track('motion_mode', { mode: m, enabled: state.modes[m] });
       drawChart();
       linesDirty = true;
       state.dirty = true;
@@ -3299,6 +3323,11 @@
     const res = await fetch(`data.json?v=${window.MOTION_VERSION || 'local'}`);
     if (!res.ok) throw new Error('data.json ' + res.status);
     D = await res.json();
+    track('motion_view', {
+      path: location.pathname,
+      title: document.title,
+      service_days: (D.order || []).join(','),
+    });
     createSchedulePanel();
 
     shapes = D.shapes.map((pts) => ({ pts }));

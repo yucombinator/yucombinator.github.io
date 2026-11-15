@@ -327,6 +327,8 @@ test('speed defaults to 0.25 and the 1x control toggles 2.5x', async ({ page }) 
   await one.click();
   await expect(one).toHaveAttribute('aria-pressed', 'true');
   await expect(one).toHaveAttribute('aria-label', '1× speed');
+  expect(await page.evaluate(() => window.dataLayer.map((e) => e.event))).toEqual(
+    expect.arrayContaining(['motion_view', 'motion_speed']));
 
   await one.click();
   await expect(one).toHaveAttribute('aria-pressed', 'true');
