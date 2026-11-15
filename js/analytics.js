@@ -3,8 +3,6 @@
   'use strict';
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function () { window.dataLayer.push(arguments); };
-  var GA4_ID = 'G-QHG1T1WG6R'; // GA4 property configured in GTM-WZ2695VC.
 
   window.trackEvent = function (event, params) {
     var payload = { event: event };
@@ -14,7 +12,6 @@
       }
     }
     window.dataLayer.push(payload);
-    window.gtag('event', event, params || {});
   };
 
   // Track navigation into an In Motion city from any page.
@@ -41,13 +38,4 @@
   gtm.async = true;
   gtm.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-WZ2695VC';
   first.parentNode.insertBefore(gtm, first);
-
-  // Send feature events directly as well, so they work without extra GTM
-  // triggers. GTM remains responsible for the page-view tag.
-  window.gtag('js', new Date());
-  window.gtag('config', GA4_ID, { send_page_view: false });
-  var ga = document.createElement('script');
-  ga.async = true;
-  ga.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
-  first.parentNode.insertBefore(ga, first);
 })(window, document);
