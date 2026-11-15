@@ -10,7 +10,9 @@
 
   function track(event, params) {
     try {
-      (window.dataLayer = window.dataLayer || []).push(Object.assign({ event, city: CITY }, params || {}));
+      const payload = Object.assign({ city: CITY }, params || {});
+      if (window.trackEvent) window.trackEvent(event, payload);
+      else (window.dataLayer = window.dataLayer || []).push(Object.assign({ event }, payload));
     } catch { /* analytics must never break the map */ }
   }
   const MODES = (CFG.modes || []).map((m) => m.key);
