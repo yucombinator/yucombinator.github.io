@@ -108,9 +108,10 @@
   .speeds button{background:none;border:0;color:#8fa6ab;padding:5px 7px;border-radius:3px;display:flex;align-items:center}
   .speeds button svg{height:10px;width:auto;fill:currentColor;display:block}
   .speeds .pp{color:#c9d9d4;width:27px;height:24px;padding:0;justify-content:center;
-    border:1px solid #33505a;border-radius:50%;margin:0 1px}
+    border:1px solid transparent;border-radius:50%;margin:0 1px}
   .speeds .pp[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
   .speeds .pp:hover{border-color:#4b6b74}
+  .speeds .pp:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .speeds .pp svg{height:9px}
   .speed-sep{width:1px;background:#27404a;align-self:stretch;margin:2px 1px}
   .speeds button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
@@ -316,7 +317,7 @@
   html[data-theme="light"] .days button,html[data-theme="light"] .speeds button{color:#526a73}
   html[data-theme="light"] .days button:hover,html[data-theme="light"] .speeds button:hover{color:#1c323a}
   html[data-theme="light"] .days button[aria-pressed="true"],html[data-theme="light"] .speeds button[aria-pressed="true"],html[data-theme="light"] .speeds .pp[aria-pressed="true"]{color:var(--accent-text);background:color-mix(in srgb,var(--accent) 16%,transparent)}
-  html[data-theme="light"] .speeds .pp{color:#38505a;border-color:#b8c8cf}
+  html[data-theme="light"] .speeds .pp{color:#38505a;border-color:transparent}
   html[data-theme="light"] .speeds .pp[aria-pressed="true"]{border-color:var(--accent)}
   html[data-theme="light"] .speeds .pp:hover{border-color:#879da6}
   html[data-theme="light"] .speed-sep{background:#c5d2d8}
