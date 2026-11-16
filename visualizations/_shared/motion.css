@@ -112,9 +112,6 @@
   .speeds .pp[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
   .speeds .pp:hover{border-color:#4b6b74}
   .speeds .pp svg{height:9px}
-  .speeds .pp .ic-play{display:none}
-  .speeds .pp[aria-pressed="true"] .ic-pause{display:none}
-  .speeds .pp[aria-pressed="true"] .ic-play{display:block}
   .speed-sep{width:1px;background:#27404a;align-self:stretch;margin:2px 1px}
   .speeds button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
   .speeds button:hover{color:#d6ece4}
@@ -320,6 +317,7 @@
   html[data-theme="light"] .days button:hover,html[data-theme="light"] .speeds button:hover{color:#1c323a}
   html[data-theme="light"] .days button[aria-pressed="true"],html[data-theme="light"] .speeds button[aria-pressed="true"],html[data-theme="light"] .speeds .pp[aria-pressed="true"]{color:var(--accent-text);background:color-mix(in srgb,var(--accent) 16%,transparent)}
   html[data-theme="light"] .speeds .pp{color:#38505a;border-color:#b8c8cf}
+  html[data-theme="light"] .speeds .pp[aria-pressed="true"]{border-color:var(--accent)}
   html[data-theme="light"] .speeds .pp:hover{border-color:#879da6}
   html[data-theme="light"] .speed-sep{background:#c5d2d8}
   html[data-theme="light"] .live{background:rgba(200,40,40,.07);border-color:#d8a6a6;color:#9b3434}
