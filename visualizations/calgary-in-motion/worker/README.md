@@ -30,6 +30,11 @@ not time. So the worker:
 `live-trips.json` is fetched once per isolate and cached six hours
 (`cf.cacheTtl` one day); it is ~400 KB for all 27,900 trips.
 
+A few live trips (~2% at test time, five vehicles) are not in the static feed
+at all — Calgary's realtime feed carries occasional extra-board trips the
+published schedule omits — and those vehicles are skipped rather than guessed
+onto a route.
+
 Trip-update and alert feeds exist (`gs4m-mdc2`, `jhgn-ynqj`) but carry no route
 either, so the client stays on scheduled arrows for delays and alerts.
 
