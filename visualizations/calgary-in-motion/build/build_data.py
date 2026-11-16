@@ -16,7 +16,7 @@ import regional  # noqa: E402
 CALGARY = {
     "id": "calgary", "agency": "Calgary Transit",
     "url": "https://data.calgary.ca/download/npk7-z3bj/application%2Fzip",
-    "kind": "calgary", "color": "6b7280",
+    "kind": "calgary", "color": "d81b7a",
 }
 
 # The feed carries no route colours, so the CTrain lines and the MAX family are
