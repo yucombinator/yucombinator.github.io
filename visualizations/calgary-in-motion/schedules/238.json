@@ -1,0 +1,1 @@
+{"route":"calgary:869-20800","stops":[["All Saints High School",50.859616,-114.025449],["Somerset-Bridlewood Stn",50.898657,-114.069956]],"days":{"weekday":{"runs":[{"i":2443,"trip":"75672751","dir":0,"headsign":"ALL SAINTS HS/SOMERSETBRIDLEWOOD STATION","start":56400,"end":57300,"stops":[[0,55800,56400,1],[1,57300,57300,1]]}]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}

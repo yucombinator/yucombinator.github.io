@@ -1,0 +1,1 @@
+{"route":"calgary:793-20800","stops":[["EB 6 AV NW @ 18 ST NW",51.057559,-114.101691],["Sunnyside LRT Station (SB 9A ST NW @ 4 AV NW)",51.056275,-114.084678]],"days":{"weekday":{"runs":[{"i":2398,"trip":"75672694","dir":0,"headsign":"QUEEN ELIZABETH/SUNNYSIDE","start":56400,"end":56820,"stops":[[0,55800,56400,1],[1,56820,56820,1]]}]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}

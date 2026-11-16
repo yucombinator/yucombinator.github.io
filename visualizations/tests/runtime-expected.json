@@ -18,9 +18,11 @@
       "brtTip": 3
     },
     "cityLabels": [
+      "San Francisco",
       "Toronto",
       "Vancouver",
-      "Seattle"
+      "Seattle",
+      "Calgary"
     ],
     "oss": true,
     "legendOrder": [
@@ -51,9 +53,11 @@
       "ferryTip": 5
     },
     "cityLabels": [
+      "San Francisco",
       "Toronto",
       "Vancouver",
-      "Seattle"
+      "Seattle",
+      "Calgary"
     ],
     "oss": true,
     "legendOrder": [
@@ -83,9 +87,11 @@
       "ferryTip": 3
     },
     "cityLabels": [
+      "San Francisco",
       "Toronto",
       "Vancouver",
-      "Seattle"
+      "Seattle",
+      "Calgary"
     ],
     "oss": true,
     "legendOrder": [
@@ -98,5 +104,34 @@
       "ferry"
     ],
     "accent": "#6aa9ff"
+  },
+  "calgary-in-motion": {
+    "total": "7,908",
+    "started": "2,958",
+    "legend": {
+      "lrt": 21,
+      "brt": 30,
+      "localbus": 239,
+      "regionalbus": 24
+    },
+    "tipRows": {
+      "brtTip": 6,
+      "regionalTip": 4
+    },
+    "cityLabels": [
+      "San Francisco",
+      "Toronto",
+      "Vancouver",
+      "Seattle",
+      "Calgary"
+    ],
+    "oss": true,
+    "legendOrder": [
+      "lrt",
+      "brt",
+      "localbus",
+      "regionalbus"
+    ],
+    "accent": "#ff7a5c"
   }
 }
