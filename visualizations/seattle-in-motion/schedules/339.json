@@ -1,1 +1,1 @@
-{"route":"puget:635","stops":[],"days":{"weekday":{"runs":[]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}
+{"route":"puget:635","stops":[["Port Orchard Armory P&R",47.533954,-122.618835],["First Lutheran Church P&R",47.52561,-122.628841],["Mullenix P&R",47.468221,-122.621971],["Charleston Gate",47.55861,-122.653232]],"days":{"weekday":{"runs":[{"i":14635,"trip":"20-572020","dir":0,"headsign":"PSNS","start":15840,"end":17400,"stops":[[0,15840,15840,1],[1,16020,16020,1],[2,16680,16680,1],[3,17400,17400,1]]}]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}

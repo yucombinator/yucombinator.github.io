@@ -1,1 +1,1 @@
-{"route":"puget:TA034","stops":[],"days":{"weekday":{"runs":[]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}
+{"route":"puget:TA034","stops":[["Bainbridge Island TC",47.623693,-122.511537]],"days":{"weekday":{"runs":[{"i":14952,"trip":"2613028","dir":1,"headsign":"Task","start":69300,"end":72000,"stops":[[0,69300,69300,1],[0,72000,72000,1]]},{"i":14953,"trip":"2615028","dir":1,"headsign":"Task","start":69300,"end":71400,"stops":[[0,69300,69300,1],[0,71400,71400,1]]}]},"saturday":{"runs":[]},"sunday":{"runs":[]}}}
