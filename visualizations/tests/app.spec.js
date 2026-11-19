@@ -390,6 +390,8 @@ test('Ottawa loads with O-Train and STO service', async ({ page }) => {
   await expect(page.locator('#legend button[data-future]')).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => window.__timSchedule.futureTip('line1-east')))
     .toContain('Blair to Trim');
+  expect(await page.evaluate(() => window.__timSchedule.futureTip('line1-algonquin')))
+    .toContain('Algonquin');
   await page.evaluate(() => window.__timSchedule.openRouteByKey('oc:1-373'));
   await expect(page.locator('#schedulePanel')).toBeVisible();
   await expect(page.locator('#schName')).toContainText('1');
