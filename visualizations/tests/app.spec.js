@@ -380,12 +380,16 @@ test('live mode advances scheduled-only routes', async ({ page }) => {
   expect(after).toBeGreaterThan(before);
 });
 
-test('Ottawa–Gatineau loads with O-Train and STO service', async ({ page }) => {
+test('Ottawa loads with O-Train and STO service', async ({ page }) => {
   test.skip(test.info().project.name !== 'desktop', 'desktop city smoke');
-  await page.goto('/ottawa-gatineau-in-motion/?test=1');
+  await page.goto('/ottawa-in-motion/?test=1');
   await expect(page.locator('#loading')).toHaveClass(/done/, { timeout: 30_000 });
   await expect(page.locator('#legend')).toContainText('O-Train');
   await expect(page.locator('#legend')).toContainText('Rapibus');
+  await page.locator('#legend button[data-future]').click();
+  await expect(page.locator('#legend button[data-future]')).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => window.__timSchedule.futureTip('line1-east')))
+    .toContain('Blair to Trim');
   await page.evaluate(() => window.__timSchedule.openRouteByKey('oc:1-373'));
   await expect(page.locator('#schedulePanel')).toBeVisible();
   await expect(page.locator('#schName')).toContainText('1');

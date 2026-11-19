@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ottawa–Gatineau in Motion: OC Transpo + STO GTFS -> ../data.json."""
+"""Ottawa in Motion: OC Transpo + STO GTFS -> ../data.json."""
 import os
 import re
 import shutil
@@ -53,7 +53,7 @@ def classify(feed, route_id, route_type, route_color="", agency="", route_name="
 
 
 CFG = {
-    "city": "Ottawa–Gatineau",
+    "city": "Ottawa",
     "cache": str(HERE / "gtfs"),
     "out": os.environ.get("MOTION_OUT", str(CITY / "data.json")),
     "timeZone": "America/Toronto",
