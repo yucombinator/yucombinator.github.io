@@ -5,5 +5,6 @@ window.MOTION_CITIES = [
   { "slug": "toronto-in-motion", "label": "Toronto" },
   { "slug": "vancouver-in-motion", "label": "Vancouver" },
   { "slug": "seattle-in-motion", "label": "Seattle" },
-  { "slug": "calgary-in-motion", "label": "Calgary" }
+  { "slug": "calgary-in-motion", "label": "Calgary" },
+  { "slug": "ottawa-gatineau-in-motion", "label": "Ottawa–Gatineau" }
 ];

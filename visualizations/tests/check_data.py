@@ -53,7 +53,9 @@ def main():
         city_cfg = json.loads((city / "city.js").read_text()
                               .split("=", 1)[1].strip().rstrip(";"))
         built = datetime.fromisoformat(committed["built"])
-        ref = built.astimezone(ZoneInfo(city_cfg["timeZone"])).date().isoformat()
+        saturday = json.loads((city / "data-saturday.json").read_text())
+        ref = (saturday.get("date")
+               or built.astimezone(ZoneInfo(city_cfg["timeZone"])).date().isoformat())
         with tempfile.TemporaryDirectory() as tmp:
             env = dict(os.environ, MOTION_OUT=str(Path(tmp) / "data.json"),
                        MOTION_REFERENCE_DATE=ref)
