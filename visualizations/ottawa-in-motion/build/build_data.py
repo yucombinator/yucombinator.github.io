@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Ottawa in Motion: OC Transpo + STO GTFS -> ../data.json."""
+import json
 import os
 import re
 import shutil
@@ -76,6 +77,8 @@ if __name__ == "__main__":
         if (ref - today).days < 7:
             ref += timedelta(days=7)
         CFG["referenceDate"] = ref.isoformat()
+    else:
+        CFG["referenceDate"] = os.environ["MOTION_REFERENCE_DATE"]
 
     for feed in FEEDS:
         path = mb.feed_dir(feed, CFG["cache"])
@@ -90,3 +93,8 @@ if __name__ == "__main__":
             feed["url"] = feed["fallback_url"]
             mb.feed_dir(feed, CFG["cache"])
     mb.run(CFG)
+    out = Path(CFG["out"])
+    if out.exists() and CFG.get("referenceDate"):
+        doc = json.loads(out.read_text())
+        doc["referenceDate"] = CFG["referenceDate"]
+        out.write_text(json.dumps(doc, separators=(",", ":")))

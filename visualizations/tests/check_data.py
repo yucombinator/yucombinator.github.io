@@ -49,12 +49,14 @@ def compare(city, out):
 
 def main():
     for city in CITIES:
+        if city.name == "san-francisco-in-motion" and not os.environ.get("BAY_AREA_511_KEY"):
+            print("skip: san-francisco-in-motion (BAY_AREA_511_KEY not set)")
+            continue
         committed = json.loads((city / "data.json").read_text())
         city_cfg = json.loads((city / "city.js").read_text()
                               .split("=", 1)[1].strip().rstrip(";"))
         built = datetime.fromisoformat(committed["built"])
-        saturday = json.loads((city / "data-saturday.json").read_text())
-        ref = (saturday.get("date")
+        ref = (committed.get("referenceDate")
                or built.astimezone(ZoneInfo(city_cfg["timeZone"])).date().isoformat())
         with tempfile.TemporaryDirectory() as tmp:
             env = dict(os.environ, MOTION_OUT=str(Path(tmp) / "data.json"),

@@ -22,4 +22,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Rebuild and compare
+        env:
+          BAY_AREA_511_KEY: ${{ secrets.BAY_AREA_511_KEY }}
         run: python3 visualizations/tests/check_data.py
