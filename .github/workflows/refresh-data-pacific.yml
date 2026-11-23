@@ -1,8 +1,8 @@
-name: Refresh Pacific GTFS snapshots
+name: Refresh GTFS snapshots — Pacific and capital region
 
-# Vancouver and Seattle share the Pacific timezone; 08:17 UTC is 00:17 PST /
-# 01:17 PDT, just after the local date rolls over. Toronto keeps its own
-# 05:17 UTC job. Busways are static OSM overlays and are not rebuilt here.
+# Vancouver, Seattle, Calgary and Ottawa are rebuilt after their local date
+# rolls over. Toronto keeps its own 05:17 UTC job. Busways are static OSM
+# overlays and are not rebuilt here.
 on:
   schedule:
     - cron: "17 8 * * *"
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        city: [vancouver-in-motion, seattle-in-motion]
+        city: [vancouver-in-motion, seattle-in-motion, calgary-in-motion, ottawa-in-motion]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -44,6 +44,7 @@ jobs:
             visualizations/${{ matrix.city }}/data-sunday.json
             visualizations/${{ matrix.city }}/stops-*.json
             visualizations/${{ matrix.city }}/schedules/*.json
+            visualizations/${{ matrix.city }}/live-trips.json
           if-no-files-found: error
 
   commit:
@@ -58,8 +59,9 @@ jobs:
           python-version: "3.12"
       - name: Clear committed stops before merging artifacts
         run: |
-          rm -f visualizations/vancouver-in-motion/stops-*.json
-          rm -f visualizations/seattle-in-motion/stops-*.json
+          for city in vancouver-in-motion seattle-in-motion calgary-in-motion ottawa-in-motion; do
+            rm -f "visualizations/$city"/stops-*.json
+          done
       - name: Download Vancouver artifact
         uses: actions/download-artifact@v4
         with:
@@ -70,15 +72,27 @@ jobs:
         with:
           name: seattle-in-motion
           path: visualizations/seattle-in-motion
+      - name: Download Calgary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: calgary-in-motion
+          path: visualizations/calgary-in-motion
+      - name: Download Ottawa artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ottawa-in-motion
+          path: visualizations/ottawa-in-motion
       # Re-check against the checkout we are about to commit on top of.
       - name: Re-validate downloaded snapshots
         run: |
-          python3 visualizations/tests/check_snapshot.py --city vancouver-in-motion
-          python3 visualizations/tests/check_snapshot.py --city seattle-in-motion
+          for city in vancouver-in-motion seattle-in-motion calgary-in-motion ottawa-in-motion; do
+            python3 visualizations/tests/check_snapshot.py --city "$city"
+          done
       - name: Validate route schedules
         run: |
-          python3 visualizations/tests/check_schedules.py --city vancouver-in-motion
-          python3 visualizations/tests/check_schedules.py --city seattle-in-motion
+          for city in vancouver-in-motion seattle-in-motion calgary-in-motion ottawa-in-motion; do
+            python3 visualizations/tests/check_schedules.py --city "$city"
+          done
 
       - name: Stamp the data version
         run: python3 visualizations/_shared/stamp_version.py
@@ -92,12 +106,19 @@ jobs:
                   visualizations/seattle-in-motion/data*.json \
                   visualizations/seattle-in-motion/stops-*.json \
                   'visualizations/seattle-in-motion/schedules/*.json' \
+                  visualizations/calgary-in-motion/data*.json \
+                  visualizations/calgary-in-motion/stops-*.json \
+                  'visualizations/calgary-in-motion/schedules/*.json' \
+                  visualizations/calgary-in-motion/live-trips.json \
+                  visualizations/ottawa-in-motion/data*.json \
+                  visualizations/ottawa-in-motion/stops-*.json \
+                  'visualizations/ottawa-in-motion/schedules/*.json' \
                   visualizations/_shared/version.js \
                   visualizations/*/index.html
           if git diff --cached --quiet; then
             echo "No data changes — skipping commit"
           else
-            git commit -m "Refresh Pacific GTFS snapshots ($(date -u +%F))"
+            git commit -m "Refresh GTFS snapshots ($(date -u +%F))"
             git pull --rebase -X theirs origin main
             python3 visualizations/_shared/stamp_version.py
             git add visualizations/_shared/version.js visualizations/*/index.html

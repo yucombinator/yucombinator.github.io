@@ -7,7 +7,7 @@ name: Check In Motion data parity
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 6 * * 1"
+    - cron: "23 10 * * 1"
 
 permissions:
   contents: read

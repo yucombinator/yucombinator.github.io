@@ -28,6 +28,10 @@ FLOORS = {
                             "saturday": 15000, "sunday": 13000},
     "seattle-in-motion": {"trips": 15000, "routes": 300, "shapes": 800,
                           "saturday": 10000, "sunday": 9000},
+    "calgary-in-motion": {"trips": 10000, "routes": 250, "shapes": 600,
+                          "saturday": 6500, "sunday": 6000},
+    "ottawa-in-motion": {"trips": 8000, "routes": 220, "shapes": 700,
+                         "saturday": 4500, "sunday": 4000},
 }
 
 

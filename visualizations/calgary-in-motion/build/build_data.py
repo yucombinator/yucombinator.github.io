@@ -112,13 +112,21 @@ if __name__ == "__main__":
             exceptions |= {row["date"] for row in mb.read_csv(path, "calendar_dates.txt")}
 
     today = datetime.now(ZoneInfo(CFG["timeZone"])).date()
-    for offset in range(14):
-        ref = today - timedelta(days=offset)
-        specs = mb.make_day_specs(dict(CFG, referenceDate=ref.isoformat()))
-        if not any(spec["ymd"] in exceptions for spec in specs):
-            CFG["referenceDate"] = ref.isoformat()
-            print(f"reference date {ref.isoformat()} "
-                  f"({', '.join(s['iso'] for s in specs)})", file=sys.stderr)
-            break
+    if os.environ.get("MOTION_REFERENCE_DATE"):
+        CFG["referenceDate"] = os.environ["MOTION_REFERENCE_DATE"]
+    else:
+        for offset in range(14):
+            ref = today - timedelta(days=offset)
+            specs = mb.make_day_specs(dict(CFG, referenceDate=ref.isoformat()))
+            if not any(spec["ymd"] in exceptions for spec in specs):
+                CFG["referenceDate"] = ref.isoformat()
+                print(f"reference date {ref.isoformat()} "
+                      f"({', '.join(s['iso'] for s in specs)})", file=sys.stderr)
+                break
 
     mb.run(CFG)
+    if CFG.get("referenceDate"):
+        out = Path(CFG["out"])
+        doc = json.loads(out.read_text())
+        doc["referenceDate"] = CFG["referenceDate"]
+        out.write_text(json.dumps(doc, separators=(",", ":")))
