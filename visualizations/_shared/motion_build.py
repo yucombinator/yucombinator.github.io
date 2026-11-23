@@ -11,6 +11,8 @@ import math
 import os
 import shutil
 import sys
+import time
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -84,10 +86,25 @@ def feed_dir(feed, cache):
     zip_path = os.path.join(cache, feed["id"] + ".zip")
     if not os.path.exists(zip_path):
         print(f"  ↓ {feed['id']} ({feed['url'][:60]}…)", file=sys.stderr)
-        req = urllib.request.Request(feed["url"], headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=120) as resp, open(zip_path, "wb") as out:
-            while chunk := resp.read(1 << 20):
-                out.write(chunk)
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(
+                    feed["url"], headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=120) as resp,                         open(zip_path, "wb") as out:
+                    while chunk := resp.read(1 << 20):
+                        out.write(chunk)
+                break
+            except (urllib.error.HTTPError, urllib.error.URLError,
+                    TimeoutError, OSError) as exc:
+                try:
+                    os.remove(zip_path)
+                except FileNotFoundError:
+                    pass
+                if attempt == 2:
+                    raise
+                print(f"  ! {feed['id']} download {type(exc).__name__}; retrying",
+                      file=sys.stderr)
+                time.sleep(2 * (attempt + 1))
     try:
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(path)
